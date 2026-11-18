@@ -69,7 +69,7 @@ reads every frame back from the screen and compares it with the slide,
 painting, `--simulate-prep S` paces the painting as if the slides took S
 seconds, `--interrupt-after S` presses a key S seconds into the painting,
 and `--simulate-display-change S` brings the picker up S seconds into the
-show. A test run leaves the user's Paint settings as they were.
+show; `--soak N` presses N random speaker keys (a stability run). A test run leaves the user's Paint settings as they were.
 
 Each show's timings (every slide change, key to slide on screen, resumes
 after a display change) are printed as JSON at the end and kept in
@@ -134,6 +134,7 @@ a WPF thread of its own; the controller on the thread pool.
 | The user's 23 real PowerPoint decks (E25's), `render` into a throwaway cache | all 23 rendered, 370 slides; 5.0 s median a deck with PowerPoint's start and quit |
 | A key during the painting | the painting stops within a stroke; slide 1 0.6 s after the key |
 | A display change (simulated), same screen chosen | resumed at the same slide in 2.6 s |
+| A soak: 400 random keys (331 changes, bursts combined), every frame verified | all confirmed, worst 695 ms; pixel-exact but for Paint's bottom edge; 96 MB, flat |
 | Paint un-maximised / closed during a show | put back in 2.2 s / reopened, slide back in 4.6 s |
 | The x64 build, run under emulation on the ARM64 laptop | `doctor` passes; 189 ms median, every frame pixel-exact |
 
@@ -148,6 +149,13 @@ a WPF thread of its own; the controller on the thread pool.
 - **Paint keeps the Text font and its size** across sessions. The painter
   records both before changing them and puts them back after the show; a
   show that dies half way is put right by the next one (or by `doctor`).
+- **Notifications land on the slides.** In the first soak run every frame
+  was about 87% right, a black screen 91%: something sat over a tenth of
+  the canvas the whole time, most likely notification toasts (Do not
+  disturb was off; E19). The same soak again was clean. Switch Do not
+  disturb on before a show; the picker says so.
+- **Paint's bottom edge**: on a dark slide the canvas's last two rows show
+  Paint's edge, not the slide.
 - **A lost focus loses a paste**: Ctrl+V reaches another window. The stage
   refocuses Paint and tries once more before it reports a change as
   unconfirmed.

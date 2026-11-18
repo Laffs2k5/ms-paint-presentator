@@ -304,10 +304,17 @@ public sealed class PaintSession : IDisposable
         bool Gone() => !(IsWindow(Window) && IsWindowVisible(Window));
         PostMessageW(Window, WM_CLOSE, 0, 0);
         var sw = Stopwatch.StartNew();
+        bool again = false;
         while (sw.ElapsedMilliseconds < timeoutMs)
         {
             Thread.Sleep(300);
             if (Gone()) return true;
+            if (!again && sw.ElapsedMilliseconds > timeoutMs / 2)
+            {
+                // a close that went unanswered (seen once, after a long soak): ask again
+                again = true;
+                PostMessageW(Window, WM_CLOSE, 0, 0);
+            }
             if (!discard) continue;
             try { ById("SecondaryButton")?.Patterns.Invoke.Pattern.Invoke(); }
             catch (Exception e) when (e is System.Runtime.InteropServices.COMException or InvalidOperationException) { }

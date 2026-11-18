@@ -20,6 +20,7 @@ internal sealed record PresentOptions
     public double SimulatePrep { get; set; }
     public double InterruptAfter { get; set; }
     public double SimulateDisplayChange { get; set; }
+    public int Soak { get; set; }
     public bool BackgroundPaste { get; set; }
     public string? NodeTools { get; set; }
 
@@ -42,6 +43,7 @@ internal sealed record PresentOptions
                 case "--simulate-prep": o.SimulatePrep = double.Parse(Next()); break;
                 case "--interrupt-after": o.InterruptAfter = double.Parse(Next()); break;
                 case "--simulate-display-change": o.SimulateDisplayChange = double.Parse(Next()); break;
+                case "--soak": o.Soak = int.Parse(Next()); break;
                 case "--background-paste": o.BackgroundPaste = true; break;
                 case "--node-tools": o.NodeTools = Next(); break;
                 case var a when a.StartsWith("--"): throw new UsageException($"unknown option {a}");
@@ -169,7 +171,8 @@ internal static class PresentCommand
                 : stage;
             var controller = new ShowController(Staged(slides, size), slides, hook.Keys, startAtPainting: true, Log);
             using var stopAuto = new CancellationTokenSource();
-            Task autoKeys = o.Auto ? Task.Run(() => AutoKeys(() => paint?.InFront() == true, stopAuto.Token)) : Task.CompletedTask;
+            Task autoKeys = o.Soak > 0 ? Task.Run(() => SoakKeys(o.Soak, o.Seed ?? 1, () => paint?.InFront() == true, stopAuto.Token))
+                          : o.Auto ? Task.Run(() => AutoKeys(() => paint?.InFront() == true, stopAuto.Token)) : Task.CompletedTask;
             Log("Ready: Right, Space or Enter for the first slide; Esc ends.");
             // no blocking collections while the show runs (research 05 §7.5, E23)
             var gcMode = System.Runtime.GCSettings.LatencyMode;
@@ -322,6 +325,8 @@ internal static class PresentCommand
             summary["slide changes"] = controller.Changes;
             if (verifier is { Results.Count: > 0 })
                 summary["verified"] = new { min = verifier.Results.Min(r => r.Match), all = verifier.Results.Select(r => $"{r.Frame}: {r.Match}") };
+            using (var me = Process.GetCurrentProcess())
+                summary["memory"] = new { working_set_mb = me.WorkingSet64 >> 20, managed_heap_mb = GC.GetTotalMemory(false) >> 20, gc_gen2 = GC.CollectionCount(2) };
             summary["key to slide ms"] = timed.Count == 0 ? null : new
             {
                 median = timed[timed.Count / 2],
@@ -353,7 +358,8 @@ internal static class PresentCommand
                     {
                         Log($"could not put the Text settings back ({e.Message}); the next show will");
                     }
-                    p?.Close(discard: true);
+                    if (p is not null && !p.Close(discard: true))
+                        Log("Paint did not close: close it by hand and choose Don't save");
                     pen?.Dispose();
                 });
             clipboard.Clear();
@@ -443,6 +449,31 @@ internal static class PresentCommand
     /// <summary>Scripted "speaker" keys, untagged so the hook takes them as the
     /// speaker's (E13's script): next, back, the painting, a jump, black, a
     /// burst, Esc.</summary>
+    /// <summary>For a soak test: <paramref name="count"/> random speaker keys
+    /// (mostly next and back, some jumps, black screens and bursts), then Esc.
+    /// Guarded like the other test keys: only ever into Paint.</summary>
+    private static void SoakKeys(int count, int seed, Func<bool> paintInFront, CancellationToken stop)
+    {
+        var rng = new Random(seed);
+        int[] keys = [0x27, 0x27, 0x27, 0x20, 0x22, 0x25, 0x25, 0x21, 0x24, 0x23, 0x42, 0x57];
+        Thread.Sleep(1500);
+        for (int n = 0; n < count && !stop.IsCancellationRequested; n++)
+        {
+            int vk = rng.Next(10) == 0 ? 0x30 + rng.Next(1, 8) : keys[rng.Next(keys.Length)];
+            int burst = rng.Next(12) == 0 ? 3 : 1;  // now and then a burst, combined into one paste
+            for (int b = 0; b < burst; b++)
+            {
+                for (int waited = 0; !paintInFront() && waited < 3000; waited += 100) Thread.Sleep(100);
+                if (!paintInFront()) { Log("soak: Paint is not in front, a key skipped"); continue; }
+                Keyboard.Tap(vk, tagged: false);
+                if (vk >= 0x30 && vk <= 0x39) { Thread.Sleep(120); if (paintInFront()) Keyboard.Tap(0x0D, tagged: false); }
+                Thread.Sleep(burst > 1 ? 40 : 0);
+            }
+            Thread.Sleep(250 + rng.Next(450));
+        }
+        if (paintInFront()) Keyboard.Tap(0x1B, tagged: false);
+    }
+
     private static void AutoKeys(Func<bool> paintInFront, CancellationToken stop)
     {
         (int Vk, int WaitMs)[] script =
