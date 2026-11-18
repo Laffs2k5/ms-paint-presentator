@@ -983,7 +983,7 @@ once.
 - **Build steps are lost** unless the tool exports one page per step (Slidev
   `--with-clicks` can).
 
-## E25. Past PowerPoint decks (2026-11-18): **pass for a synthetic deck**; the user's real decks are still to try
+## E25. Past PowerPoint decks (2026-11-18): **pass**, for a synthetic deck and for 23 real decks
 
 Script: [`poc/experiments/e25_legacy_ppt.py`](../poc/experiments/e25_legacy_ppt.py).
 A made-up "legacy" deck: 4:3 (720×540 pt), entrance animations on click (Fly
@@ -1016,8 +1016,35 @@ laptop's viewport (2784×1499: 1910×1431, E11's rule).
   missing. A font that is really missing is substituted exactly as in
   PowerPoint's own show on the same laptop, so the presenter can at most
   warn.
-- **Not covered yet:** embedded video or audio (the export would show a still
-  frame), and real decks: transitions, SmartArt, charts, linked files.
+- **Not covered by the synthetic deck:** embedded video or audio (the export
+  would show a still frame), and the real decks below.
+
+**Part 2: the user's real decks.** Script:
+[`poc/experiments/e25_real_decks.py`](../poc/experiments/e25_real_decks.py).
+Every `.ppt` and `.pptx` in the user's work OneDrive and Documents, each
+opened read-only without a window, in its own subprocess with a time limit and
+PowerPoint's alerts off. Every visible slide was exported at the largest size
+of the deck's exact shape for the laptop's viewport. The decks are
+employer-internal, so only anonymous counts are recorded here; the exports
+went to a temporary folder that was deleted.
+
+| | Result |
+|---|---|
+| Decks | 23, all `.pptx` (none older), last saved 2016–2026; 370 slides, 1–48 per deck (median 13) |
+| Shape | **16:9, all of them**: 2548×1433 on this laptop (0.44 px from exact) |
+| Opened and exported | **23 of 23, every slide**: no export error, no slide that came out as a single colour |
+| Time | opening at most 0.56 s; export 0.1 s per slide (median; 0.085–0.535 s), 5.9 s for the slowest deck |
+| Animations | in 3 decks: 6 slides, 23 effects. They come out in their final state (the synthetic deck above) |
+| Hidden slides, transitions, video or audio, embedded or linked objects, linked pictures, embedded fonts | none |
+| SmartArt, tables | 8 SmartArt graphics in 4 decks, 34 tables in 9 decks: exported without error (PowerPoint draws them itself) |
+
+- **PowerPoint's own renderer makes past decks the easy case:** every slide
+  exported, quickly, at the exact size.
+- **Expect builds to be the only loss.** Three decks of 23 use animations; a
+  later PPspliT-style split (research 03 §4) could turn them into steps.
+- **Gotcha:** `Presentation.Fonts(n).Embedded` raised `E_INVALIDARG` for
+  some fonts in 6 decks; the first run lost those decks to it. The script
+  now counts unreadable fonts instead of failing.
 
 ## E21. A finished paste without reading the screen (2026-11-18): **no event exists; poll the Crop button over UIA**
 
