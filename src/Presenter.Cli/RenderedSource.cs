@@ -8,8 +8,6 @@ namespace Presenter.Cli;
 /// rendered by its own toolchain at the slide size, through the cache.</summary>
 internal sealed class RenderedSource(DeckInfo info, RenderOptions options) : IDeckSource
 {
-    private readonly List<SlideRender> _renders = [];
-
     public string Name => Path.GetFileName(Path.TrimEndingDirectorySeparator(info.Path));
     public double Aspect => info.Aspect;
     public DeckInfo Info => info;
@@ -20,7 +18,6 @@ internal sealed class RenderedSource(DeckInfo info, RenderOptions options) : IDe
         if (info.SlideCount is int n) slides.SetCount(n);
         var sw = Stopwatch.StartNew();
         var render = SlideRender.Start(info, size, options, ct);
-        _renders.Add(render);
         void Ready(int i)
         {
             if (slides.IsReady(i)) return;

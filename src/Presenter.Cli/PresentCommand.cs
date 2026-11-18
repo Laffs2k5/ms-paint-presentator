@@ -10,7 +10,6 @@ internal sealed record PresentOptions
 {
     public string? Deck { get; set; }
     public string? Monitor { get; set; }
-    public bool Pick { get; set; }
     public bool Painting { get; set; } = true;
     public string Title { get; set; } = "Paint Presentator";
     // for tests and demos
@@ -33,7 +32,7 @@ internal sealed record PresentOptions
             switch (args[i])
             {
                 case "--monitor": o.Monitor = Next(); break;
-                case "--pick": o.Pick = true; break;  // the default now; kept for old command lines
+                case "--pick": break;  // the picker comes first anyway; kept for old command lines
                 case "--no-painting": o.Painting = false; break;
                 case "--title": o.Title = Next(); break;
                 case "--auto": o.Auto = true; break;
@@ -91,13 +90,13 @@ internal static class PresentCommand
         summary["screen"] = option.ToString();
 
         // pre-flight (E19, E6)
-        if (!Power.OnMains()) Log("pre-flight: on battery; Paint is slower and less steady (E6). Plug in the charger.");
-        Log("pre-flight: switch Do not disturb on, or notifications show over the slides (E19).");
+        foreach (var note in ScreenOptions.PreflightNotes()) Log($"pre-flight: {note}");
         Power.KeepAwake(true);
 
         using var clipboard = new ClipboardHost();
         using var stage = new PaintStage(clipboard, Log) { ForceBackgroundRoute = o.BackgroundPaste };
         using var renders = new CancellationTokenSource();
+        CancellationTokenSource? renderCts = null;  // the current render; a new slide size cancels it
         bool failed = false;
         // Ctrl+C in the terminal ends the show like Esc: Paint closed, settings put back
         using var ending = new CancellationTokenSource();
@@ -126,7 +125,8 @@ internal static class PresentCommand
             summary["slide size"] = size.ToString();
             summary["Paint launches"] = launches;
 
-            var slides = deck.Prepare(size, Log, renders.Token);
+            renderCts = CancellationTokenSource.CreateLinkedTokenSource(renders.Token);
+            var slides = deck.Prepare(size, Log, renderCts.Token);
             var (ox, oy, dx, dy) = await stage.Run(p =>
             {
                 p!.Focus();
@@ -142,7 +142,7 @@ internal static class PresentCommand
             (pen, tools) = await stage.Run(p => { var pn = new SyntheticPen(); return (pn, new Toolbox(p!, pn)); });
 
             if (o.Painting)
-                summary["painting"] = await Paint(o, stage, tools, pen, hook, slides, origin, size, ending.Token);
+                summary["painting"] = await Paint(o, stage, tools, pen, hook, slides, origin, size, () => paint.InFront(), ending.Token);
             if (slides.Failure is null)
             {
                 try { await slides.WaitReadyAsync(1, ending.Token); }
@@ -210,6 +210,11 @@ internal static class PresentCommand
             {
                 while (true)
                 {
+                    if (ending.IsCancellationRequested)  // Ctrl+C while a resume was under way
+                    {
+                        Log("Ctrl+C: the show ends");
+                        break;
+                    }
                     using var cts = new CancellationTokenSource();
                     interrupted = cts;
                     paused = false;
@@ -241,7 +246,7 @@ internal static class PresentCommand
                     if (reason == "display-change")
                     {
                         Log("the displays changed: the screen picker waits for the speaker");
-                        var picked = await ScreenOptions.Pick(deck.Aspect, "The displays changed. Where now?");
+                        var picked = await ScreenOptions.Pick(deck.Aspect, "The displays changed. Where now?", ending.Token);
                         if (picked is null)
                         {
                             Log("no screen chosen: the show ends");
@@ -257,7 +262,10 @@ internal static class PresentCommand
                             size = option.SlideFor(deck.Aspect);
                             current = paint = await stage.OpenPaint(monitor, size);
                             (dx, dy, origin, pen, tools) = await Reopened(stage, hook, paint, pen);
-                            var resized = deck.Prepare(size, Log, renders.Token);
+                            renderCts.Cancel();  // the old size's render is not needed any more
+                            renderCts.Dispose();
+                            renderCts = CancellationTokenSource.CreateLinkedTokenSource(renders.Token);
+                            var resized = deck.Prepare(size, Log, renderCts.Token);
                             resized.Set(0, ImageFolderDeck.Fit(painting, size));
                             slides = resized;
                             stage.SetSlides(slides.Get);
@@ -281,7 +289,21 @@ internal static class PresentCommand
                         Log("Paint is no longer maximised: putting it back");
                         await stage.Run(p => { p!.PlaceOn(monitor); p.Focus(); });
                     }
-                    await controller.ShowCurrentAsync();
+                    try
+                    {
+                        await controller.ShowCurrentAsync(ending.Token);
+                    }
+                    catch (OperationCanceledException) when (ending.IsCancellationRequested)
+                    {
+                        Log("Ctrl+C: the show ends");
+                        break;
+                    }
+                    catch (Exception e) when (slides.Failure is not null && e is not OperationCanceledException)
+                    {
+                        Log($"the deck could not be rendered at the new size: {slides.Failure.Message}");
+                        failed = true;
+                        break;
+                    }
                     resumes.Add(new { reason, work, screen = option.ToString(), seconds = Math.Round(sw.Elapsed.TotalSeconds, 1) });
                 }
             }
@@ -298,7 +320,7 @@ internal static class PresentCommand
 
             var timed = controller.Changes.Where(c => c.Milliseconds is not null).Select(c => c.Milliseconds!.Value).Order().ToList();
             summary["slide changes"] = controller.Changes;
-            if (verifier is not null)
+            if (verifier is { Results.Count: > 0 })
                 summary["verified"] = new { min = verifier.Results.Min(r => r.Match), all = verifier.Results.Select(r => $"{r.Frame}: {r.Match}") };
             summary["key to slide ms"] = timed.Count == 0 ? null : new
             {
@@ -316,6 +338,7 @@ internal static class PresentCommand
         {
             Console.CancelKeyPress -= onCtrlC;
             renders.Cancel();
+            renderCts?.Dispose();
             hook?.Dispose();
             if (paint is not null)
                 await stage.Run(p =>
@@ -359,7 +382,8 @@ internal static class PresentCommand
     }
 
     private static async Task<object> Paint(PresentOptions o, PaintStage stage, Toolbox tools, SyntheticPen pen, KeyHook hook,
-                                            SlideStore slides, (int X, int Y) origin, PixelSize size, CancellationToken ending)
+                                            SlideStore slides, (int X, int Y) origin, PixelSize size, Func<bool> paintInFront,
+                                            CancellationToken ending)
     {
         // the painting stops on the first key, Ctrl+C, or when rendering fails
         using var stop = CancellationTokenSource.CreateLinkedTokenSource(hook.FirstKey.Token, ending, slides.FailedToken);
@@ -374,7 +398,7 @@ internal static class PresentCommand
         if (o.InterruptAfter > 0)  // for tests: the speaker presses Right during the painting
             _ = Task.Delay(TimeSpan.FromSeconds(o.InterruptAfter)).ContinueWith(_ =>
             {
-                if (Presenter.Windows.PaintSession.ForegroundIsPaint()) Keyboard.Tap(0x27, tagged: false);
+                if (paintInFront()) Keyboard.Tap(0x27, tagged: false);
                 else Log("the test key was skipped: Paint is not in front");
             });
         var (stopped, steps) = await stage.Run(p =>

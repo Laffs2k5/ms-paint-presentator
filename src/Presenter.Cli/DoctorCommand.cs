@@ -125,8 +125,12 @@ internal static class DoctorCommand
                 try { return (await hook.Keys.ReadAsync(cts.Token)).Action == ShowAction.Next; }
                 catch (OperationCanceledException) { return false; }
             });
-            Add("keyboard hook", alive && taken ? Level.Pass : Level.Fail,
-                $"heartbeat {(alive ? "answered" : "MISSED")}; a Right while Paint is in front was {(taken ? "taken" : "NOT taken")}");
+            if (!front)
+                Add("keyboard hook", alive ? Level.Warn : Level.Fail,
+                    $"heartbeat {(alive ? "answered" : "MISSED")}; Paint could not be brought to the front, so no test key was sent");
+            else
+                Add("keyboard hook", alive && taken ? Level.Pass : Level.Fail,
+                    $"heartbeat {(alive ? "answered" : "MISSED")}; a Right while Paint is in front was {(taken ? "taken" : "NOT taken")}");
 
             bool restored = await stage.Run(p =>
             {

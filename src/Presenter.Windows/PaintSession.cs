@@ -238,7 +238,10 @@ public sealed class PaintSession : IDisposable
     }
 
     /// <summary>Text for Paint's open text box only: typed while Paint is in
-    /// front, else posted to its input window as characters.</summary>
+    /// front, else posted to its input window as characters. (Posted tool
+    /// keys switch Paint's tools without the focus; posted characters were only
+    /// seen working with Paint active: a pen tap on the canvas, as the painter
+    /// makes before typing, brings Paint to the front.)</summary>
     public void TypeText(string text)
     {
         if (InFront())
@@ -252,11 +255,6 @@ public sealed class PaintSession : IDisposable
 
     // --- focus, closing, dialogs ------------------------------------------------------------------
     public bool InFront() => GetAncestor(GetForegroundWindow(), GA_ROOTOWNER) == Window;
-
-    /// <summary>Whether a Paint window, any, is in front (for test keys).</summary>
-    public static bool ForegroundIsPaint() =>
-        Path.GetFileName(ProcessImage(GetAncestor(GetForegroundWindow(), GA_ROOTOWNER)) ?? "")
-            .Equals("mspaint.exe", StringComparison.OrdinalIgnoreCase);
 
     public bool Focus(int timeoutMs = 3000)
     {

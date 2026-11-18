@@ -27,7 +27,17 @@ internal sealed class ImageFolderSource(string folder) : IDeckSource
         slides.SetCount(_deck.Files.Count);
         _ = Task.Run(() =>
         {
-            for (int i = 1; i <= _deck.Files.Count && !ct.IsCancellationRequested; i++) slides.Set(i, _deck.Png(i, size));
+            int i = 1;
+            try
+            {
+                for (; i <= _deck.Files.Count && !ct.IsCancellationRequested; i++) slides.Set(i, _deck.Png(i, size));
+            }
+            catch (Exception e) when (e is not OperationCanceledException)
+            {
+                // GDI+ reports a file that is not an image as "out of memory"
+                string why = e is OutOfMemoryException ? "not an image GDI+ can read" : e.Message;
+                slides.Fail(new IOException($"slide image {i} could not be read: {why}", e));
+            }
         }, ct);
         return slides;
     }
