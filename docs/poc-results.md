@@ -553,3 +553,62 @@ E1–E8) and accepted (subscriber kept, connection id returned). `CF_DIB` slide,
   paste command (Ctrl+V, or E2's posted `WM_COMMAND`). DoomPaint's design,
   which re-arms its data object per frame and triggers each paste, is the right
   model.
+
+## E15. Draw in Paint with synthetic input (2026-11-18): **pass**
+
+Script: [`poc/experiments/e15_draw.py`](../poc/experiments/e15_draw.py).
+For the loading painting. Laptop panel (2880×1920 at 200%), canvas 2000×1000,
+Paint maximised at 100%, the Pencil (1 px) unless noted. Each test draws in its
+own cell, then a screen grab is compared with the ideal path. Two full runs
+gave the same numbers; extra probes chased the pen failure and pressure.
+
+**Circles** (350° of r = 95 px, 146 points 4 px apart):
+
+| Route | Time between points | Speed | Path covered | Worst gap / stray ink |
+|---|---|---|---|---|
+| Mouse (`SendInput`, absolute) | none: the whole stroke in one call | 10,000–12,000 px/s | 100% | 1 px / 1 px (drawn 1 px up-left) |
+| Mouse | 1 / 4 / 8 / 16 ms | 3,600 / 900 / 450 / 225 px/s | 100% | 1 px / 1–2 px |
+| Synthetic pen (`InjectSyntheticPointerInput`) | none | – | **fails part-way**, see below | – |
+| Synthetic pen | 1 / 4 / 8 / 16 ms | 3,600 / 900 / 450 / 225 px/s | 100% | 1 px / 1–2 px |
+| Mouse messages posted to `InputSiteWindowClass` | 4–8 ms | – | **nothing drawn** | – |
+
+- **Strokes land where intended,** within a pixel, at 200% scaling, with no
+  point dropped and no arcs cut into chords, even when the whole stroke goes in
+  one `SendInput` call.
+- **They show live.** Paused half way with the button still down, the first
+  half was already fully on screen, on both routes.
+- **Rapid strokes all land:** 12 short strokes back to back took 0.11 s by
+  mouse and 0.01 s by pen, and all 12 showed every time.
+- **The pen leaves the mouse cursor where it is.** The mouse route moves the
+  real cursor (the script puts it back).
+- **Pen frames must be spaced.** Injected back to back with no wait, the
+  stroke failed part-way (after 55–95 frames) with `ERROR_INVALID_PARAMETER`
+  in 6 of 8 tries, whatever came before. 1 ms apart, it never failed.
+- **No drawing in the background.** Posted mouse messages draw nothing, with
+  Paint in front or not, unlike the posted `S` in E2. With another window in
+  front, the pen still draws, but Paint comes to the front. So Paint is in
+  front while the loading painting is drawn.
+
+**Pressure** (pen at 50 and at 1000 out of 1024; stroke width in px):
+
+| Brush | Light | Hard |
+|---|---|---|
+| Brush (the mouse also gives 3) | 3 | 3 |
+| Calligraphy pen | 3 | 3 |
+| Natural pencil | 4 | 4 |
+| **Watercolor brush** | **16** | **31** |
+| **Oil brush** | **20** | **39** |
+
+**Choosing a tool by script** (more in E16): the Brushes button's
+SelectionItem.Select does not switch tools; invoking an item of its menu does
+(Brush, Calligraphy brush, Calligraphy pen, Airbrush, Oil brush, Crayon,
+Marker, Natural pencil, Watercolor brush). The canvas's UIA name says which
+tool is active ("Using Pencil tool on Canvas"); the Calligraphy pen reports
+itself as "Calligraphy brush 2".
+
+**For the loading painting:** draw with the synthetic pen, frames at least
+1 ms apart. It is exact and live, it leaves the mouse alone, and with the
+Watercolor or Oil brush pressure gives strokes a hand-drawn swell. The mouse
+route is the fallback. Speed is no limit: a hand-like pace of a few hundred
+px/s is far below what either route takes. Not tested: whether the speaker
+moving or clicking the mouse during a pen stroke disturbs it.

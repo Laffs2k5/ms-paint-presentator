@@ -25,6 +25,7 @@ uv run python ..\experiments\e11_display_area.py --out $env:TEMP\e11
 | E8 clipboard history | [`e8_clipboard_history.py`](experiments/e8_clipboard_history.py) + [`clipboard_history.ps1`](experiments/clipboard_history.ps1) | Per opt-out format: does the slide land in Win+V history, does Paint still paste |
 | E5 DAdvise | [`e5_dadvise.py`](experiments/e5_dadvise.py) | Every IDataObject call per phase (offered, pasted, focus round-trip, pasted again), DAdvise refused or accepted |
 | E2/E3 background paste | [`e2_background_paste.py`](experiments/e2_background_paste.py) | Per candidate: does Paint paste (and commit) while another window keeps focus |
+| E15 drawing | [`e15_draw.py`](experiments/e15_draw.py) | Per input route (mouse, synthetic pen, posted messages) and speed: does a stroke land on its path, live; rapid strokes; drawing with another window in front; pen pressure per brush |
 
 [`experiments/doompaint_clipserve.py`](experiments/doompaint_clipserve.py) is
 DoomPaint's live OLE clipboard (MIT, © Mark Russinovich), vendored unchanged
