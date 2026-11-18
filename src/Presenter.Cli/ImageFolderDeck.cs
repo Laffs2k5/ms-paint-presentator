@@ -36,6 +36,18 @@ internal sealed class ImageFolderDeck
         using var img = Image.FromFile(file);
         if (img.Width == size.Width && img.Height == size.Height && file.EndsWith(".png", StringComparison.OrdinalIgnoreCase))
             return File.ReadAllBytes(file);
+        return Fit(img, size);
+    }
+
+    /// <summary>An image (PNG bytes) fitted to the size, centred on black.</summary>
+    public static byte[] Fit(byte[] png, PixelSize size)
+    {
+        using var img = Image.FromStream(new MemoryStream(png));
+        return Fit(img, size);
+    }
+
+    private static byte[] Fit(Image img, PixelSize size)
+    {
         using var bmp = new Bitmap(size.Width, size.Height, PixelFormat.Format24bppRgb);
         using (var g = Graphics.FromImage(bmp))
         {

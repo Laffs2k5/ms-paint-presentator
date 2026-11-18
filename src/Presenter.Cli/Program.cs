@@ -18,6 +18,9 @@ const string Usage = """
       presenter screens
           List the displays and the slide size each would get.
 
+      presenter pick
+          Show the screen picker and print the choice.
+
       presenter doctor [--monitor N] [--json]
           Check this machine: displays, Paint and the elements the presenter
           drives, a pixel-exact test paste, paste speed, the keyboard hook,
@@ -37,6 +40,7 @@ try
         "present" => await PresentCommand.Run(args[1..]),
         "screens" => ScreensCommand.Run(),
         "doctor" => await DoctorCommand.Run(args[1..]),
+        "pick" => await PickCommand.Run(args[1..]),
         _ => throw new UsageException($"unknown command: {args[0]}"),
     };
 }

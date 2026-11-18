@@ -5,6 +5,56 @@ using Presenter.Windows;
 
 namespace Presenter.Cli;
 
+/// <summary>Options of `presenter present`.</summary>
+internal sealed record PresentOptions
+{
+    public string? Deck { get; set; }
+    public string? Monitor { get; set; }
+    public bool Pick { get; set; }
+    public bool Painting { get; set; } = true;
+    public string Title { get; set; } = "Paint Presentator";
+    // for tests and demos
+    public bool Auto { get; set; }
+    public bool Verify { get; set; }
+    public string? Snapshot { get; set; }
+    public int? Seed { get; set; }
+    public double SimulatePrep { get; set; }
+    public double InterruptAfter { get; set; }
+    public double SimulateDisplayChange { get; set; }
+
+    public static PresentOptions Parse(string[] args)
+    {
+        var o = new PresentOptions();
+        for (int i = 0; i < args.Length; i++)
+        {
+            string Next() => i + 1 < args.Length ? args[++i] : throw new UsageException($"{args[i]} needs a value");
+            switch (args[i])
+            {
+                case "--monitor": o.Monitor = Next(); break;
+                case "--pick": o.Pick = true; break;
+                case "--no-painting": o.Painting = false; break;
+                case "--title": o.Title = Next(); break;
+                case "--auto": o.Auto = true; break;
+                case "--verify": o.Verify = true; break;
+                case "--snapshot": o.Snapshot = Next(); break;
+                case "--seed": o.Seed = int.Parse(Next()); break;
+                case "--simulate-prep": o.SimulatePrep = double.Parse(Next()); break;
+                case "--interrupt-after": o.InterruptAfter = double.Parse(Next()); break;
+                case "--simulate-display-change": o.SimulateDisplayChange = double.Parse(Next()); break;
+                case var a when a.StartsWith("--"): throw new UsageException($"unknown option {a}");
+                default: o.Deck = o.Deck is null ? args[i] : throw new UsageException("one deck at a time"); break;
+            }
+        }
+        return o;
+    }
+}
+
+/// <summary>
+/// `presenter present`: the whole show (research 05 §4). Screen, Paint at the
+/// slide size, the loading painting while the slides are made, then the
+/// slides by key; on a display change the picker comes back and the show
+/// resumes where it was.
+/// </summary>
 internal static class PresentCommand
 {
     private static readonly Stopwatch Clock = Stopwatch.StartNew();
@@ -13,34 +63,26 @@ internal static class PresentCommand
 
     public static async Task<int> Run(string[] args)
     {
-        string? deckPath = null, monitorArg = null;
-        string title = "Paint Presentator";
-        string? snapshot = null;
-        bool painting = true, auto = false, verify = false;
-        int? seed = null;
-        double simulatePrep = 0, interruptAfter = 0;
-        for (int i = 0; i < args.Length; i++)
+        var o = PresentOptions.Parse(args);
+        if (o.Deck is null) throw new UsageException("which deck?");
+        IDeckSource deck = DeckSources.Open(o.Deck);
+        var summary = new Dictionary<string, object?> { ["deck"] = deck.Name };
+
+        // the screen: named, picked, or the only one there is
+        Presenter.Windows.Monitor monitor;
+        ScreenOption option;
+        if (o.Monitor is not null || (!o.Pick && Monitors.All().Count == 1))
         {
-            switch (args[i])
-            {
-                case "--monitor" when i + 1 < args.Length: monitorArg = args[++i]; break;
-                case "--no-painting": painting = false; break;
-                case "--auto": auto = true; break;
-                case "--verify": verify = true; break;
-                case "--title" when i + 1 < args.Length: title = args[++i]; break;
-                case "--snapshot" when i + 1 < args.Length: snapshot = args[++i]; break;
-                case "--seed" when i + 1 < args.Length: seed = int.Parse(args[++i]); break;
-                case "--simulate-prep" when i + 1 < args.Length: simulatePrep = double.Parse(args[++i]); break;
-                case "--interrupt-after" when i + 1 < args.Length: interruptAfter = double.Parse(args[++i]); break;
-                case var a when a.StartsWith("--"): throw new UsageException($"unknown option {a}");
-                default: deckPath = deckPath is null ? args[i] : throw new UsageException("one deck at a time"); break;
-            }
+            monitor = Monitors.Find(o.Monitor);
+            option = ScreenOptions.For(monitor);
         }
-        if (deckPath is null) throw new UsageException("which deck?");
-        if (!ImageFolderDeck.Is(deckPath)) throw new UsageException($"not a folder of slide images: {deckPath}");
-        var deck = new ImageFolderDeck(deckPath);
-        var monitor = Monitors.Find(monitorArg);
-        var summary = new Dictionary<string, object?> { ["screen"] = monitor.ToString() };
+        else
+        {
+            var picked = await ScreenOptions.Pick(deck.Aspect, "Where do you present?");
+            if (picked is null) return 1;
+            (option, monitor) = picked.Value;
+        }
+        summary["screen"] = option.ToString();
 
         // pre-flight (E19, E6)
         if (!Power.OnMains()) Log("pre-flight: on battery; Paint is slower and less steady (E6). Plug in the charger.");
@@ -49,6 +91,7 @@ internal static class PresentCommand
 
         using var clipboard = new ClipboardHost();
         using var stage = new PaintStage(clipboard, Log);
+        using var renders = new CancellationTokenSource();
         PaintSession? paint = null;
         KeyHook? hook = null;
         SyntheticPen? pen = null;
@@ -57,14 +100,13 @@ internal static class PresentCommand
         try
         {
             // Paint once, at the predicted size; again only if the prediction was off (E13)
-            var predicted = SlideGeometry.PredictedViewport(monitor.WorkArea.Size, monitor.Dpi);
-            var size = SlideGeometry.SlideSize(predicted, deck.Aspect);
+            var size = option.SlideFor(deck.Aspect);
             paint = await stage.OpenPaint(monitor, size);
             int launches = 1;
             var viewport = await stage.Run(p => p!.Viewport()) ?? throw new PaintException("Paint's viewport was not found");
             if (SlideGeometry.SlideSize(viewport.Size, deck.Aspect) != size)
             {
-                Log($"viewport {viewport.Size}, not {predicted} as predicted: reopening Paint");
+                Log($"viewport {viewport.Size}, not {option.Viewport} as predicted: reopening Paint");
                 size = SlideGeometry.SlideSize(viewport.Size, deck.Aspect);
                 paint = await stage.OpenPaint(monitor, size);
                 launches++;
@@ -73,13 +115,7 @@ internal static class PresentCommand
             summary["slide size"] = size.ToString();
             summary["Paint launches"] = launches;
 
-            // the slides, encoded ahead in the background (research 05 §7.5)
-            var slides = new ReadySlides(deck.Files.Count);
-            _ = Task.Run(() =>
-            {
-                for (int i = 1; i <= deck.Files.Count; i++) slides.Set(i, deck.Png(i, size));
-            });
-
+            var slides = deck.Prepare(size, Log, renders.Token);
             var (ox, oy, dx, dy) = await stage.Run(p =>
             {
                 p!.Focus();
@@ -94,52 +130,85 @@ internal static class PresentCommand
             if (!hook.Alive()) Log("the keyboard hook did not answer its heartbeat");
             (pen, tools) = await stage.Run(p => { var pn = new SyntheticPen(); return (pn, new Toolbox(p!, pn)); });
 
-            if (painting)
-            {
-                var started = Stopwatch.StartNew();
-                PaintingProgress Progress()
-                {
-                    int done = slides.ReadyCount;
-                    if (simulatePrep > 0)  // for tests: slides "become ready" over that many seconds
-                        done = Math.Min(done, (int)(slides.Count * started.Elapsed.TotalSeconds / simulatePrep));
-                    return new PaintingProgress(done, slides.Count);
-                }
-                if (interruptAfter > 0)  // for tests: the speaker presses Right during the painting
-                    _ = Task.Delay(TimeSpan.FromSeconds(interruptAfter)).ContinueWith(_ => Keyboard.Tap(0x27, tagged: false));
-                var steps = await stage.Run(p =>
-                {
-                    var lp = new LoadingPainting(p!, tools, pen, origin, size, title, Progress, hook.FirstKey.Token, seed, Log);
-                    bool stopped = lp.Run();
-                    return (stopped, lp.Steps);
-                });
-                summary["painting"] = new { seconds = Math.Round(started.Elapsed.TotalSeconds, 1), interrupted = steps.stopped, steps = steps.Steps };
-            }
+            if (o.Painting)
+                summary["painting"] = await Paint(o, stage, tools, pen, hook, slides, origin, size);
             await slides.WaitReadyAsync(1, CancellationToken.None);
 
             // the canvas as it is now becomes slide 0
-            slides.Set(0, await stage.Run(p =>
-            {
-                var c = p!.CanvasOnScreen() ?? throw new PaintException("the canvas was not found");
-                using var bmp = ScreenCapture.Grab(PixelRect.FromSize(c.Left + dx, c.Top + dy, size));
-                return ScreenCapture.Png(bmp);
-            }));
-            stage.SetSlides(i => slides.Get(i));
-            if (snapshot is not null) File.WriteAllBytes(snapshot, slides.Get(0));
+            byte[] painting = await stage.Run(p => GrabCanvas(p!, (dx, dy), size));
+            slides.Set(0, painting);
+            stage.SetSlides(slides.Get);
+            if (o.Snapshot is not null) File.WriteAllBytes(o.Snapshot, painting);
 
-            VerifyingStage? verifier = verify
-                ? new VerifyingStage(stage, slides.Get, p =>
-                  {
-                      var c = p.CanvasOnScreen() ?? throw new PaintException("the canvas was not found");
-                      return PixelRect.FromSize(c.Left + dx, c.Top + dy, size);
-                  }, size)
-                : null;
-            var controller = new ShowController((IStage?)verifier ?? stage, slides, hook.Keys, startAtPainting: true, Log);
+            VerifyingStage? verifier = null;
+            IStage Staged(ReadySlides s, PixelSize sz) => o.Verify
+                ? verifier = new VerifyingStage(stage, s.Get, p => CanvasRect(p, (dx, dy), sz), sz)
+                : stage;
+            var controller = new ShowController(Staged(slides, size), slides, hook.Keys, startAtPainting: true, Log);
             using var stopAuto = new CancellationTokenSource();
-            Task autoKeys = auto ? Task.Run(() => AutoKeys(stopAuto.Token)) : Task.CompletedTask;
+            Task autoKeys = o.Auto ? Task.Run(() => AutoKeys(stopAuto.Token)) : Task.CompletedTask;
             Log("Ready: Right, Space or Enter for the first slide; Esc ends.");
-            await controller.RunAsync(CancellationToken.None);
+
+            // the show, until Esc; a display change brings the picker back (research 05 §5)
+            var resumes = new List<object>();
+            while (true)
+            {
+                using var displayChanged = new CancellationTokenSource();
+                void OnChange(object? s, EventArgs e) => displayChanged.Cancel();
+                Microsoft.Win32.SystemEvents.DisplaySettingsChanged += OnChange;
+                if (o.SimulateDisplayChange > 0 && resumes.Count == 0)
+                    displayChanged.CancelAfter(TimeSpan.FromSeconds(o.SimulateDisplayChange));
+                try
+                {
+                    await controller.RunAsync(displayChanged.Token);
+                    break;  // Esc
+                }
+                catch (OperationCanceledException) when (displayChanged.IsCancellationRequested)
+                {
+                    Log("the displays changed: the screen picker waits for the speaker");
+                }
+                finally
+                {
+                    Microsoft.Win32.SystemEvents.DisplaySettingsChanged -= OnChange;
+                }
+                var picked = await ScreenOptions.Pick(deck.Aspect, "The displays changed. Where now?");
+                if (picked is null)
+                {
+                    Log("no screen chosen: the show ends");
+                    break;
+                }
+                var sw = Stopwatch.StartNew();
+                var work = ScreenChoice.WorkAfterChange(option, picked.Value.Option, size, deck.Aspect);
+                (option, monitor) = picked.Value;
+                Log($"resuming on {option}: {work}");
+                if (work == ResumeWork.NewSlideSize)
+                {
+                    // Paint at the new size, the slides again, the painting fitted (research 05 §5)
+                    size = option.SlideFor(deck.Aspect);
+                    paint = await stage.OpenPaint(monitor, size);
+                    hook.SetTargets(paint.Window);
+                    (ox, oy, dx, dy) = await stage.Run(p => { p!.Focus(); Keyboard.Tap('S'); Thread.Sleep(300); return p.MeasureOrigin(); });
+                    origin = (ox, oy);
+                    await stage.Run(_ => { pen.Dispose(); pen = new SyntheticPen(); tools = new Toolbox(paint, pen); });
+                    var resized = deck.Prepare(size, Log, renders.Token);
+                    resized.Set(0, ImageFolderDeck.Fit(painting, size));
+                    slides = resized;
+                    stage.SetSlides(slides.Get);
+                    var current = controller.Current;
+                    controller = new ShowController(Staged(slides, size), slides, hook.Keys, startAtPainting: false, Log, controller.Navigator);
+                    if (current is Frame.Slide { Index: var i }) await slides.WaitReadyAsync(i, CancellationToken.None);
+                    await controller.ShowCurrentAsync();
+                }
+                else
+                {
+                    await stage.Run(p => { p!.PlaceOn(monitor); p.Focus(); });
+                    await controller.ShowCurrentAsync();
+                }
+                resumes.Add(new { work = work.ToString(), screen = option.ToString(), seconds = Math.Round(sw.Elapsed.TotalSeconds, 1) });
+            }
             stopAuto.Cancel();
             await autoKeys;
+            if (resumes.Count > 0) summary["display changes"] = resumes;
 
             var timed = controller.Changes.Where(c => c.Milliseconds is not null).Select(c => c.Milliseconds!.Value).Order().ToList();
             summary["slide changes"] = controller.Changes;
@@ -155,6 +224,7 @@ internal static class PresentCommand
         }
         finally
         {
+            renders.Cancel();
             hook?.Dispose();
             if (paint is not null)
                 await stage.Run(p =>
@@ -177,6 +247,40 @@ internal static class PresentCommand
         }
         Console.WriteLine(JsonSerializer.Serialize(summary, new JsonSerializerOptions { WriteIndented = true }));
         return 0;
+    }
+
+    private static async Task<object> Paint(PresentOptions o, PaintStage stage, Toolbox tools, SyntheticPen pen, KeyHook hook,
+                                            ReadySlides slides, (int X, int Y) origin, PixelSize size)
+    {
+        var started = Stopwatch.StartNew();
+        PaintingProgress Progress()
+        {
+            int done = slides.ReadyCount;
+            if (o.SimulatePrep > 0)  // for tests: slides "become ready" over that many seconds
+                done = Math.Min(done, (int)(slides.Count * started.Elapsed.TotalSeconds / o.SimulatePrep));
+            return new PaintingProgress(done, slides.Count);
+        }
+        if (o.InterruptAfter > 0)  // for tests: the speaker presses Right during the painting
+            _ = Task.Delay(TimeSpan.FromSeconds(o.InterruptAfter)).ContinueWith(_ => Keyboard.Tap(0x27, tagged: false));
+        var (stopped, steps) = await stage.Run(p =>
+        {
+            var lp = new LoadingPainting(p!, tools, pen, origin, size, o.Title, Progress, hook.FirstKey.Token, o.Seed, Log);
+            bool interrupted = lp.Run();
+            return (interrupted, lp.Steps);
+        });
+        return new { seconds = Math.Round(started.Elapsed.TotalSeconds, 1), interrupted = stopped, steps };
+    }
+
+    private static PixelRect CanvasRect(PaintSession p, (int Dx, int Dy) offset, PixelSize size)
+    {
+        var c = p.CanvasOnScreen() ?? throw new PaintException("the canvas was not found");
+        return PixelRect.FromSize(c.Left + offset.Dx, c.Top + offset.Dy, size);
+    }
+
+    private static byte[] GrabCanvas(PaintSession p, (int Dx, int Dy) offset, PixelSize size)
+    {
+        using var bmp = ScreenCapture.Grab(CanvasRect(p, offset, size));
+        return ScreenCapture.Png(bmp);
     }
 
     /// <summary>Scripted "speaker" keys, untagged so the hook takes them as the
@@ -204,33 +308,11 @@ internal static class PresentCommand
     }
 }
 
-/// <summary>Slide PNGs as they become ready; index 0 is the loading painting.</summary>
-internal sealed class ReadySlides(int count) : ISlideSet
+internal static class DeckSources
 {
-    private readonly byte[]?[] _png = new byte[count + 1][];
-    private readonly TaskCompletionSource[] _ready = Enumerable.Range(0, count + 1)
-        .Select(_ => new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously)).ToArray();
-
-    public int Count => count;
-
-    /// <summary>How many slides from 1 on are ready without a gap.</summary>
-    public int ReadyCount
+    public static IDeckSource Open(string path)
     {
-        get
-        {
-            int n = 0;
-            while (n < count && Volatile.Read(ref _png[n + 1]) is not null) n++;
-            return n;
-        }
-    }
-
-    public bool IsReady(int index) => index >= 0 && index <= count && Volatile.Read(ref _png[index]) is not null;
-    public Task WaitReadyAsync(int index, CancellationToken ct) => _ready[index].Task.WaitAsync(ct);
-    public byte[] Get(int index) => _png[index] ?? throw new InvalidOperationException($"slide {index} is not ready");
-
-    public void Set(int index, byte[] png)
-    {
-        Volatile.Write(ref _png[index], png);
-        _ready[index].TrySetResult();
+        if (ImageFolderDeck.Is(path)) return new ImageFolderSource(path);
+        throw new UsageException($"not a deck this presenter can show yet: {path}");
     }
 }

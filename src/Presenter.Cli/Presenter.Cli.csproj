@@ -13,5 +13,6 @@
     <ProjectReference Include="..\Presenter.Core\Presenter.Core.csproj" />
     <ProjectReference Include="..\Presenter.Windows\Presenter.Windows.csproj" />
     <ProjectReference Include="..\Presenter.Slides\Presenter.Slides.csproj" />
+    <ProjectReference Include="..\Presenter.Ui\Presenter.Ui.csproj" />
   </ItemGroup>
 </Project>
