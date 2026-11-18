@@ -159,7 +159,15 @@ public sealed class PaintSession : IDisposable
     public bool SelectionFloats()
     {
         _crop ??= ById("CropButton") ?? throw new PaintException("Paint's Crop button was not found");
-        return _crop.IsEnabled;
+        try
+        {
+            return _crop.IsEnabled;
+        }
+        catch (Exception e) when (e is FlaUI.Core.Exceptions.FlaUIException or System.Runtime.InteropServices.COMException)
+        {
+            _crop = null;  // stale: Paint closed or rebuilt its toolbar
+            throw new PaintException($"Paint's Crop button cannot be read ({e.GetType().Name}): is Paint still there?");
+        }
     }
 
     // --- focus, closing, dialogs ------------------------------------------------------------------

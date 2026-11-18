@@ -75,7 +75,7 @@ public sealed class PaintStage : IStage, IDisposable
             Frame.Slide s => (_slidePng ?? throw new InvalidOperationException("no slides set"))(s.Index),
             _ => throw new ArgumentException(frame.ToString()),
         };
-        return PasteAndCommit(paint, png);
+        return PasteAndCommitGuarded(paint, png);
     });
 
     /// <summary>
@@ -110,6 +110,21 @@ public sealed class PaintStage : IStage, IDisposable
         if (WaitFor(paint, floats: false, timeoutMs: 1000) is null)
             _log?.Invoke("the commit was not seen within 1 s");
         return seen;
+    }
+
+    private long? PasteAndCommitGuarded(PaintSession paint, byte[] png)
+    {
+        try
+        {
+            return PasteAndCommit(paint, png);
+        }
+        catch (PaintException e)
+        {
+            // Paint is gone or its UI changed under us: the show's watchdog
+            // reopens it; this change counts as unconfirmed.
+            _log?.Invoke($"the paste failed: {e.Message}");
+            return null;
+        }
     }
 
     private static long? WaitFor(PaintSession paint, bool floats, int timeoutMs)

@@ -91,7 +91,18 @@ public sealed class ShowController
                 _log?.Invoke($"{frame} is not rendered yet: waiting");
                 await _slides.WaitReadyAsync(i, ct).ConfigureAwait(false);
             }
-            long? seen = await _stage.ShowAsync(frame, ct).ConfigureAwait(false);
+            long? seen;
+            try
+            {
+                seen = await _stage.ShowAsync(frame, ct).ConfigureAwait(false);
+            }
+            catch (Exception e) when (e is not OperationCanceledException)
+            {
+                // the stage failed (Paint gone?): keep the show going; a watchdog
+                // outside puts Paint back and pastes the current frame again
+                _log?.Invoke($"{frame} could not be shown: {e.Message}");
+                seen = null;
+            }
             double? ms = seen is { } s ? (s - batch[0].Timestamp) * 1000.0 / Stopwatch.Frequency : null;
             var change = new SlideChange(from, frame.ToString()!, ms is { } m ? Math.Round(m, 1) : null, batch.Count);
             _changes.Add(change);
