@@ -830,3 +830,28 @@ The user's Edge profiles were never used, and no Edge process was stopped.
 
 The loading painting has about 3 to 11 seconds to fill for a 40-slide deck;
 a cache of rendered slides (per deck and size) makes the next start instant.
+
+## E19. Interruptions (2026-11-18): **partly answered**; the toast tests need a rerun with Do not disturb off
+
+Script: [`poc/experiments/e19_interruptions.py`](../poc/experiments/e19_interruptions.py),
+with [`toast.ps1`](../poc/experiments/toast.ps1) to show and remove a test
+toast (sent as Windows PowerShell's app, removed from the notification history
+afterwards). Paint maximised and in front, laptop panel. Screen grabs stay in
+memory; only counts of changed pixels are reported.
+
+| Question | Result |
+|---|---|
+| Can the documented API see Do not disturb? | **No.** `SHQueryUserNotificationState` said "accepts notifications" while Windows 11's Do not disturb was on (the taskbar showed its bell; a look at the screen confirmed it) |
+| Does a toast show over maximised Paint? | Not with Do not disturb on: the toast corner did not change and no window appeared. **Not yet tested with it off** |
+| Windows' presentation mode (`PresentationSettings.exe /start`, a documented tool on laptops) | The state becomes "presentation mode" and `/stop` puts it back. Whether it holds toasts back could not be told, with Do not disturb already holding them |
+| Does Paint pop anything up at launch? | Only the "100%" zoom tooltip, by the status bar's zoom slider (from setting the zoom), clear of the canvas. The same in 3 of 3 launches; no What's new or sign-in prompts |
+| Keep the display awake (`SetThreadExecutionState` with `ES_CONTINUOUS`, `ES_DISPLAY_REQUIRED`, `ES_SYSTEM_REQUIRED`) | Accepted. `powercfg /requests` would show it, but needs an elevated prompt |
+
+**For the presenter's pre-flight check:** it cannot read Do not disturb
+through a documented API (the state lives in undocumented places), so it
+should ask the speaker to switch it on, or warn. Presentation mode is
+detectable and can be switched on and off by the presenter, but whether it
+holds toasts back is open.
+
+**Still to do:** with Do not disturb off for a minute, rerun the script: does a
+toast show over Paint, and does presentation mode hold it back?

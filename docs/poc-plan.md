@@ -88,7 +88,8 @@ Planned features:
   timer, slide n of N. It needs no focus, since the hook gets the keys.
 - **Pre-flight checks:**
   - the charger is connected (Paint is slower and less steady on battery, E6);
-  - Do not disturb is on (E19);
+  - Do not disturb is on (E19: no documented API can read it, so ask the
+    speaker);
   - the screen is kept awake for the whole show (`SetThreadExecutionState`);
   - the paste routes pass a self-test (E2).
 - **Build steps are whole slides** (Slidev `--with-clicks`), so Back works the
@@ -162,7 +163,7 @@ Paint build. Note which paster the self-test picks (Ctrl+V or UIA menu) and the
 | **E16** | Pick tools, colours and sizes by script | Brush types, brush size, palette and custom colours, Shapes, Fill and Text, through keys or UIA (E4 covered only Pencil, Eraser and Brushes). Check whether Paint carries our choices into the user's next session | Every tool the loading painting uses can be selected by script, and the user's settings can be restored. **Pass (E16): keys, menus, pen taps and the size slider choose everything; only the Text font survives a relaunch, and it is restored. Edit colors is off-limits** |
 | **E17** | Place a small paste | Where a paste smaller than the canvas lands, whether it can be moved before `S` (arrow keys, a drag), and what it costs against a full-size paste | Pieces stamped at a chosen spot: the loading painting's fallback if E15 fails. **Pass (E17): a paste lands at (0, 0); a pen drag plus arrow-key nudges (1 px each) place it exactly; about 60–75 ms per paste whatever its size** |
 | **E18** | Display changes mid-show | Unplug and replug the projector, change resolution and scaling, switch between duplicate and extend (`DisplaySwitch.exe`), with FancyZones on. Record what Paint does and which events arrive. Includes the projector run E11 has not had yet | The show survives, or recovers by measuring and rendering again behind a fresh loading painting |
-| **E19** | Interruptions | Do notifications show over maximised Paint? Can Do not disturb be detected or turned on? Does Paint show tips or a what's-new panel at launch? | A pre-flight check fixes each one or warns the presenter |
+| **E19** | Interruptions | Do notifications show over maximised Paint? Can Do not disturb be detected or turned on? Does Paint show tips or a what's-new panel at launch? | A pre-flight check fixes each one or warns the presenter. **Partly (E19): the documented API cannot see Do not disturb; Paint shows no popups over the canvas; keep-awake is accepted. Toast tests need a rerun with Do not disturb off** |
 | **E13** | End-to-end mini presenter | Screen picker → loading painting while the slides render → slides by key (paste and `S`) → presenter view on the other screen. Measure the feel | "Snappy" by your own judgement, and the loading painting looks hand-made |
 
 ## 3. Suggested POC tooling
