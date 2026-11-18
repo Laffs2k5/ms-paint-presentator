@@ -1052,3 +1052,37 @@ raw WinEvents).
   start-up checklist checks it).
 - Not tried: Windows.Graphics.Capture frames. Polling the Crop button made it
   unnecessary.
+
+## E22. One slide at a time (2026-11-18): **works; the first slide takes 1.9 s (Marp) or 5 s (Slidev)**
+
+Script: [`poc/experiments/e22_per_slide.py`](../poc/experiments/e22_per_slide.py),
+with [`e22_slide_server.mjs`](../poc/experiments/e22_slide_server.mjs), a Node
+"slide server" that renders any slide on request. It uses the deck's own
+toolchain and the Playwright that comes with it. Playwright for .NET ships no
+ARM64 driver for Windows, and the renderers are child processes anyway
+(research 05). Marp's slides come from its own HTML output (the bespoke
+template with controls and transitions off), Slidev's from its own dev
+server, at the URL `slidev export` uses. Edge runs headless in a
+non-persistent context (a throwaway profile in the work folder); no Edge
+process was left behind. E12's sample deck at 2650 px, slides asked for out
+of order (the last before the second).
+
+| | Server ready | First slide | Each further slide or click step | Against the tool's own export (E12) |
+|---|---|---|---|---|
+| Marp | 1.67 s | **1.92 s** | 145–152 ms | same size; identical (mean difference 0.0–0.2 of 255) |
+| Slidev | 2.78 s | **5.03 s** (its first page compiles: 2.3 s) | 332–405 ms | same size; close (0.4–0.9; 3.4 on slide 1) |
+
+- **Out-of-order rendering works:** any slide or click step, on request.
+- **It trades total time for an early first slide.** A full export of 40
+  slides takes 6.2 s (Marp) or 11 s (Slidev) before any slide is usable
+  (E12); one at a time the first comes at 1.9 s or 5 s, but 40 take about 8 s
+  or 20 s.
+- **For the presenter:** start the slide server, ask for the first (or
+  resume) slide, then the rest in deck order, and move a slide to the front
+  when the speaker jumps to it. For a typical deck the loading painting (12–15
+  s, E13) covers either way; early start matters for long decks and for
+  resuming after a display change at a new size.
+- PowerPoint (`Slide.Export`, 0.05 s a slide, E12) and PDF (50 ms a page,
+  E24) already render one slide at a time.
+- The pass criterion's "first slide under a second" is not met for these two
+  tools; their start-up (HTML export, dev server, Edge) dominates.

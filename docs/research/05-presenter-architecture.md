@@ -213,9 +213,11 @@ In rough order of value:
    that slide moves to the front of the queue. This needs a renderer that can
    do one slide at a time:
    - **PowerPoint** already can (`Slide.Export`, E12).
-   - **Marp and Slidev:** render their HTML once, then screenshot slide by
-     slide with Playwright for .NET, driving Edge headless with a throwaway
-     profile. Experiment E22.
+   - **Marp and Slidev:** a Node slide server on the deck's own toolchain
+     and its Playwright (Playwright for .NET has no ARM64 driver for
+     Windows), Edge headless with a throwaway profile. E22: the first slide
+     at 1.9 s (Marp) or 5 s (Slidev), then 0.15 s or 0.35 s a slide.
+   - **PDF:** any page on its own, about 50 ms (E24).
 2. **Detect a finished paste without reading the screen.** E21 answered it:
    Paint raises no event, but polling the Crop button's `IsEnabled` over UIA
    (3.4 ms a read) tells the paste as fast as the pixel does, and the commit
@@ -284,8 +286,9 @@ Libraries, all compatible with the repo's MIT licence:
   `InjectSyntheticPointerInput`, GDI paths, display config and the OLE calls.
 - **FlaUI** (MIT): UIA3.
 - **WPF / WinForms** (MIT, part of .NET).
-- **Playwright for .NET** (MIT): only if per-slide HTML rendering is chosen
-  (E22).
+- **Playwright** (Apache-2.0, the copy in each deck's toolchain): used from the
+  Node slide server (E22), not linked. Playwright for .NET (MIT) ships no
+  ARM64 driver for Windows.
 - **Windows.Data.Pdf** through .NET's Windows target (the WinRT projection):
   part of Windows, for the PDF adapter (E24).
 - **Marp CLI and Slidev** (MIT) run as external tools, not linked.
@@ -321,7 +324,7 @@ experiments in `poc/dotnet/` next to the Python ones.
 |---|---|---|
 | **E20** | Does a C# live clipboard object work like DoomPaint's? WinForms `DataObject` with `SetDataObject(obj, false)` against our own `IDataObject` (source-generated COM). PNG plus the opt-out, a new object per slide, 200 pastes | Paint pastes every slide, `GetData` within ~10 ms, no error dialog, Win+V untouched |
 | **E21** | A finished paste by event: UIA (Crop button enabled) or Windows.Graphics.Capture, against the three-point poll | The event arrives within a frame of the slide showing, with no polling |
-| **E22** | One slide at a time: a Slidev or Marp deck's HTML, built by its own toolchain, screenshotted with Playwright .NET through headless Edge (throwaway profile) at the scale factor | Exact size, same pixels as E12's export, first slide in under a second |
+| **E22** | One slide at a time: a Slidev or Marp deck's HTML, built by its own toolchain, screenshotted through headless Edge (throwaway profile) at the scale factor | Exact size, same pixels as E12's export, first slide in under a second. **Done in Node, not .NET (no ARM64 driver): same pixels; first slide 1.9 s / 5 s** |
 | **E23** | The C# hook under load: allocate heavily, force collections, while timing key to callback | Callback well under 300 ms at all times; heartbeat never misses |
 | **E24** | The PDF adapter: decks exported to PDF by Marp, Slidev and PowerPoint, rendered by `Windows.Data.Pdf` at the measured size | Exact size, close to the tool's own PNG, fast enough for start-up |
 | **E25** | Past PowerPoint decks: 4:3 and 16:9, animations, embedded video, fonts the laptop lacks, old `.ppt` files. What comes out of `Slide.Export`? | Every slide renders at the size; what is lost (builds, video) is known and reported per deck |
