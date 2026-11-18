@@ -856,7 +856,7 @@ maximised does not count as full screen. The documented API cannot read Do
 not disturb (the state lives in undocumented places), so the check asks the
 speaker to switch it on.
 
-## E13. End-to-end mini presenter (2026-11-18): **built; the feel is for the user to judge**
+## E13. End-to-end mini presenter (2026-11-18): **pass** (the user's verdict: "awesome")
 
 Script: [`poc/experiments/e13_presenter.py`](../poc/experiments/e13_presenter.py),
 deck [`e13_deck.md`](../poc/experiments/e13_deck.md) (seven slides written
@@ -884,8 +884,26 @@ keys: Next ×3, Back, End, Home, 3 + Enter, B twice, then four quick Nexts.
   its DLL is missing, so it will be a small Win32 window; it needs two
   displays to test, E18), the presenter view, E11's calibration paste, and
   clearing out the cache.
-- **The verdict on the feel is the user's:** run it without `--auto` and
-  drive it from the keyboard.
+- **The user drove it from the keyboard:** "apart from that, awesome", with
+  three points, all handled:
+
+  | Feedback | Change |
+  |---|---|
+  | Paint opens twice at start | The first window only measured the viewport. Now E11's rule predicts it (2784×1499, exact here), Paint opens once at the slide size, and reopens only if the prediction was off |
+  | Must be able to get back to the loading painting, as slide 0 | A snapshot of the painting heads the slide list: Home, `0` + Enter, or Left from slide 1 go back to it; a number + Enter means that slide |
+  | The loading painting needs more work | The designer's concept, The sky leaks ([spec](loading-painting.md)) |
+
+- **Second scripted run** (14 slide changes, back to the painting by Home,
+  `0` + Enter and Left, black and back, a burst of keys): all 14 seen,
+  **230 ms median**, one Paint launch.
+- **A bug found on the way:** paintctl reused its cached blank canvas file,
+  which the user's File > Save during the manual run had overwritten, so the
+  next launches opened the saved painting. The canvas origin, found from the
+  white area, came out 510 px off and most pastes went unseen. paintctl now
+  checks the file is blank and keeps a saved picture under another name. The
+  presenter also waits for the canvas to sit centred before measuring, and
+  later takes the origin from UIA's rectangle plus the offset measured while
+  the canvas was blank (0, 1 px here).
 
 ## E20. A C# live clipboard object (2026-11-18): **pass**
 

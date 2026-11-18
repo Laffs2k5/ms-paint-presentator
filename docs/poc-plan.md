@@ -81,7 +81,8 @@ point depends on them.
   - classic Paint mishaps, staged: the bucket fill that leaks through a
     one-pixel gap and floods the sky.
 
-  The painting stays on the canvas until the first Next. If live drawing does
+  The painting stays on the canvas until the first Next, and it is slide 0:
+  Home, `0` + Enter, or Left from slide 1 go back to it (the user). If live drawing does
   not work, ready-made pieces are stamped in place by paste instead (E17).
   It uses Paint's 20 palette colours (E16). Paint remembers only the Text
   tool's font across sessions, so the presenter puts that back if it changes it.
@@ -193,7 +194,7 @@ Paint build. Note which paster the self-test picks (Ctrl+V or UIA menu) and the
 | **E24** | The PDF adapter | Decks exported to PDF by Marp, Slidev and PowerPoint, rendered by `Windows.Data.Pdf` at the measured size | Exact size, close to the tool's own PNG, fast enough for start-up. **Pass (E24): exact width once the DIP-to-pixel factor is measured (1.8 here); within 0.75 of 255 of each tool's own PNG; about 50 ms per page** |
 | **E25** | Past PowerPoint decks | 4:3 and 16:9 decks with animations, embedded video, fonts the laptop lacks, old `.ppt` files, through `Slide.Export` | Every slide renders at the size; what is lost is known and reported per deck. **Pass (E25): a synthetic deck (`.pptx` and `.ppt`; animations in their final state; skip hidden slides; exact-aspect sizes) and the user's 23 real decks: 370 slides, all 16:9, all exported, 0.1 s a slide; only builds (3 decks) are lost** |
 | **E26** | Monitor identity | GDI name, `QueryDisplayConfig` device path and output technology, and the registry EDID (manufacturer, product, serial) for the active displays and every monitor Windows remembers; compared across a replug in E18 | An identity that survives a replug and tells apart two identical monitors. **EDID serial (E26): present and distinct on every monitor seen here, even two of the same model; the internal panel is flagged. Replug: E18** |
-| **E13** | End-to-end mini presenter | Screen picker → loading painting while the slides render → slides by key (paste and `S`). Measure the feel | "Snappy" by your own judgement, and the loading painting looks hand-made. **Built (E13): 223 ms key to slide at 3.5 MP; the loading painting takes about 12–15 s. Awaiting the user's verdict** |
+| **E13** | End-to-end mini presenter | Screen picker → loading painting while the slides render → slides by key (paste and `S`). Measure the feel | "Snappy" by your own judgement, and the loading painting looks hand-made. **Pass (E13), the user's verdict: 230 ms key to slide at 3.5 MP; Paint opens once; the loading painting is slide 0; the painting itself is being redone to the designer's concept** |
 
 ## 3. Suggested POC tooling
 
