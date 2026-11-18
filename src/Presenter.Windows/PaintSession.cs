@@ -116,6 +116,10 @@ public sealed class PaintSession : IDisposable
 
     public AutomationElement? ById(string id) => Win.FindFirstDescendant(cf => cf.ByAutomationId(id));
     public AutomationElement? ByName(string name) => Win.FindFirstDescendant(cf => cf.ByName(name));
+    public AutomationElement? ByName(string name, FlaUI.Core.Definitions.ControlType type) =>
+        Win.FindFirstDescendant(cf => cf.ByName(name).And(cf.ByControlType(type)));
+    public AutomationElement? Find(Func<FlaUI.Core.Conditions.ConditionFactory, FlaUI.Core.Conditions.ConditionBase> condition) =>
+        Win.FindFirstDescendant(condition);
 
     private static PixelRect? RectOf(AutomationElement? e)
     {
