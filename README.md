@@ -2,15 +2,16 @@
 
 Run presentations in Microsoft Paint instead of PowerPoint. Windows 11 only.
 
-Status: **the POC is done; the presenter is being built.** The proof of
-concept (`poc/`, [plan](docs/poc-plan.md), [results](docs/poc-results.md))
+Status: **the POC is done; the presenter works end to end.** The proof
+of concept (`poc/`, [plan](docs/poc-plan.md), [results](docs/poc-results.md))
 answered how each part works, and the architecture is
 [research 05](docs/research/05-presenter-architecture.md). The presenter,
-`presenter.exe` in C#, already runs a whole show in Paint: the screen
-picker, the loading painting ([The sky leaks](docs/loading-painting.md)),
-slides by key at about 180 ms, display changes and a `doctor` check. See
-[src/README.md](src/README.md). Still open: the deck renderers in C#, and
-E18 (display changes) with a second display.
+`presenter.exe` in C#, shows decks from PowerPoint, PDF, Marp and Slidev
+in Paint: the screen picker, the loading painting
+([The sky leaks](docs/loading-painting.md)) while the deck renders, slides
+by key at about 190 ms, display changes, watchdogs and a `doctor` check.
+See [src/README.md](src/README.md). Still open: E18 (display changes) with
+a second display.
 
 ## Research
 
