@@ -2,9 +2,11 @@
 
 The plan's presenter design, end to end, on one screen:
 
-1. Open Paint maximised at 100% on the screen, measure the viewport and work
-   out the slide size: the largest reference shape (E12) that fits viewport -
-   66 px with viewport - slide even (E11).
+1. Predict Paint's viewport on the screen with E11's rule, open Paint once,
+   maximised at 100%, with a canvas of the slide size for it: the largest
+   reference shape (E12) that fits viewport - 66 px with viewport - slide even
+   (E11). The viewport is then measured; if the prediction was off, Paint is
+   reopened at the right size.
 2. Render the deck (e13_deck.md, Marp) at that size in the background: a
    fixed design canvas at a scale factor, one row cropped or padded if the
    rounding is off (E12). Edge runs headless with a throwaway profile kept in
@@ -21,7 +23,8 @@ The plan's presenter design, end to end, on one screen:
    both tagged as the presenter's own keys. Keys pressed while a slide is
    still pasting are combined, so a burst of Next jumps straight to the last.
    B / W black or white screen (again to come back), a number and Enter jumps,
-   Esc ends and closes Paint without saving. Every slide change is timed, key
+   Esc ends and closes Paint without saving. The loading painting is slide 0:
+   Left from slide 1, Home, or 0 + Enter go back to it. Every slide change is timed, key
    press to slide on screen.
 
 Not in this version: the screen picker (Tk does not load in the ARM64 Python,
@@ -64,6 +67,7 @@ import e12_render as e12  # Edge, the reference shape, Marp's design canvas
 import e15_draw as e15  # synthetic pen
 import e16_tools as e16  # tools, colours, sizes
 import e17_place_paste as e17  # finding the canvas on screen
+import win32gui
 from paintctl import core
 from PIL import Image, ImageChops, ImageGrab
 
@@ -87,9 +91,54 @@ def slide_size(vp_w: int, vp_h: int) -> tuple[int, int]:
     return w, h
 
 
-def canvas_origin(paint: int) -> tuple[int, int]:
-    """The canvas's top-left on screen, from its white area (as E17)."""
-    c = core.info(paint)["canvas_on_screen"]
+def predicted_viewport(mon: dict) -> tuple[int, int]:
+    """E11's rule for maximised Paint at 100%: the work area's width, and its
+    height less 210.5 px x the display scale, rounded half up."""
+    w = mon["work"]
+    return w.width, w.height - math.floor(210.5 * mon["dpi"] / 96 + 0.5)
+
+
+def settled_canvas(paint: int, timeout: float = 6.0) -> dict:
+    """The canvas rectangle once it stops moving."""
+    last, end = None, time.perf_counter() + timeout
+    while time.perf_counter() < end:
+        c = core.info(paint)["canvas_on_screen"]
+        if c and c == last:
+            return c
+        last = c
+        time.sleep(0.3)
+    return last
+
+
+def centred_canvas(paint: int, tries: int = 3) -> dict:
+    """Wait until the canvas sits centred in the viewport. Right after launch
+    Paint can leave the canvas scrolled down by hundreds of pixels and centre
+    it only later (seen: 510 px, mid-painting), so a steady position is not
+    enough. If it stays off centre, set the zoom to fit and back to 100%
+    again, which re-centres it (E11)."""
+    for attempt in range(tries):
+        end = time.perf_counter() + 3.0
+        while time.perf_counter() < end:
+            i = core.info(paint)
+            c, vp = i["canvas_on_screen"], i["viewport"]
+            if c and vp:
+                want = (vp["left"] + (vp["width"] - c["width"]) // 2,
+                        vp["top"] + (vp["height"] - c["height"]) // 2)
+                if abs(c["left"] - want[0]) <= 2 and abs(c["top"] - want[1]) <= 2:
+                    return c
+            time.sleep(0.2)
+        log(f"canvas not centred (at {c['left']},{c['top']}, want {want}): re-centring")
+        core.set_zoom(paint, "fit")
+        core.set_zoom(paint, 100)
+    return settled_canvas(paint)
+
+
+def canvas_origin(paint: int) -> tuple[int, int, int, int]:
+    """The canvas's top-left on screen, from its white area (as E17), once
+    the canvas is centred. Needs a blank canvas. Also returns the offset from
+    UIA's canvas rectangle, so the origin can be found again later, when the
+    canvas is no longer blank (UIA's rectangle can be a pixel off, E11)."""
+    c = centred_canvas(paint)
     pad = 6
     box = (c["left"] - pad, c["top"] - pad, c["left"] + c["width"] + pad, c["top"] + c["height"] + pad)
     white = e17.Stage._mask(ImageGrab.grab(bbox=box, all_screens=True), (255, 255, 255))
@@ -97,7 +146,8 @@ def canvas_origin(paint: int) -> tuple[int, int]:
     px = white.load()
     left, _ = e17._longest_run([px[x, h // 4] for x in range(w)])
     top, _ = e17._longest_run([px[w // 4, y] for y in range(h)])
-    return box[0] + left, box[1] + top
+    x, y = box[0] + left, box[1] + top
+    return x, y, x - c["left"], y - c["top"]
 
 
 # --- rendering ----------------------------------------------------------------------------------
@@ -322,19 +372,23 @@ class Painter:
 
 # --- the show ------------------------------------------------------------------------------------------
 class Show:
-    def __init__(self, paint, origin, size, files, on_screen: Image.Image):
+    def __init__(self, paint, origin, size, files, on_screen: Image.Image, debug_dir=None):
         self.paint, self.origin, self.size = paint, origin, size
+        self.debug_dir = debug_dir
         self.on_screen = on_screen.convert("RGB")  # what the canvas shows now
         self.rng = random.Random(1)
-        self.pngs = [f.read_bytes() for f in files]
-        self.images = [Image.open(io.BytesIO(b)).convert("RGB") for b in self.pngs]
+        # index 0 is the loading painting (a snapshot of it), 1..n the slides:
+        # the speaker can go back to the painting like to any slide
+        self.pngs = [e1.enc_png(self.on_screen)] + [f.read_bytes() for f in files]
+        self.images = [self.on_screen] + [Image.open(io.BytesIO(b)).convert("RGB")
+                                          for b in self.pngs[1:]]
         self.blank = {}
         for name, rgb in (("black", (0, 0, 0)), ("white", (255, 255, 255))):
             img = Image.new("RGB", size, rgb)
             self.blank[name] = (e1.enc_png(img), img)
         self.clip = e1.MultiFormatClipboard()
         self.screen = e6.ScreenProbe()
-        self.idx = -1  # the loading painting
+        self.idx = 0  # the loading painting is on the canvas
         self.blanked = None
         self.changes = []  # (from, to, ms, keys combined)
 
@@ -369,6 +423,17 @@ class Show:
                 break
         if not pts:
             time.sleep(0.3)
+        if seen is None and self.debug_dir:  # what was on the canvas instead (canvas only)
+            n = len(list(self.debug_dir.glob("missed-*.png")))
+            ImageGrab.grab(bbox=(ox, oy, ox + self.size[0], oy + self.size[1]), all_screens=True) \
+                .save(self.debug_dir / f"missed-{n}.png")
+            full = ImageGrab.grab(all_screens=True)
+            full.resize((full.width // 2, full.height // 2)).save(self.debug_dir / f"missed-{n}-screen.png")
+            log(f"Paint window {win32gui.GetWindowRect(self.paint)}, "
+                f"placement {win32gui.GetWindowPlacement(self.paint)[1]}, "
+                f"canvas {core.info(self.paint).get('canvas_on_screen')}")
+            log(f"missed: probes {pts}, want {[img.getpixel(p) for p in pts]}, "
+                f"see {[self.screen.pixel(ox + x, oy + y) for x, y in pts]}")
         e10.send(list(e6.KEY_S), e10.OWN_TAG)  # commit (E14)
         self.on_screen = img
         if seen is None and pts and core.dismiss_clipboard_error(self.paint, 0.5):
@@ -391,13 +456,13 @@ class Show:
                     end = True
                 elif action.startswith("digit"):
                     digits += action[-1]
-                elif action == "next" and vk == 0x0D and digits:
-                    target, digits = min(max(int(digits) - 1, 0), n - 1), ""
+                elif action == "next" and vk == 0x0D and digits:  # 0 is the painting
+                    target, digits = min(int(digits), n - 1), ""
                 elif action == "next":
                     target = min(target + 1, n - 1)
                 elif action == "prev":
                     target = max(target - 1, 0)
-                elif action == "first":
+                elif action == "first":  # Home: back to the painting
                     target = 0
                 elif action == "last":
                     target = n - 1
@@ -409,7 +474,6 @@ class Show:
                 png, img = self.blank[blank]
                 to = blank
             elif blank == "back" or target != self.idx:
-                target = max(target, 0)
                 png, img, to = self.pngs[target], self.images[target], target
             else:
                 continue
@@ -430,8 +494,12 @@ class Show:
 
 def auto_keys(stop: threading.Event) -> None:
     """Scripted 'user' keys (tagged as the user, E10) to test the show."""
-    script = [(0x27, 1.2), (0x27, 1.2), (0x20, 1.2), (0x25, 1.2), (0x23, 1.2), (0x24, 1.2),
-              (0x33, 0.2), (0x0D, 1.2), (0x42, 1.2), (0x42, 1.2),
+    script = [(0x27, 1.2), (0x27, 1.2), (0x20, 1.2), (0x25, 1.2), (0x23, 1.2),
+              (0x24, 1.2),                # Home: the painting (0)
+              (0x33, 0.2), (0x0D, 1.2),   # 3 + Enter: slide 3
+              (0x30, 0.2), (0x0D, 1.2),   # 0 + Enter: the painting
+              (0x27, 1.2), (0x25, 1.2),   # Right to slide 1, Left back to the painting
+              (0x42, 1.2), (0x42, 1.2),
               (0x27, 0.05), (0x27, 0.05), (0x27, 0.05), (0x27, 1.5), (0x1B, 0)]
     time.sleep(1.5)
     for vk, wait in script:
@@ -448,6 +516,7 @@ def main() -> int:
     p.add_argument("--monitor", default=None, help="default: the primary screen")
     p.add_argument("--auto", action="store_true", help="drive the show with scripted keys")
     p.add_argument("--snapshot", type=Path, help="save the finished loading painting (canvas only)")
+    p.add_argument("--debug-dir", type=Path, help="save the canvas when a paste is not seen")
     a = p.parse_args()
     work = a.work.resolve()
     mons = e11.monitors()
@@ -470,18 +539,31 @@ def main() -> int:
     e16.PEN = pen
     paint = None
     try:
-        probe = e11.open_maximised(mon, 1600, 900)
-        vp = core.info(probe)["viewport"]
-        core.close(probe, discard=True)
-        size = slide_size(vp["width"], vp["height"])
-        out["viewport"], out["slide size"] = [vp["width"], vp["height"]], list(size)
-        log(f"viewport {vp['width']}x{vp['height']}, slide {size[0]}x{size[1]}")
+        predicted = predicted_viewport(mon)
+        size = slide_size(*predicted)
         render = Render(work, size)
         render.start()
         paint = e11.open_maximised(mon, *size)
+        vp = core.info(paint)["viewport"]
+        out["viewport predicted"] = list(predicted)
+        out["viewport"] = [vp["width"], vp["height"]]
+        out["Paint launches"] = 1
+        if slide_size(vp["width"], vp["height"]) != size:  # the prediction was off: reopen
+            log(f"viewport {vp['width']}x{vp['height']}, not {predicted[0]}x{predicted[1]} as predicted")
+            core.close(paint, discard=True)
+            size = slide_size(vp["width"], vp["height"])
+            render.join(120)
+            render = Render(work, size)
+            render.start()
+            paint = e11.open_maximised(mon, *size)
+            out["Paint launches"] = 2
+        out["slide size"] = list(size)
+        log(f"viewport {vp['width']}x{vp['height']}, slide {size[0]}x{size[1]}")
         core.focus(paint)
         e16.key("S")
-        origin = canvas_origin(paint)
+        ox, oy, dx, dy = canvas_origin(paint)
+        origin = (ox, oy)
+        out["origin offset from UIA"] = [dx, dy]
         t0 = time.perf_counter()
         painter = Painter(paint, origin, size, pen)
         painter.sun()
@@ -495,13 +577,19 @@ def main() -> int:
                          "error": render.error}
         log(f"painting done in {out['painting']['seconds']} s; render {out['render']}")
         time.sleep(0.5)
+        c = settled_canvas(paint)  # has the canvas moved since it was measured?
+        now = (c["left"] + dx, c["top"] + dy)  # UIA's rectangle plus the measured offset
+        if now != origin:
+            log(f"canvas moved from {origin} to {now}")
+            out["canvas moved during the painting"] = [list(origin), list(now)]
+            origin = now
         painting = ImageGrab.grab(bbox=(*origin, origin[0] + size[0], origin[1] + size[1]),
                                   all_screens=True)  # the canvas only
         if a.snapshot:  # for a look at the painting
             painting.save(a.snapshot)
         if render.error:
             raise RuntimeError(render.error)
-        show = Show(paint, origin, size, render.files, painting)
+        show = Show(paint, origin, size, render.files, painting, a.debug_dir)
         hook = e10.KeyHook({paint})
         stop = threading.Event()
         if a.auto:
