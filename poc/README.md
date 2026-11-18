@@ -34,6 +34,7 @@ uv run python ..\experiments\e11_display_area.py --out $env:TEMP\e11
 | E13 mini presenter | [`e13_presenter.py`](experiments/e13_presenter.py) + [`e13_deck.md`](experiments/e13_deck.md) | The whole show: slide size, rendering (Marp, cached), the loading painting drawn live, then slides by key through the hook; times each slide change. `--auto` plays scripted keys; without it you drive it. Needs the Node tools from E12 |
 | E20 C# clipboard | [`e20_csharp_clipboard.py`](experiments/e20_csharp_clipboard.py) + [`dotnet/E20Clipboard`](dotnet/E20Clipboard) | The Python object against a C# WinForms `DataObject` and a C# `IDataObject` of our own: pastes, `GetData` timing, misses, Win+V. Build the C# side first (`dotnet build -c Release`) |
 | E23 C# hook under load | [`dotnet/E23Hook`](dotnet/E23Hook) (`dotnet run -c Release -- 10`) | A C# keyboard hook's key-to-callback time while the process allocates and collects, probes sent from a separate process; swallows its own probe key only |
+| E24 PDF adapter | [`e24_pdf.py`](experiments/e24_pdf.py) + [`dotnet/E24Pdf`](dotnet/E24Pdf) | The E12 deck exported to PDF by Marp, Slidev and PowerPoint, rendered by Windows' own PDF renderer at an exact width, compared with each tool's PNG. Needs E12's Node tools; build the C# side first |
 
 [`experiments/doompaint_clipserve.py`](experiments/doompaint_clipserve.py) is
 DoomPaint's live OLE clipboard (MIT, © Mark Russinovich), vendored unchanged

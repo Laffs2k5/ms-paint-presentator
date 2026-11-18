@@ -947,3 +947,38 @@ probe was ever sent during a pause; it was thrown away. Both processes use
 - **No separate hook process is needed.** Keep the callback free of
   allocations and locks (it only writes a timestamp here), give the hook its
   own thread, and use the default workstation GC.
+
+## E24. PDF as the adapter for any tool (2026-11-18): **pass**
+
+Script: [`poc/experiments/e24_pdf.py`](../poc/experiments/e24_pdf.py), with
+[`poc/dotnet/E24Pdf`](../poc/dotnet/E24Pdf) (C#, `Windows.Data.Pdf`, part of
+Windows: nothing to install). E12's sample deck was exported to PDF by Marp,
+Slidev and PowerPoint (`SaveAs` PDF), each PDF rendered at 2650 px wide (the
+laptop's slide width), and every page compared with the same tool's own PNG
+export at that size (E12, scale mode). Edge ran headless with throwaway
+profiles; no Edge process was left behind.
+
+| Exported by | Pages | Pixel size | Mean difference per channel (of 255) | Pixels off by > 40 | Time per page |
+|---|---|---|---|---|---|
+| Marp | 4 | 2650×1251 | 0.09–0.17 | 0.09–0.15% | 48–70 ms |
+| Slidev | 4 | 2650×1251 | 0.13–0.32 | 0.13–0.38% | 51–61 ms |
+| PowerPoint | 4 | 2650×1251 | 0.13–0.75 | 0.13–0.60% | 48–58 ms |
+
+Loading a PDF took 44–49 ms, measuring the scale factor (below) about 200 ms
+once.
+
+- **The size needs one measurement.** `PdfPageRenderOptions.DestinationWidth`
+  is in DIPs, and Windows turned them into pixels by a factor of **1.8** on
+  this laptop (the panel is at 200%). Making the process DPI-aware did not
+  change it. So render page 1 once, read the pixel width, and request
+  width ÷ factor. That landed on exactly 2650 px; the height may need a pixel
+  cropped or padded, as for Marp and Slidev (E12). A first run without this
+  wrote 4770×2250 PNGs.
+- **The pixels match the tools' own exports:** the differences are
+  anti-aliasing at edges.
+- **PDF is a universal and fast path.** About 50 ms per page, the speed of
+  PowerPoint's `Slide.Export` and faster than Marp or Slidev (E12). Any page
+  can be rendered on its own, so the show can start early (research 05 §7).
+  Not measured: how long each tool takes to export the PDF.
+- **Build steps are lost** unless the tool exports one page per step (Slidev
+  `--with-clicks` can).
