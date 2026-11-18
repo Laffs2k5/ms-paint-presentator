@@ -52,8 +52,7 @@ class Interrupted(Exception):
 
 class LoadingPainting:
     def __init__(self, paint: int, origin: tuple[int, int], size: tuple[int, int], pen,
-                 title: str, progress, prep_estimate: float, stop=lambda: False,
-                 seed: int | None = None):
+                 title: str, progress, stop=lambda: False, seed: int | None = None):
         self.paint, self.origin, self.size, self.pen = paint, origin, size, pen
         self.title_text = title
         self.progress = progress  # () -> Progress
@@ -63,9 +62,6 @@ class LoadingPainting:
         self.H = 1280.0 * size[1] / size[0]
         self.s = size[0] / 1280.0  # design px -> canvas px
         self.u = self.H / 720.0
-        self.P = prep_estimate
-        self.fast = prep_estimate < 6
-        self.with_sun = prep_estimate >= 9
         self.tool = None  # (brush, colour, size)
         self.filled = 0
         self.t0 = time.perf_counter()
@@ -165,7 +161,7 @@ class LoadingPainting:
                 paths.append(p)
             pen_at = p[-1]
         self.note(f"title in {colour}")
-        self.strokes(paths, 2.0 if self.fast else 3.0)
+        self.strokes(paths, 3.0)
 
     def _wrap(self, text: str, box) -> list:
         """The title's outlines (bold Comic Sans, from the installed font),
@@ -235,7 +231,7 @@ class LoadingPainting:
                    (x1 + j(), y1 + 8 * u), (x1 + 6 * u, y1 + j()), (x0 + j(), y1 + j()),
                    (x0 + j(), y1 + 6 * u), (x0 + j(), y0 - 10 * u)]
         self.note("frame")
-        self.strokes([self.dense(self.wob(self.dense(corners, 12), 1.5 * u))], 0.4 if self.fast else 0.6)
+        self.strokes([self.dense(self.wob(self.dense(corners, 12), 1.5 * u))], 0.6)
 
     def fill_to(self, k: int, total: int):
         """Lime zigzag up to slide k of total: one bite of 1/total per slide."""
@@ -275,20 +271,20 @@ class LoadingPainting:
         self.note("birds")
         self.strokes(paths, 0.5)
 
-    def finale(self, cloud: bool):
+    def finale(self):
         """The bucket in the cloud: it leaks through the gap and floods the sky."""
         self.check()
         key(ord("B"))  # Fill with color (tagged: B is the show's black-screen key)
         e16.pick_colour(self.paint, "Light turquoise")
         self.tool = None
-        x, y = (self.cloud_c[0], self.cloud_c[1] + 0.005 * self.H) if cloud else (0.5 * self.W, 0.08 * self.H)
+        x, y = self.cloud_c[0], self.cloud_c[1] + 0.005 * self.H
         sx, sy = self.at(x, y)
         self.note("bucket: ...hmm")
         self.pen._inject(sx, sy, e15.F_INRANGE | e15.F_UPDATE)  # hover over the spot
-        time.sleep(0.3 if self.fast else 0.8)
+        time.sleep(0.8)
         self.check()
         e15.stroke(self.pen, [(sx, sy), (sx, sy)], 2)
-        self.note("leaks!" if cloud else "fills the sky")
+        self.note("leaks!")
         time.sleep(0.5)
 
     def letters(self):
@@ -396,24 +392,17 @@ class LoadingPainting:
     # --- the whole painting ----------------------------------------------------------------
     def run(self) -> dict:
         """Paint until the finale and the signature are done, or `stop()`."""
-        result = {"fast": self.fast, "sun": self.with_sun, "interrupted": False}
+        result = {"interrupted": False}
         try:
+            # Always the whole painting, however soon the slides are ready (the
+            # user's call): the first key jumps to slide 1 anyway.
             self.title()
-            if self.with_sun:
-                self.sun()
-            cloud = not self.fast
-            if cloud:
-                self.cloud()
+            self.sun()
+            self.cloud()
             self.frame_lines()
             self.catch_up()  # the fill starts once the frame is there (the concept)
-            # decorations while the time lasts (only the birds before the finale)
-            if not self.fast:
-                p = self.progress()
-                elapsed = time.perf_counter() - self.t0
-                est = (p.total - p.done) * elapsed / p.done if p.done else self.P - elapsed
-                if p.done < p.total and est >= 2.5 - 1:
-                    self.birds()
-                    self.catch_up()
+            self.birds()
+            self.catch_up()
             # wait at the frame, one bite per slide that becomes ready
             while True:
                 p = self.progress()
@@ -423,7 +412,7 @@ class LoadingPainting:
                     break
                 self.check()
                 time.sleep(0.05)
-            self.finale(cloud)
+            self.finale()
             self.letters()
             self.signature()
             key(ord("S"))  # the Select tool: no brush panel over the canvas

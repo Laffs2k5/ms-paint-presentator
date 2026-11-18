@@ -13,8 +13,8 @@ The plan's presenter design, end to end, on one screen:
    the work folder. Rendered slides are cached per deck and size.
 3. Meanwhile, paint the loading painting live in Paint with the synthetic pen
    (E15) and Paint's own tools (E16): the designer's concept, The sky leaks
-   (docs/loading-painting.md, loading_painting.py). The title, a sun and a
-   cloud if there is time, a frame filled as the slides really render, then
+   (docs/loading-painting.md, loading_painting.py). The title, a sun, a
+   cloud and birds, a frame filled as the slides really render, then
    the bucket leaks through the cloud and the date is signed with a typo. The
    keyboard hook is on while it paints: the first key stops the painting and
    goes straight to slide 1. --simulate-prep paces the fill as if rendering
@@ -165,9 +165,6 @@ class Render(threading.Thread):
         key = hashlib.sha1(text.encode()).hexdigest()[:12]
         self.dir = work / "e13-cache" / f"{key}-{size[0]}x{size[1]}"
         self.done, self.files, self.error, self.cached, self.seconds = 0, [], None, False, None
-
-    def cached_ready(self) -> bool:
-        return (self.dir / "complete").exists()
 
     def run(self):
         t0 = time.perf_counter()
@@ -480,14 +477,12 @@ def main() -> int:
                 return lp.Progress(min(k, render.done, render.total), render.total)
             return lp.Progress(render.done, render.total)
 
-        estimate = sim if sim else (0.0 if render.cached_ready() else 2 + 0.1 * render.total)
         painter = lp.LoadingPainting(paint, origin, size, pen, "Paint Presentator", progress,
-                                     estimate, stop=lambda: not hook.events.empty(), seed=a.seed)
+                                     stop=lambda: not hook.events.empty(), seed=a.seed)
         if a.interrupt_after:
             threading.Timer(a.interrupt_after, lambda: e10.tap(0x27)).start()
         result = painter.run()
         out["painting"] = {k: v for k, v in result.items() if k != "steps"}
-        out["painting"]["prep estimate s"] = estimate
         out["painting steps"] = result["steps"]
         render.join(120)
         out["render"] = {"seconds": render.seconds, "slides": render.total, "cached": render.cached,

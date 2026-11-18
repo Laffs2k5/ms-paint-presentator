@@ -41,13 +41,12 @@ switches change only the colour (about 1.0 s) rather than the tool (about
 
 | # | Element | Tool · colour | Budget | Notes |
 |---|---|---|---|---|
-| 1 | Title | Brush · Indigo, Red, Purple, Dark red or Black (random) | 3.0 s (fast: 2.0 s) | Traced from the font outline, jagged and shaky. Now and then (12%) the pen forgets to lift between letters |
-| 2 | Sun | Brush · Orange | 1.8 s | Only if preparation takes 9 s or more. A ring that overshoots and does not meet itself, scribbles as fill, 7–9 rays of uneven length, about a third drawn twice |
-| 3 | Cloud | Brush · Black | 0.9 s | Not in fast mode. Lumpy outline with 3–5 bumps, **deliberately left open**: the gap is needed for the finale |
-| 4 | Frame | Brush · Black | 0.6 s (fast: 0.4 s) | Four crooked strokes that overshoot the corners |
+| 1 | Title | Brush · Indigo, Red, Purple, Dark red or Black (random) | 3.0 s | Traced from the font outline, jagged and shaky. Now and then (12%) the pen forgets to lift between letters |
+| 2 | Sun | Brush · Orange | 1.8 s | A ring that overshoots and does not meet itself, scribbles as fill, 7–9 rays of uneven length, about a third drawn twice |
+| 3 | Cloud | Brush · Black | 0.9 s | Lumpy outline with 3–5 bumps, **deliberately left open**: the gap is needed for the finale |
+| 4 | Frame | Brush · Black | 0.6 s | Four crooked strokes that overshoot the corners |
 | 5 | Fill | Brush · Lime, 1.6× width | 1.4 s × the share of slides filled | A zigzag bite of 1/N of the frame per ready slide, a little outside the lines. After every element the pen comes back and catches up |
-| 6 | Decorations | | | Only if time allows (below) |
-| 6a | Birds | Brush · Black | 2.5 s | Two or three "m"s in different sizes |
+| 6 | Birds | Brush · Black | 2.5 s | Two or three "m"s in different sizes |
 | 7 | Waiting | Brush · Lime | | Nothing left to decorate: the pen waits at the frame and adds one bite per slide that becomes ready |
 | 8 | Finale | Fill (bucket) · Light turquoise | about 2.5 s | Starts only at 100%. The pen hesitates in the cloud ("…hmm", 0.8 s), then clicks. The colour leaks through the gap and floods everything connected, but not the inside of closed letters |
 | 8a | Letters | Fill (bucket) · 1 to 4 random colours | about 1.5–3.5 s | The bucket fills 1 to 4 of the title's letters, chosen at random, each in its own colour from the palette (not White, Black, the greys, the sky's Light turquoise or the title's colour). The user's addition. The painter reads the title's area from the screen once, to find letter bodies (not holes) that are still white |
@@ -57,19 +56,20 @@ switches change only the colour (about 1.0 s) rather than the tool (about
 
 1. The fill follows slides that are ready, never the clock.
 2. After each decoration the pen goes back to the frame and catches up.
-3. Sun and cloud come right after the title when preparation is long
-   enough. The birds start only if the estimated remaining time (measured
-   pace × slides left) covers their cost with at most 1 s to spare. The
-   signature always comes last, after the finale.
-4. With the decorations used up, the pen waits at the frame.
-5. Fast mode, under 6 s of preparation: a faster title, no sun, cloud or
-   decorations; the bucket fills the sky directly. Under 9 s: no sun.
-6. The first key press always jumps straight to slide 1; only decoration is
+3. **Always the whole painting** (the user's call, overriding the concept):
+   sun, cloud and birds come every time, however soon the slides are ready.
+   The concept left them out when preparation was short (no sun under 9 s,
+   no cloud or birds under 6 s), which in practice would have been nearly
+   every show: a cached deck is ready at once, and a fresh 7-slide deck in a
+   few seconds. The signature always comes last, after the finale.
+4. With the decorations done, the pen waits at the frame until every slide
+   is ready.
+5. The first key press always jumps straight to slide 1; only decoration is
    lost.
 
-The designer's simulation: 3 s of preparation (fast mode) gives a painting of
-9.5 s; 8 s gives 12.0 s; 15 s gives 19.2 s. So the painting ends about 4–7 s
-after the slides are ready.
+The whole painting takes about 25 s when the slides are ready from the
+start (the designer's simulation, with the short versions, gave 9.5–19.2 s
+for 3–15 s of preparation).
 
 ## Gags
 
@@ -101,8 +101,6 @@ In reserve:
 - How many of the title's letters the bucket fills (1 to 4), which ones, and
   in which colours.
 - A seed decides the shake, the ray angles and the number of cloud bumps.
-- How much decoration fits depends on the preparation time; quick runs come
-  out simpler.
 - The date in the signature turns slide 0 into a stamp of the day.
 - Ideas: a moon after 18:00, airbrush snow in December, and once in 20 runs a
   reserve gag instead of the birds.

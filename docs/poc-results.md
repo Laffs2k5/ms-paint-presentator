@@ -931,6 +931,11 @@ keys: Next ×3, Back, End, Home, 3 + Enter, B twice, then four quick Nexts.
   stops it and goes to slide 1. The painter's own keys (`B`, `T`, Backspace)
   carry the presenter's tag, and the date goes in as Unicode characters
   (`VK_PACKET`), which are not show keys.
+- **Always the whole painting (the user's call):** the concept's short
+  versions for a quick preparation (no sun under 9 s, no cloud or birds under
+  6 s) would have been nearly every show, since a cached deck is ready at once.
+  Now sun, cloud and birds come every time: 25 s with cached slides, then
+  231 ms median key to slide.
 - **Letters in colour (the user's addition):** after the sky, the bucket
   fills 1 to 4 random letters of the title, each in its own random colour.
   One screen read of the title's area, compared at half resolution with the
