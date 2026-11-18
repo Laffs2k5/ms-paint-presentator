@@ -38,6 +38,7 @@ import time
 from ctypes import wintypes
 
 import e11_display_area as e11  # same folder; also sets DPI awareness
+import win32gui
 from paintctl import core
 from PIL import Image
 
@@ -141,15 +142,17 @@ def dib(img: Image.Image) -> bytes:
         return buf.getvalue()[14:]  # CF_DIB = BMP without BITMAPFILEHEADER
 
 
+def slide_image(base: Image.Image, k: int) -> Image.Image:
+    """Slide k: the test pattern with probe squares in slide k's colour."""
+    img = base.copy()
+    for x, y in probe_points(*base.size):
+        img.paste(colour(k), (x, y, x + _PROBE, y + _PROBE))
+    return img
+
+
 def make_slides(w: int, h: int, n: int) -> list[bytes]:
     base = e11.test_pattern(w, h)
-    out = []
-    for k in range(n):
-        img = base.copy()
-        for x, y in probe_points(w, h):
-            img.paste(colour(k), (x, y, x + _PROBE, y + _PROBE))
-        out.append(dib(img))
-    return out
+    return [dib(slide_image(base, k)) for k in range(n)]
 
 
 # --- clipboard modes --------------------------------------------------------------------
@@ -203,22 +206,36 @@ def summary(values: list[float]) -> dict | None:
 
 
 def measure(mon: dict, w: int, h: int, n: int, warmup: int, clip, timeout: float,
-            pause: float) -> dict:
+            pause: float, trigger: str = "ctrl-v", background: bool = False) -> dict:
     slides = make_slides(w, h, n + warmup)
     hwnd = e11.open_maximised(mon, w, h)
     screen = ScreenProbe()
     rows = []
+    standin = None
     try:
-        c = core.info(hwnd)["canvas_on_screen"]
+        info = core.info(hwnd)
+        c, vp = info["canvas_on_screen"], info["viewport"]
         pts = [(c["left"] + x + _PROBE // 2, c["top"] + y + _PROBE // 2)
                for x, y in probe_points(w, h)]
-        if not core.focus(hwnd):
-            return {"error": "could not focus Paint"}
+        if background:
+            # E2: another window in front (over Paint's toolbar, clear of the
+            # canvas). Commit then goes through a posted `S` (E2).
+            import e2_background_paste as e2
+            standin = e2.StandIn(mon["work"].left + 200, mon["work"].top + 20, 900,
+                                 160)  # short: its shadow must not reach the canvas
+            front = standin.hwnd
+        else:
+            front = hwnd
+        if not core.focus(front):
+            return {"error": "could not focus the front window"}
         for k, data in enumerate(slides):
             want = colour(k)
             clip.offer(data)
             t0 = time.perf_counter()
-            send_keys(*CTRL_V)
+            if trigger == "wm-command":  # E2: posted Edit > Paste, no keys
+                _user32.PostMessageW(hwnd, 0x0111, 0xE125, 0)
+            else:
+                send_keys(*CTRL_V)
             # A screen read syncs with the display refresh (~16.7 ms at 60 Hz),
             # so poll one probe per frame, then confirm the others once.
             seen = None
@@ -236,11 +253,18 @@ def measure(mon: dict, w: int, h: int, n: int, warmup: int, clip, timeout: float
                 "getdata_ms": round((get - t0) * 1000, 1) if get else None,
                 "visible_ms": round((seen - t0) * 1000, 1) if seen else None,
                 "polls": polls})
+            rows[-1]["front_kept_focus"] = (
+                win32gui.GetForegroundWindow() == front)
             print(f"  {w}x{h} #{k}: getdata={rows[-1]['getdata_ms']} "
                   f"visible={rows[-1]['visible_ms']} ms", file=sys.stderr, flush=True)
-            send_keys(*KEY_S)  # commit (E14)
+            if background:
+                e2.background_commit(hwnd)  # posted `S` to the input site (E2)
+            else:
+                send_keys(*KEY_S)  # commit (E14); needs Paint focused
             time.sleep(pause)
     finally:
+        if standin:
+            standin.close()
         screen.close()
         core.close(hwnd, discard=True)
     timed = [r for r in rows if not r["warmup"]]
@@ -248,6 +272,8 @@ def measure(mon: dict, w: int, h: int, n: int, warmup: int, clip, timeout: float
     get = [r["getdata_ms"] for r in timed if r["getdata_ms"] is not None]
     return {"size": [w, h], "megapixels": round(w * h / 1e6, 2),
             "dib_mb": round(len(slides[0]) / 1e6, 1),
+            "trigger": trigger, "background": background,
+            "front_kept_focus": all(r["front_kept_focus"] for r in timed),
             "pastes": len(timed), "missed": len(timed) - len(vis),
             "visible_ms": summary(vis), "getdata_ms": summary(get),
             "rows": rows}
@@ -265,13 +291,18 @@ def main() -> int:
     p.add_argument("--timeout", type=float, default=5.0)
     p.add_argument("--pause", type=float, default=0.3,
                    help="seconds after each commit before the next slide")
+    p.add_argument("--trigger", choices=("ctrl-v", "wm-command"), default="ctrl-v",
+                   help="ctrl-v: SendInput; wm-command: posted Edit > Paste (E2)")
+    p.add_argument("--background", action="store_true",
+                   help="keep another window in front of Paint (E2)")
     a = p.parse_args()
     sizes = [tuple(int(v) for v in s.lower().split("x"))
              for s in (a.size or ["1214x475", "1854x875", "2446x1163"])]
     mon = next(m for m in e11.monitors() if m["device"] == a.monitor)
     clip = OleClipboard() if a.mode == "ole" else PlainClipboard()
     try:
-        results = [measure(mon, w, h, a.n, a.warmup, clip, a.timeout, a.pause)
+        results = [measure(mon, w, h, a.n, a.warmup, clip, a.timeout, a.pause,
+                           a.trigger, a.background)
                    for w, h in sizes]
     finally:
         clip.close()
