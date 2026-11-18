@@ -3,7 +3,7 @@
 Run presentations in Microsoft Paint instead of PowerPoint. Windows 11 only.
 
 Status: **POC in progress.** Environment captured and `paintctl` working on
-Windows 11 ARM64, the DoomPaint baseline runs, and E11, E14, E6, E2/E3, E1, E7, E4 and E8 pass, E5 answered (nothing calls DAdvise), and E15 passes (a script can draw in Paint, live). The presenter design is decided (see the [POC plan](docs/poc-plan.md)). Next: E16, choosing Paint's tools by script. See [POC results](docs/poc-results.md).
+Windows 11 ARM64, the DoomPaint baseline runs, and E11, E14, E6, E2/E3, E1, E7, E4 and E8 pass, E5 answered (nothing calls DAdvise), and E15 and E16 pass (a script can draw in Paint, live, and choose its tools and colours). The presenter design is decided (see the [POC plan](docs/poc-plan.md)). Next: E17, placing small pastes. See [POC results](docs/poc-results.md).
 
 ## Research
 

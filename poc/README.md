@@ -26,6 +26,7 @@ uv run python ..\experiments\e11_display_area.py --out $env:TEMP\e11
 | E5 DAdvise | [`e5_dadvise.py`](experiments/e5_dadvise.py) | Every IDataObject call per phase (offered, pasted, focus round-trip, pasted again), DAdvise refused or accepted |
 | E2/E3 background paste | [`e2_background_paste.py`](experiments/e2_background_paste.py) | Per candidate: does Paint paste (and commit) while another window keeps focus |
 | E15 drawing | [`e15_draw.py`](experiments/e15_draw.py) | Per input route (mouse, synthetic pen, posted messages) and speed: does a stroke land on its path, live; rapid strokes; drawing with another window in front; pen pressure per brush |
+| E16 tools and colours | [`e16_tools.py`](experiments/e16_tools.py) | How each tool, brush, shape, colour, size and the text font can be chosen by script, the palette's RGB, and what Paint keeps after a relaunch (it restores what it changed) |
 
 [`experiments/doompaint_clipserve.py`](experiments/doompaint_clipserve.py) is
 DoomPaint's live OLE clipboard (MIT, © Mark Russinovich), vendored unchanged
@@ -45,5 +46,8 @@ with its licence notice. E6 uses it.
   only 25 items, so a run can push out your own. Turn clipboard history off
   while experimenting, or accept that. Do not clean up with the WinRT delete
   API: after `DeleteItemFromHistory` on one item the whole history was gone (E8).
+- **E16 changes Paint's text font** (the one setting Paint keeps across
+  sessions) and puts it back, even when it fails. If a run is killed, check the
+  font of the Text tool in Paint.
 - **Don't commit screen grabs.** Notification toasts that pop up during a run
   (Teams, Outlook) end up in them, with names and addresses.

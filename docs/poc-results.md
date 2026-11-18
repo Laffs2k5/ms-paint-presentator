@@ -612,3 +612,85 @@ Watercolor or Oil brush pressure gives strokes a hand-drawn swell. The mouse
 route is the fallback. Speed is no limit: a hand-like pace of a few hundred
 px/s is far below what either route takes. Not tested: whether the speaker
 moving or clicking the mouse during a pen stroke disturbs it.
+
+## E16. Choose Paint's tools, colours and sizes by script (2026-11-18): **pass**
+
+Script: [`poc/experiments/e16_tools.py`](../poc/experiments/e16_tools.py).
+For the loading painting. Laptop panel at 200%, Paint maximised and in front,
+the synthetic pen (E15) for strokes and taps. Every choice is checked by what
+Paint reports through UI Automation (the canvas is named "Using Pencil tool on
+Canvas", the colour slots "Color 1: Red") and by what lands on the canvas. The
+numbers are from the final run; earlier runs found the pitfalls below.
+
+**How each thing can be chosen:**
+
+| What | Works | Does not work |
+|---|---|---|
+| Tools | Keys: `P` Pencil, `B` Fill ("Fill with color"), `T` Text, `E` Eraser, `I` Colour picker ("Pick color"), `Z` Magnifier, `S` Select. Or UIA Toggle on the tool buttons | – |
+| Brushes (9) | Invoke an item of the Brushes button's menu: Brush, Calligraphy brush, Calligraphy pen ("Calligraphy brush 2"), Airbrush, Oil brush, Crayon, Marker, Natural pencil, Watercolor brush | SelectionItem.Select on the Brushes button |
+| Shapes (23) | A pen tap on the shape (Line, Oval, Rectangle, Five-point star, Heart tried) | UIA select of its list item |
+| Shape outline / fill | Invoke an item of the drop-down: No / Solid outline (fill), Crayon, Marker, Oil brush, Natural pencil, Watercolor brush; each item's Toggle state says which is on | – |
+| Colour slot | UIA select of "Color 1" / "Color 2" | – |
+| Colours (20) | A pen tap on the swatch (30 of 30 picks) | UIA: the swatches have no SelectionItem pattern |
+| Size, opacity | The Size and Opacity sliders (UIA RangeValue), there while a drawing tool is active: size 0–90, opacity 0–100 | – |
+| Text | `T`, drag a box with the pen, pick the font, type the text as Unicode key events (`KEYEVENTF_UNICODE`), commit with a pen tap outside the box or by choosing another tool through UIA | Letters sent as virtual-key presses (no text came out); `S` while a box is open types an S |
+| Custom colours | – | Edit colors, see below |
+
+A pen tap on a control is the general fallback: it clicks without moving the
+mouse.
+
+**The palette**, as drawn with the Pencil (RGB):
+
+| Colour | RGB | Colour | RGB |
+|---|---|---|---|
+| Black | 0, 0, 0 | White | 255, 255, 255 |
+| Gray | 127, 127, 127 | Light gray | 195, 195, 195 |
+| Dark red | 136, 0, 21 | Brown | 185, 122, 87 |
+| Red | 237, 28, 36 | Rose | 255, 174, 201 |
+| Orange | 255, 127, 39 | Gold | 255, 201, 14 |
+| Yellow | 255, 242, 0 | Light yellow | 239, 228, 176 |
+| Green | 34, 177, 76 | Lime | 181, 230, 29 |
+| Turquoise | 0, 162, 232 | Light turquoise | 153, 217, 234 |
+| Indigo | 63, 72, 204 | Blue-gray | 112, 146, 190 |
+| Purple | 163, 73, 164 | Lavender | 200, 191, 231 |
+
+**Pencil width by size:** 0 → 1 px, 5 → 6, 20 → 21, 45 → 68, 90 → 248. Up to
+about 20 the width is size + 1; above that it grows faster.
+
+**Shapes:** dragged with the pen, a shape stays editable, with handles and a
+toolbar up to 40 px above it, until `S` commits it. Then the ink matches the
+drag within 3 px and stays put. A Rectangle with Crayon outline and Solid fill
+was filled with Colour 2 (yellow, 255, 242, 0).
+
+**What Paint keeps after close and relaunch:** almost nothing. The tool (always
+the Brush), colours (Black, White), shape outline and fill (Solid outline, No
+fill), Pencil size (0) and opacity (100) all reset. **The Text tool's font is
+kept.** The script records the font at the start and puts it back, even when a
+run fails, then checks it after one more relaunch.
+
+**Pitfalls found:**
+
+- **Edit colors is off-limits.** It opens a dialog inside Paint's window.
+  Invoked through UIA, the call blocks until the dialog closes; walking Paint's
+  UIA tree while it is open hangs (one probe hung for over three minutes). The
+  20 palette colours are enough for a crappy painting.
+- **The font list is awkward.** It is virtualised (a font far down the list is
+  not there to select), holds several items of one name, and typing a name
+  plus Enter sometimes autocompletes ("Calibri" became "Calibri Light"). The
+  setter selects the exact item when it is there, else types the name, then
+  Delete (drops an autocompleted tail), then Enter. The box can report the old
+  font for a moment; a new text box or a relaunch shows the real one.
+- **An earlier run left the Text font as Comic Sans MS** in the user's Paint.
+  The original was identified from a screen grab of default text (Calibri,
+  whose size matched; Segoe UI's did not), put back and checked after a
+  relaunch. That is why the script now restores the font itself.
+- **For a moment after a tool change, two canvas elements** carry the
+  AutomationId `image` and the "Using … tool" name; the lookup retries.
+- **A tap with the Text tool on empty canvas opens a new box,** and if the font
+  list is still open a tap only closes the list. Close a box by choosing
+  another tool through UIA.
+
+**For the loading painting:** compose it in the 20 palette colours above,
+choose tools by key, brushes and shape styles through their menus, colours by
+pen tap, and sizes through the slider. If it uses the Text tool, restore the
+font afterwards. Never open Edit colors.
