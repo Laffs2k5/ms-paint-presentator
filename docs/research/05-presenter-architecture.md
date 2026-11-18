@@ -22,6 +22,12 @@ start-up, for the screen actually used.
   would confuse. The keyboard hook, the clipboard and the windows each get a
   thread of their own. A **controller** owns the state and is the only part
   that decides.
+- **Decks come from other tools** (the user's rule). A deck is made in, and
+  normally presented from, its own tool. The Paint presenter is a second way
+  to show the same deck, and must also show past PowerPoint decks. So it reads
+  decks as their tools leave them, renders them with the deck's own
+  toolchain, and keeps each deck's shape (§6). Node is fine as a dependency.
+  There is no presenter view, so no speaker notes are needed.
 - **Messages, not shared state:** components talk through queues (`Channel<T>`).
   The hook only enqueues; the controller turns keys into commands; the stage
   runs them; the slide pipeline reports progress.
@@ -32,8 +38,8 @@ start-up, for the screen actually used.
   - watchdogs for Paint, the hook and the clipboard;
   - monitor identity that survives a cable being pulled;
   - a `doctor` command that reruns the POC's checks.
-- The Python POC stays as the reference and test harness. Four short C#
-  experiments (E20–E23, below) de-risk the port before the bulk of it.
+- The Python POC stays as the reference and test harness. Short experiments
+  (E20–E25, below) de-risk the port before the bulk of it.
 
 ## 1. What the POC fixed, and what follows for the architecture
 
@@ -45,7 +51,8 @@ start-up, for the screen actually used.
 | Paint reads our clipboard object within about 7 ms of the paste; that call arrives on our STA thread (E1, E6) | The clipboard object lives on its own STA thread that always pumps messages, never blocked by waiting for Paint |
 | A clipboard object per slide, or Paint pastes a cached PNG (E7) | Each slide gets a new data object; the PNG bytes are encoded ahead and kept in memory |
 | Each screen read waits for a display refresh; 36 reads per slide made the show take seconds (E6, E13) | Finished pastes are detected by an event, or by at most three points chosen in memory |
-| Slides render at start for the measured size, from a fixed design canvas at a scale factor, about 2.5–11 s for 40 slides (E12) | Rendering is a background pipeline with progress, a cache and room to start early |
+| Slides render at start for the measured size, from the deck's own design canvas at a scale factor, about 2.5–11 s for 40 slides (E12) | Rendering is a background pipeline with progress, a cache and room to start early |
+| Decks are made and shown in their own tools; past PowerPoint decks must work (the user) | Adapters per source, the deck's own toolchain, the deck's own shape (§6) |
 | A display change brings back the picker and waits (decided) | Display events go to the controller, which pauses the show and opens the picker |
 | Do not disturb cannot be read; toasts show over Paint (E19) | The pre-flight asks the speaker; no API is relied on |
 | Edit colors blocks UIA; a whole-tree walk can hang (E16) | UIA calls have time-outs and target single elements; tree walks only in diagnostics |
@@ -64,9 +71,9 @@ start-up, for the screen actually used.
                 │       commands ◀───────────┘            │               └──▶ UI     │
                 │          ▼                              ▼              (WPF thread: │
                 │  Stage thread ─ the only writer    Slide pipeline        picker,    │
-                │   to Paint: paste+S, pen, keys,     (tasks): source →     presenter │
-                │   UIA, focus, self-tests            renderer → cache      view,     │
-                │     │                                │                    pre-flight)│
+                │   to Paint: paste+S, pen, keys,     (tasks): source →     pre-flight│
+                │   UIA, focus, self-tests            adapter → cache       notices)  │
+                │     │                                │                              │
                 │     └─ Clipboard STA thread          └─ child processes in a        │
                 │        (live OLE data object,           Job Object: Node + Marp or  │
                 │         always pumping)                 Slidev + Edge (throwaway    │
@@ -84,7 +91,7 @@ start-up, for the screen actually used.
 | **Controller** (one thread, an actor) | state: slide index, slide size, chosen screen, cache handle; key combining; the state machine (§4) | touch Paint or the clipboard directly | one place decides; everything else executes |
 | **Stage** (one thread) | the Paint process and window, focus, `SendInput`, synthetic pen, UIA (FlaUI), paste-done detection, the loading painting's strokes | run two Paint operations at once | Paint is one UI thread (E2, E15) |
 | **Clipboard** (STA thread, message pump) | `OleSetClipboard`, the live data object per slide (PNG plus the history opt-out, E8) | block | Paint's `GetData` arrives here (E1, E6) |
-| **UI** (WPF thread) | screen picker, presenter view, pre-flight checklist, error notices | steal focus from Paint during the show (`WS_EX_NOACTIVATE`) | the hook handles keys; Paint keeps its lit title bar |
+| **UI** (WPF thread) | screen picker, pre-flight checklist, error notices (no presenter view: the user) | steal focus from Paint during the show | the hook handles keys; Paint keeps its lit title bar |
 | **Slide pipeline** (tasks on the thread pool) | starting renderers, collecting PNGs, crop or pad (E12), encoding, the cache | block the controller | renders take seconds |
 | **Renderers** (child processes, Job Object with kill-on-close) | Node + marp-cli or Slidev + headless Edge (throwaway profile); PowerPoint (out-of-process COM, quit if we started it) | outlive the presenter; use the user's Edge profile | E12; the user's rule |
 
@@ -113,10 +120,11 @@ key down ─▶ hook callback: tag check, foreground check, enqueue    ~0.1 ms (
   (E13: four quick Nexts gave two pastes).
 - **The tag** in `dwExtraInfo` lets the hook pass the presenter's own keys and
   treat everything else as the speaker (E10).
-- **Foreground and background routes** (E2): with Paint in front, use
-  `Ctrl+V` and `S`, Paint's public shortcuts. With the presenter view in
-  front, post `WM_COMMAND` 0xE125 and post `S` to the input-site window. A
-  self-test at start picks the route that works.
+- **Foreground and background routes** (E2): with no presenter view, Paint is
+  in front during the show, so `Ctrl+V` and `S`, Paint's public shortcuts, are
+  the route. Posting `WM_COMMAND` 0xE125 and `S` to the input-site window is
+  the fallback, for example while the picker or a notice has the focus. A
+  self-test at start checks both.
 
 ## 4. The controller's states
 
@@ -138,7 +146,7 @@ key down ─▶ hook callback: tag check, foreground check, enqueue    ~0.1 ms (
   while the stage draws the loading painting. Neither waits for the other; the
   progress bar's strokes are queued as progress arrives.
 - **Ready** means the painting is done and enough slides are rendered: slide
-  1, or the slide to resume at. The rest can still be rendering (§6).
+  1, or the slide to resume at. The rest can still be rendering (§7).
 
 ## 5. Display changes, as decided
 
@@ -165,7 +173,37 @@ key down ─▶ hook callback: tag check, foreground check, enqueue    ~0.1 ms (
   - whether FancyZones moves it;
   - whether its canvas survives.
 
-## 6. Smarter than the POC
+## 6. Decks come from other tools
+
+The user's rule: a deck is made in, and normally presented from, its own tool
+(a browser in full screen, PowerPoint, whatever that tool does). The Paint
+presenter is a second way to show the same deck, for when the nerdy laugh is
+wanted, and it must show past PowerPoint decks too. So:
+
+- **No Paint-specific markup.** The presenter reads a deck as its tool leaves
+  it. Any hint for the presenter must be something the tool itself ignores.
+- **The deck's own toolchain renders it.** A Slidev project is exported by its
+  own Slidev, version and theme (its `node_modules`), so Paint shows what the
+  browser shows. Node is required, which the user accepts.
+- **A slide keeps its deck's shape:** 16:9, 4:3, whatever the deck has. It is
+  fitted into Paint's display area and centred with Paint's background around
+  it, never stretched or reflowed. The 16:10 reference shape of the
+  presentation constraints applies only to decks made for Paint.
+- **No presenter view and no speaker notes** (the user).
+
+| Source | Recognised by | Rendered by | Build steps | One slide at a time (early start) |
+|---|---|---|---|---|
+| **PowerPoint** `.pptx`, `.ppt` (past decks) | the extension | PowerPoint through COM, `Slide.Export` at the size (E12) | not at first: each slide in its final state; PPspliT-style splitting later (research 03 §4) | yes |
+| **Slidev** project | Slidev headmatter in `slides.md`, or `@slidev/cli` in `package.json` | the project's own Slidev: `slidev export --format png --with-clicks --scale` (E12) | yes, one image per click | through Playwright (E22) |
+| **Marp** Markdown | `marp: true` in the front matter | marp-cli (the deck's own, if it has one): `--images png --image-scale` (E12) | no: Marp's fragments only animate in its HTML | through Playwright (E22) |
+| **PDF**, from anything else (Keynote, Google Slides, reveal.js through decktape, a tool not chosen yet) | the extension | Windows' own PDF renderer, `Windows.Data.Pdf`, at the size: nothing to install (E24) | only if the tool exports one page per step | yes |
+
+**The "something else":** Slidev fits the user's description best. It
+presents itself full screen in a browser, has clicks for build steps, and
+exports one PNG per click at any size (E12). Marp is the simpler choice. PDF
+keeps every other tool open.
+
+## 7. Smarter than the POC
 
 In rough order of value:
 
@@ -220,21 +258,17 @@ In rough order of value:
 8. **Timing trace:** an `EventSource` that logs every slide change, key to
    on-screen time, and each render. "It felt slow" then has numbers behind it.
    Never log content or names.
-9. **Presenter view:** a WPF window on the other screen with
-   `WS_EX_NOACTIVATE`: current and next slide from the cache, notes, timer,
-   and "n of N". Research 03's phone web page is an alternative for a single
-   screen.
-10. **Builds:** Slidev's `--with-clicks` already gives one image per step
-    (E12); PowerPoint needs PPspliT-style splitting (research 03 §4).
+9. **Builds:** Slidev's `--with-clicks` already gives one image per step
+   (E12); PowerPoint needs PPspliT-style splitting (research 03 §4); see §6.
 
-## 7. Language: C# (gate 4)
+## 8. Language: C# (gate 4)
 
 | | C# / .NET 9 | Python (as in the POC) | Python + a small C# hook process | Rust or C++ |
 |---|---|---|---|---|
-| Keyboard hook | own thread; GC is the only pause, tunable (§6.5) | GIL: 16 ms with a busy thread (E10); a long C call risks the 300 ms limit | safe | safest |
+| Keyboard hook | own thread; GC is the only pause, tunable (§7.5) | GIL: 16 ms with a busy thread (E10); a long C call risks the 300 ms limit | safe | safest |
 | OLE clipboard | WinForms `DataObject` with `SetDataObject(obj, false)` keeps a live OLE object; or our own `IDataObject` via source-generated COM | DoomPaint's clipserve, proven | proven | hand-written COM |
 | UIA, pen, `SendInput` | FlaUI (UIA3), CsWin32 for P/Invoke | pywinauto, ctypes, proven | mixed | `windows` crate; verbose |
-| UI (picker, presenter view) | WPF, native on ARM64 | Tk does not load in the ARM64 Python (E13); would need Win32 by hand | two stacks | most work |
+| UI (picker, pre-flight) | WPF, native on ARM64 | Tk does not load in the ARM64 Python (E13); would need Win32 by hand | two stacks | most work |
 | Shipping | single-file exe, no runtime to install | Python + venv on a corporate laptop | two stacks | single small exe |
 
 **Recommendation:** C#. Keep Python as the POC and harness: its experiments
@@ -249,10 +283,12 @@ Libraries, all compatible with the repo's MIT licence:
 - **WPF / WinForms** (MIT, part of .NET).
 - **Playwright for .NET** (MIT): only if per-slide HTML rendering is chosen
   (E22).
+- **Windows.Data.Pdf** through .NET's Windows target (the WinRT projection):
+  part of Windows, for the PDF adapter (E24).
 - **Marp CLI and Slidev** (MIT) run as external tools, not linked.
 - **PowerPoint** through late-bound COM, so no interop assembly ships.
 
-## 8. From the POC to C#
+## 9. From the POC to C#
 
 | POC (Python) | C# component |
 |---|---|
@@ -265,32 +301,37 @@ Libraries, all compatible with the repo's MIT licence:
 | `e15_draw.py`, `e16_tools.py` (pen, tools, palette) | Stage: `Brush`, `Palette`, `Tools` |
 | `e13_presenter.py` (the whole show) | Controller + loading-painting script |
 
-A possible layout:
+Where the code goes (the user left it to us): the product in `src/`, the C#
+experiments in `poc/dotnet/` next to the Python ones.
 
 - `src/Presenter.Core`: controller, state machine, messages, cache. No
   Windows calls, so it can be unit-tested.
 - `src/Presenter.Windows`: the input, stage, clipboard and display-watcher
   threads.
-- `src/Presenter.Slides`: the renderer adapters and the pipeline.
-- `src/Presenter.App`: WPF, the single exe.
+- `src/Presenter.Slides`: the source adapters and the pipeline.
+- `src/Presenter.App`: WPF (picker, pre-flight, notices), the single exe.
 - `src/Presenter.Cli`: `doctor`, `render`, and maybe `present`.
 
-## 9. Experiments before the port
+## 10. Experiments before the port
 
 | # | Question | Pass |
 |---|---|---|
 | **E20** | Does a C# live clipboard object work like DoomPaint's? WinForms `DataObject` with `SetDataObject(obj, false)` against our own `IDataObject` (source-generated COM). PNG plus the opt-out, a new object per slide, 200 pastes | Paint pastes every slide, `GetData` within ~10 ms, no error dialog, Win+V untouched |
 | **E21** | A finished paste by event: UIA (Crop button enabled) or Windows.Graphics.Capture, against the three-point poll | The event arrives within a frame of the slide showing, with no polling |
-| **E22** | One slide at a time: Marp/Slidev HTML screenshotted with Playwright .NET through headless Edge (throwaway profile) at the scale factor | Exact size, same pixels as E12's export, first slide in under a second |
+| **E22** | One slide at a time: a Slidev or Marp deck's HTML, built by its own toolchain, screenshotted with Playwright .NET through headless Edge (throwaway profile) at the scale factor | Exact size, same pixels as E12's export, first slide in under a second |
 | **E23** | The C# hook under load: allocate heavily, force collections, while timing key to callback | Callback well under 300 ms at all times; heartbeat never misses |
+| **E24** | The PDF adapter: decks exported to PDF by Marp, Slidev and PowerPoint, rendered by `Windows.Data.Pdf` at the measured size | Exact size, close to the tool's own PNG, fast enough for start-up |
+| **E25** | Past PowerPoint decks: 4:3 and 16:9, animations, embedded video, fonts the laptop lacks, old `.ppt` files. What comes out of `Slide.Export`? | Every slide renders at the size; what is lost (builds, video) is known and reported per deck |
 
 E18 (display changes) still needs a second display; it also checks the
 monitor identity from §5.
 
-## 10. Open questions for the user
+## 11. Decided by the user
 
-- **Node on the target laptops:** Marp and Slidev need Node (and Edge, which
-  is always there). Is that acceptable, or should PowerPoint be the primary
-  renderer, which needs no install where Office is present?
-- **Presenter view:** a window on the second screen, or a page on a phone?
-- **Where the code goes:** `src/` in this repo next to `poc/`?
+- **No presenter view** (and so no speaker notes).
+- **The code lives in this repo:** the product in `src/`, the C# experiments
+  in `poc/dotnet/`.
+- **Node is fine** as a dependency.
+- **Decks come from other tools,** presented natively when no nerdy laugh is
+  wanted; past PowerPoint decks must work (§6).
+- **Land as much as possible through experiments before building.**

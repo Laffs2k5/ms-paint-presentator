@@ -24,12 +24,14 @@ These are fixed, not open questions. Experiments measure within them.
   the canvas. It depends on the display's resolution, scaling and taskbar.
 - **The reference screen is 16:10** (for example 1920×1200 or 2560×1600). Once
   the chrome is subtracted its display area is much wider than 16:10, and that
-  is the shape slides are designed for.
+  is the shape slides are designed for **when a deck is made for Paint**. Decks
+  from other tools keep their own shape (see the presenter design: decks come
+  from other tools).
 - **Slides are never scaled or distorted by Paint.** No Fit to window and no
   fractional zoom. One slide pixel is one screen pixel.
 - **The presenter adapts to the screen.** When the presentation starts it
   measures the display area and renders each slide at the largest size of the
-  reference shape that fits. On another screen shape the slide keeps its shape
+  deck's shape that fits. On another screen shape the slide keeps its shape
   and is **centred, with Paint's own background around it**: the canvas is the
   slide's size, not the display area's. Slides do not reflow. Keep viewport −
   slide even on both axes (E11).
@@ -49,13 +51,13 @@ point depends on them.
   and its state can drift from the deck's.
 - **Keys come through a low-level keyboard hook, not a window** (E10). Paint
   stays in front with its title bar active. The hook swallows the show keys
-  only while Paint or the presenter view is in front, so other apps keep their
+  only while Paint is in front, so other apps keep their
   keys, and it lets our own injected keys through. The keys are PowerPoint's
   slide-show set, which presenter remotes are built for: Next on Right, Down,
   Space, Enter, PageDown, N; Previous on Left, Up, Backspace, PageUp, P; Home,
   End, a number + Enter to jump; B or `.` black, W or `,` white; Esc ends. With
-  Paint in front the slide change uses Paint's shortcuts (Ctrl+V, `S`); with
-  the presenter view in front, the background route (E2). If security software
+  Paint in front the slide change uses Paint's shortcuts (Ctrl+V, `S`); the
+  background route (E2) is the fallback. If security software
   objects to the hook, fall back to `RegisterHotKey` while Paint is in front.
 - **Slides are rendered at start, for the chosen screen.** The start-up flow:
   1. **Screen picker** when there are several displays: each with resolution,
@@ -65,8 +67,8 @@ point depends on them.
   2. Open Paint maximised there at 100%, apply the E4 checklist, measure the
      display area and calibrate with a test paste (E11).
   3. Render every slide from the source at exactly that pixel size, never
-     resampled: the deck's fixed design canvas in the reference shape, drawn
-     at a scale factor, with any 1 px of rounding cropped or padded (E12).
+     resampled: the deck's own design canvas, in the deck's shape, drawn at a
+     scale factor, with any 1 px of rounding cropped or padded (E12).
      Cache the result per deck and slide size.
   4. Pre-flight checks, then wait for the first Next.
 - **The loading painting.** While the slides render, the presenter draws a
@@ -83,6 +85,15 @@ point depends on them.
   It uses Paint's 20 palette colours (E16). Paint remembers only the Text
   tool's font across sessions, so the presenter puts that back if it changes it.
 
+- **Decks come from other tools** (decided by the user). A deck is made in,
+  and normally presented from, its own tool (a browser in full screen,
+  PowerPoint). The Paint presenter is a second way to show the same deck, for
+  the nerdy laugh, and it must show past PowerPoint decks too. So it needs no
+  Paint-specific markup, renders each deck with the deck's own toolchain
+  (Node is fine), and keeps the deck's shape. Sources: PowerPoint
+  (`.pptx`, `.ppt`), Slidev, Marp, and PDF from anything else
+  ([research 05](research/05-presenter-architecture.md) §6). **No presenter
+  view**, and so no speaker notes.
 - **Display changes: the picker comes back and waits** (decided by the user).
   A display change mid-show is most likely a loose cable, which the speaker
   will plug back in, so the presenter does nothing on its own. It shows the
@@ -96,8 +107,6 @@ point depends on them.
 
 Planned features:
 
-- **Presenter view** on the other screen: current and next slide, notes, a
-  timer, slide n of N. It needs no focus, since the hook gets the keys.
 - **Pre-flight checks:**
   - the charger is connected (Paint is slower and less steady on battery, E6);
   - Do not disturb is on (E19: no documented API can read it, so ask the
@@ -175,7 +184,13 @@ Paint build. Note which paster the self-test picks (Ctrl+V or UIA menu) and the
 | **E17** | Place a small paste | Where a paste smaller than the canvas lands, whether it can be moved before `S` (arrow keys, a drag), and what it costs against a full-size paste | Pieces stamped at a chosen spot: the loading painting's fallback if E15 fails. **Pass (E17): a paste lands at (0, 0); a pen drag plus arrow-key nudges (1 px each) place it exactly; about 60–75 ms per paste whatever its size** |
 | **E18** | Display changes mid-show | Unplug and replug a display, change resolution and scaling, switch between duplicate and extend (`DisplaySwitch.exe`), with FancyZones on. Record what Paint does (where its window goes, maximised, zoom, viewport), which events arrive, and whether, with the same display back, re-pasting the current slide is all it takes. Includes the projector run E11 has not had yet. Needs a second display | The screen picker pops up and follows the displays while it waits; with the same display back the show resumes at the current slide without rendering again |
 | **E19** | Interruptions | Do notifications show over maximised Paint? Can Do not disturb be detected or turned on? Does Paint show tips or a what's-new panel at launch? | A pre-flight check fixes each one or warns the presenter. **Answered (E19): toasts show over Paint and only Do not disturb stops them (presentation mode does not); no documented API can read it, so the check asks the speaker. Paint shows no popups over the canvas; keep-awake is accepted** |
-| **E13** | End-to-end mini presenter | Screen picker → loading painting while the slides render → slides by key (paste and `S`) → presenter view on the other screen. Measure the feel | "Snappy" by your own judgement, and the loading painting looks hand-made. **Built (E13): 223 ms key to slide at 3.5 MP; the loading painting takes about 12–15 s. Awaiting the user's verdict** |
+| **E20** | C# live clipboard (research 05) | A C# clipboard object (WinForms `DataObject` with `SetDataObject(obj, false)`, and our own `IDataObject`) serving PNG slides to Paint, a new object per slide, 200 pastes | Paint pastes every slide, `GetData` within ~10 ms, no error dialog, Win+V untouched |
+| **E21** | A finished paste by event | UIA (the Crop button becomes enabled) or Windows.Graphics.Capture, against the three-point poll | The event comes within a frame of the slide showing, with no polling |
+| **E22** | One slide at a time | A Slidev or Marp deck's HTML, built by its own toolchain, screenshotted with Playwright .NET through headless Edge (throwaway profile) at the scale factor | Exact size, the same pixels as E12's export, the first slide in under a second |
+| **E23** | The C# hook under load | A `WH_KEYBOARD_LL` hook in C# while the process allocates heavily and collects | The callback stays well under 300 ms; the heartbeat never misses |
+| **E24** | The PDF adapter | Decks exported to PDF by Marp, Slidev and PowerPoint, rendered by `Windows.Data.Pdf` at the measured size | Exact size, close to the tool's own PNG, fast enough for start-up |
+| **E25** | Past PowerPoint decks | 4:3 and 16:9 decks with animations, embedded video, fonts the laptop lacks, old `.ppt` files, through `Slide.Export` | Every slide renders at the size; what is lost is known and reported per deck |
+| **E13** | End-to-end mini presenter | Screen picker → loading painting while the slides render → slides by key (paste and `S`). Measure the feel | "Snappy" by your own judgement, and the loading painting looks hand-made. **Built (E13): 223 ms key to slide at 3.5 MP; the loading painting takes about 12–15 s. Awaiting the user's verdict** |
 
 ## 3. Suggested POC tooling
 
@@ -207,7 +222,9 @@ Paint build. Note which paster the self-test picks (Ctrl+V or UIA menu) and the
    60–120 ms slower; foreground uses Paint's public shortcuts. Either way,
    self-test the route at start and fall back to the other. **Decided:** Paint
    in front, keys through a low-level hook (E10); the foreground route by
-   default, the background route when the presenter view is in front.
+   default, the background route when the presenter view is in front. The
+   user later dropped the presenter view, so Paint is in front for the whole
+   show and the background route is only a fallback.
 3. **Back navigation:** undo stack (E7) or re-paste. E7 result: undo/redo is about 7×
    faster than a paste (33–41 ms vs about 250 ms) and pixel-clean, but holds
    only about 100 slides or about 1 GiB of frames, whichever is less (68 at
@@ -223,7 +240,10 @@ Paint build. Note which paster the self-test picks (Ctrl+V or UIA menu) and the
    stage, clipboard and UI, renderers as child processes**
    ([research 05](research/05-presenter-architecture.md)); E20–E23 there
    de-risk the port.
-5. **Authoring:** Slidev primary + Marp + PPTX adapters (per doc 03), unless E12
+5. **Authoring:** decks come from other tools (decided by the user):
+   PowerPoint for past decks, Slidev (recommended for new ones) or Marp, and
+   PDF from anything else; see research 05 §6. Earlier: Slidev primary + Marp
+   + PPTX adapters (per doc 03), unless E12
    surprises us. E12: all three render at a measured size from source, with
    notes; Slidev also exports each click step. PowerPoint is the fastest
    (0.05 s per slide) and exports at the exact size.
