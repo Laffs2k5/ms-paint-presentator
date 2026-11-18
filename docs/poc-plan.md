@@ -7,7 +7,8 @@ and a language. Each experiment is small, standalone, and records its result in
 Research it builds on:
 [01 streaming](research/01-streaming-frames-into-ms-paint.md) ·
 [02 OLE surface](research/02-ole-and-paint-integration-surface.md) ·
-[03 authoring/rendering/PPTX](research/03-authoring-rendering-and-pptx.md)
+[03 authoring/rendering/PPTX](research/03-authoring-rendering-and-pptx.md) ·
+[05 presenter architecture](research/05-presenter-architecture.md)
 
 ## Presentation constraints (decided)
 
@@ -218,6 +219,10 @@ Paint build. Note which paster the self-test picks (Ctrl+V or UIA menu) and the
    but busy Python threads delay its callback by about 16 ms (the GIL), and
    Windows waits only about 300 ms before it passes the key on and holds up the
    whole keyboard. Fine for the POC; C#, or a small hook process, is safer.
+   **Proposed: C# on .NET 9, one process with dedicated threads for input,
+   stage, clipboard and UI, renderers as child processes**
+   ([research 05](research/05-presenter-architecture.md)); E20–E23 there
+   de-risk the port.
 5. **Authoring:** Slidev primary + Marp + PPTX adapters (per doc 03), unless E12
    surprises us. E12: all three render at a measured size from source, with
    notes; Slidev also exports each click step. PowerPoint is the fastest
