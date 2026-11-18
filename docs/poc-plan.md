@@ -9,6 +9,20 @@ Research it builds on:
 [02 OLE surface](research/02-ole-and-paint-integration-surface.md) ·
 [03 authoring/rendering/PPTX](research/03-authoring-rendering-and-pptx.md)
 
+## Presentation constraints (decided)
+
+These are fixed, not open questions. Experiments measure within them.
+
+- **Paint stays recognisably Paint.** Title bar, menus, toolbar and status bar
+  stay visible: no View > Full screen, no hidden toolbar. Seeing that it really is
+  Paint is the point of the project. Without the chrome it is just another window.
+- **Paint runs maximised at 100% zoom** on the presenting display.
+- **Slides are never scaled or distorted by Paint.** No Fit to window and no
+  fractional zoom. A slide image is exactly the size of the **display area**: the
+  largest canvas that is fully visible in maximised Paint at 100%, which depends
+  on the display's resolution, scaling and taskbar. Slides are rendered at that
+  size, so one slide pixel is one screen pixel.
+
 ## 0. Environment facts to capture first
 
 ```powershell
@@ -54,15 +68,15 @@ Paint build. Note which paster the self-test picks (Ctrl+V or UIA menu) and the
 
 | # | Question | How | Pass |
 |---|---|---|---|
-| **E6** | How fast is a slide-sized paste? | Live `IDataObject`, paste N distinct frames at 960×540 / 1280×720 / 1920×1080, measure keypress→`GetData`→canvas-changed (`PrintWindow` polling) | p95 ≤ 150 ms at the chosen slide size |
+| **E11** | What is the display area? | Paint maximised at 100% zoom. Find the largest canvas that is fully visible with no scrollbars, for each display resolution and scaling at hand (and on a projector). Note the taskbar's effect. Paste a test pattern of that size and compare a screenshot with the source | Display area recorded per display. Screenshot of the canvas is pixel-identical to the slide |
+| **E6** | How fast is a slide-sized paste? | Live `IDataObject`, paste N distinct frames at the display areas from E11 (for example maximised on 1920×1080 and 2560×1440), measure keypress→`GetData`→canvas-changed (`PrintWindow` polling) | p95 ≤ 150 ms at the display area of a typical projector |
 | **E2/E3** | Can we paste **without focus/keystrokes**? | `PostMessage(hwndPaint, WM_COMMAND, 0xE125, 0)` with Paint in the background. If no luck, log `WM_COMMAND` while clicking Edit > Paste to find the real ID | `GetData` called and canvas updated with Paint not foreground |
 | **E1** | Which formats does Paint consume? Does alpha work? | Offer `PNG` + `CF_DIBV5` + `CF_DIB`. Log `QueryGetData`/`GetData` order | Format preference recorded. Transparent overlay works or doesn't |
 | **E7** | Undo stack as slide history | Paste 50 slides, then Ctrl+Z ×50 / Ctrl+Y ×50. Watch Paint's RAM | Max depth + RAM per step recorded |
-| **E4** | What can UIA drive? | Accessibility Insights / `inspect.exe`: toolbar Paste button, Layers panel, View > Full screen, zoom | AutomationIds table recorded |
+| **E4** | What can UIA drive? | Accessibility Insights / `inspect.exe` / `paintctl uia-dump`: Edit > Paste menu item (there is no toolbar Paste button), Layers panel, zoom | AutomationIds table recorded |
 | **E8** | Keep slides out of Win+V history | Add `ExcludeClipboardContentFromMonitorProcessing` + `CanIncludeInClipboardHistory=0` + `CanUploadToCloudClipboard=0` | Win+V stays clean |
 | **E5** | Does anything call `DAdvise`? | Implement it with `CreateDataAdviseHolder` and log | Documented yes or no |
 | **E10** | Clicker | Your presenter remote's keycodes via an LL hook, swallowed before Paint | Next/prev/black work, Paint unaffected |
-| **E11** | Full-screen look | Paint maximised, ribbon/panels hidden, Fit to window or View > Full screen, on a projector or second screen | Looks presentable, so we know which chrome remains |
 | **E12** | Build pipeline smoke test | `npx @slidev/cli export --format png --with-clicks` and `npx @marp-team/marp-cli --images png` on a sample deck, plus a PowerPoint COM `Slide.Export` of a sample `.pptx` | PNGs at the right size, notes extracted |
 | **E13** | End-to-end mini presenter | Folder of PNGs → arrow keys → paste. Measure the feel | "Snappy" by your own judgement |
 
@@ -79,7 +93,10 @@ Paint build. Note which paster the self-test picks (Ctrl+V or UIA menu) and the
 
 ## 4. Decision gates after the POC
 
-1. **Slide resolution:** set by E6.
+1. **Slide resolution:** the display area (E11) of the presenting display, with
+   E6 confirming that pasting at that size is fast enough. Open question: render
+   slides when the display is known (at the venue), or pre-render the common
+   display areas.
 2. **Focus model:** E2 decides between a background paste (free presenter view) and
    Paint in the foreground (no-activate presenter view or phone view).
 3. **Back navigation:** undo stack (E7) or re-paste.

@@ -59,9 +59,10 @@ canvas, and `uia-dump` redacts the signed-in account name.
 | Chrome around the viewport | 2 × 220 px | 4 × 436 px |
 
 - **100% zoom maps one document pixel to one physical pixel**, also at 200%
-  scaling. Paint's chrome takes about 211–220 px of height at 100%, so a
-  1920×1080 slide at 100% zoom will not fit on a 1080p projector with the
-  toolbar showing. E11 needs to find how much chrome View > Full screen removes.
+  scaling. Paint's chrome takes about 211–220 px of height at 100%, so the
+  display area is never the full screen: on a 1080p projector a 16:9 1920×1080
+  slide will not fit. The chrome stays (see the plan's constraints), so E11
+  measures the display area that remains.
 - **Fit to window gives a fractional zoom** (121.6% shown as "121%"), so slides
   would be resampled. In the same maximised window it chose 121% once and 157%
   later, so it is not a reliable way to size slides.

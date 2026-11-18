@@ -330,8 +330,10 @@ Initial thoughts, not decisions:
 - [ ] Can a `.paint` project file be generated offline, so a whole deck opens as one
       file? The format is undocumented.
 - [ ] Behaviour when presenting over Teams/Zoom screen share and through RDP.
-- [ ] Does the Paint "Fit to window" zoom plus full-screen view (F11?) give a clean
-      chrome-free projector view?
+- [x] Does the Paint "Fit to window" zoom plus full-screen view (F11?) give a clean
+      chrome-free projector view? **Superseded:** the chrome stays visible on
+      purpose, and slides show at 100% zoom. See the constraints in the
+      [POC plan](../poc-plan.md).
 - [ ] Interaction with Windows clipboard history (Win+V) and clipboard managers.
       Can our data object opt out with `ExcludeClipboardContentFromMonitorProcessing`
       / `CanIncludeInClipboardHistory` formats?
