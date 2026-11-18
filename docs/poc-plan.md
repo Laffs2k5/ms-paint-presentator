@@ -244,7 +244,9 @@ Paint build. Note which paster the self-test picks (Ctrl+V or UIA menu) and the
    **Proposed: C# on .NET 9, one process with dedicated threads for input,
    stage, clipboard and UI, renderers as child processes**
    ([research 05](research/05-presenter-architecture.md)); E20–E23 there
-   de-risk the port.
+   de-risk the port. **Done:** the presenter is built that way in
+   [`src/`](../src/README.md) and runs whole shows from every deck source,
+   at 175–200 ms key to slide (the Python POC: 230 ms).
 5. **Authoring:** decks come from other tools (decided by the user):
    PowerPoint for past decks, Slidev (recommended for new ones) or Marp, and
    PDF from anything else; see research 05 §6. Earlier: Slidev primary + Marp
