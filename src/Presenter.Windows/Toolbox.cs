@@ -36,8 +36,7 @@ public sealed class Toolbox(PaintSession paint, SyntheticPen pen)
     {
         for (int attempt = 0; ; attempt++)
         {
-            var split = paint.ById("BrushesSplitButton") ?? throw new PaintException("the Brushes button was not found");
-            split.Patterns.ExpandCollapse.Pattern.Expand();
+            Use("brushes", () => paint.ById("BrushesSplitButton"), b => b.Patterns.ExpandCollapse.Pattern.Expand());
             Thread.Sleep(500 + 500 * attempt);
             var item = WaitFor(() => paint.ByName(name, ControlType.MenuItem), 2000);
             if (item is not null)
@@ -50,44 +49,59 @@ public sealed class Toolbox(PaintSession paint, SyntheticPen pen)
         }
     }
 
-    private AutomationElement ColourSlot(int slot) =>
-        paint.Find(cf => cf.ByControlType(ControlType.RadioButton).And(cf.ByName($"Color {slot}:", FlaUI.Core.Definitions.PropertyConditionFlags.MatchSubstring)))
-        ?? throw new PaintException($"Color {slot} was not found");
+    /// <summary>Use a cached element; if it is stale (Paint rebuilt that part of
+    /// its UI), find it again and try once more.</summary>
+    private T Use<T>(string key, Func<AutomationElement?> find, Func<AutomationElement, T> action)
+    {
+        for (int attempt = 0; ; attempt++)
+        {
+            var e = paint.Cached(key, find) ?? throw new PaintException($"Paint's {key} was not found");
+            try { return action(e); }
+            catch (Exception ex) when (attempt == 0 && ex is System.Runtime.InteropServices.COMException
+                                       or FlaUI.Core.Exceptions.FlaUIException or InvalidOperationException)
+            {
+                paint.Forget(key);
+            }
+        }
+    }
+
+    private void Use(string key, Func<AutomationElement?> find, Action<AutomationElement> action) =>
+        Use<bool>(key, find, e => { action(e); return true; });
+
+    private AutomationElement? FindSlot(int slot) =>
+        paint.Find(cf => cf.ByControlType(ControlType.RadioButton).And(cf.ByName($"Color {slot}:", FlaUI.Core.Definitions.PropertyConditionFlags.MatchSubstring)));
+
+    private void SelectSlot(int slot) =>
+        Use($"Color {slot}", () => FindSlot(slot), e => e.Patterns.SelectionItem.Pattern.Select());
+
+    private string SlotName(int slot) => Use($"Color {slot}", () => FindSlot(slot), e => e.Name ?? "");
 
     /// <summary>A palette colour into slot 1 (what strokes and the bucket use)
     /// or slot 2 (the text box's background), by a pen tap on the swatch.</summary>
     public void Colour(string name, int slot = 1)
     {
-        ColourSlot(slot).Patterns.SelectionItem.Pattern.Select();
+        SelectSlot(slot);
         Thread.Sleep(200);
         try
         {
-            var swatch = paint.ByName(name, ControlType.ListItem) ?? throw new PaintException($"the colour {name} was not found");
-            TapOn(swatch);
-            if (!(ColourSlot(slot).Name ?? "").EndsWith(": " + name))
-            {
-                TapOn(swatch);  // once more
-                if (!(ColourSlot(slot).Name ?? "").EndsWith(": " + name))
-                    throw new PaintException($"could not choose {name} for Color {slot}");
-            }
+            for (int tap = 0; tap < 2 && !SlotName(slot).EndsWith(": " + name); tap++)  // a second tap if the first missed
+                Use($"swatch {name}", () => paint.ByName(name, ControlType.ListItem), TapOn);
+            if (!SlotName(slot).EndsWith(": " + name)) throw new PaintException($"could not choose {name} for Color {slot}");
         }
         finally
         {
             if (slot != 1)
             {
-                ColourSlot(1).Patterns.SelectionItem.Pattern.Select();  // draw with colour 1 again
+                SelectSlot(1);  // draw with colour 1 again
                 Thread.Sleep(200);
             }
         }
     }
 
     /// <summary>The drawing tools' Size slider (0–90; the Brush draws size + 1 px, E27).</summary>
-    public void Size(int size)
-    {
-        var slider = paint.Find(cf => cf.ByControlType(ControlType.Slider).And(cf.ByName("Size")))
-                     ?? throw new PaintException("the Size slider was not found");
-        slider.Patterns.RangeValue.Pattern.SetValue(size);
-    }
+    public void Size(int size) =>
+        Use("Size slider", () => paint.Find(cf => cf.ByControlType(ControlType.Slider).And(cf.ByName("Size"))),
+            e => e.Patterns.RangeValue.Pattern.SetValue(size));
 
     private void TapOn(AutomationElement e)
     {
@@ -230,9 +244,8 @@ public sealed class Toolbox(PaintSession paint, SyntheticPen pen)
     /// <summary>Close (drop) an open, empty text box by choosing the Pencil.</summary>
     public void CloseText()
     {
-        var pencil = paint.Find(cf => cf.ByControlType(ControlType.Button).And(cf.ByName("Pencil")))
-                     ?? throw new PaintException("the Pencil was not found");
-        pencil.Patterns.Toggle.Pattern.Toggle();
+        Use("Pencil", () => paint.Find(cf => cf.ByControlType(ControlType.Button).And(cf.ByName("Pencil"))),
+            e => e.Patterns.Toggle.Pattern.Toggle());
         Thread.Sleep(500);
     }
 

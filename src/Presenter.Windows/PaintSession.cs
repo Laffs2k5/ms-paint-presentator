@@ -128,6 +128,22 @@ public sealed class PaintSession : IDisposable
     public AutomationElement? Find(Func<FlaUI.Core.Conditions.ConditionFactory, FlaUI.Core.Conditions.ConditionBase> condition) =>
         Win.FindFirstDescendant(condition);
 
+    // A search of Paint's element tree takes tens of milliseconds, and the
+    // painter asks for the same swatches and buttons again and again.
+    private readonly Dictionary<string, AutomationElement> _cache = [];
+
+    /// <summary>An element found once and kept; <see cref="Forget"/> it when it
+    /// turns out stale, and the next call searches again.</summary>
+    public AutomationElement? Cached(string key, Func<AutomationElement?> find)
+    {
+        if (_cache.TryGetValue(key, out var e)) return e;
+        var found = find();
+        if (found is not null) _cache[key] = found;
+        return found;
+    }
+
+    public void Forget(string key) => _cache.Remove(key);
+
     private static PixelRect? RectOf(AutomationElement? e)
     {
         if (e is null) return null;
