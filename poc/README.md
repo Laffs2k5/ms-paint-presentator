@@ -27,6 +27,7 @@ uv run python ..\experiments\e11_display_area.py --out $env:TEMP\e11
 | E2/E3 background paste | [`e2_background_paste.py`](experiments/e2_background_paste.py) | Per candidate: does Paint paste (and commit) while another window keeps focus |
 | E15 drawing | [`e15_draw.py`](experiments/e15_draw.py) | Per input route (mouse, synthetic pen, posted messages) and speed: does a stroke land on its path, live; rapid strokes; drawing with another window in front; pen pressure per brush |
 | E16 tools and colours | [`e16_tools.py`](experiments/e16_tools.py) | How each tool, brush, shape, colour, size and the text font can be chosen by script, the palette's RGB, and what Paint keeps after a relaunch (it restores what it changed) |
+| E17 placing a paste | [`e17_place_paste.py`](experiments/e17_place_paste.py) | Where a small paste lands, how arrow keys and a pen drag move it, an alpha stamp moved over a background, paste time by stamp size |
 
 [`experiments/doompaint_clipserve.py`](experiments/doompaint_clipserve.py) is
 DoomPaint's live OLE clipboard (MIT, © Mark Russinovich), vendored unchanged

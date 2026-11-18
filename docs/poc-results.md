@@ -694,3 +694,35 @@ run fails, then checks it after one more relaunch.
 choose tools by key, brushes and shape styles through their menus, colours by
 pen tap, and sizes through the slider. If it uses the Text tool, restore the
 font afterwards. Never open Edit colors.
+
+## E17. Place a small paste (2026-11-18): **pass**
+
+Script: [`poc/experiments/e17_place_paste.py`](../poc/experiments/e17_place_paste.py).
+For stamping ready-made pieces at a chosen spot, the loading painting's
+fallback. Solid-colour PNG stamps, each a new OLE clipboard object, pasted with
+Ctrl+V into a 2000×1000 canvas that fits the viewport (laptop panel at 200%,
+Paint in front). Positions are in canvas pixels, found by the stamp's colour.
+
+| Question | Result |
+|---|---|
+| Where does a small paste land? | **Always at the canvas's top-left (0, 0)**, also when a selection rectangle was made first: a selection does not steer the paste |
+| Arrow keys on the floating paste | **Move it exactly 1 px per press** (Right, Down; Shift+arrow also 1 px) |
+| Ctrl+arrow | **Stretches it** by 1 px per press instead of moving it, so the stamp is resampled: avoid |
+| Pen drag from inside the paste | Moves it to within 1 px of the target (exact in one test, 1 px off in the other) |
+| Alpha stamp moved, then committed | Transparent corners stay see-through, the opaque part is exact, and nothing is left where it first landed |
+
+**Cost** (Ctrl+V to on screen, 5 pastes each, median):
+
+| Stamp | 100×100 | 400×300 | 1000×600 | 2000×1000 |
+|---|---|---|---|---|
+| On screen | 76 ms | 60 ms | 71 ms | 95 ms |
+
+- **Small pastes are not much cheaper:** about 60–75 ms of each paste is
+  fixed, whatever the size. Solid colours decode fast; pieces with detail cost
+  more (E6: about 50–70 ms per megapixel on top).
+- **Recipe for a stamp:** paste, drag it with the pen to about the spot, find
+  it on screen, nudge it exact with arrow keys, commit with `S`. Each stamp
+  also shows the floating-selection border for a moment (E14).
+- The canvas always fits the viewport (E11), so (0, 0) is always on screen.
+  With a scrolled canvas a paste would likely land at the top-left of the
+  visible part; not tested.
