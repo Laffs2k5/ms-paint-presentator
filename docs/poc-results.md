@@ -855,3 +855,34 @@ only Do not disturb stops them. Presentation mode does not, and Paint
 maximised does not count as full screen. The documented API cannot read Do
 not disturb (the state lives in undocumented places), so the check asks the
 speaker to switch it on.
+
+## E13. End-to-end mini presenter (2026-11-18): **built; the feel is for the user to judge**
+
+Script: [`poc/experiments/e13_presenter.py`](../poc/experiments/e13_presenter.py),
+deck [`e13_deck.md`](../poc/experiments/e13_deck.md) (seven slides written
+for it). The plan's presenter design end to end, on the laptop panel (the
+taskbar is on the left there, so the viewport is 2784×1499 and the slide
+2718×1283, 3.5 MP), on mains power, with `--auto` playing a scripted set of
+keys: Next ×3, Back, End, Home, 3 + Enter, B twice, then four quick Nexts.
+
+| Step | Result |
+|---|---|
+| Slide size | Measured from Paint maximised at 100%, then the largest reference shape in viewport − 66 with even margins (E11, E12) |
+| Rendering (Marp, scale mode, Edge headless with a throwaway profile) | 5.3 s for 7 slides; 0 s from the cache on the next start. No Edge process left behind |
+| Loading painting | A scribbled crayon sun, the progress bar's frame drawn with the Rectangle tool, the title as wobbly outlined letters (random colour), the bar coloured in with the crayon as slides finish. 14.8 s with rendering, 11.8 s from the cache: the painting, not the rendering, is the long pole |
+| Key to slide on screen | **223 ms median** (n = 11), 182–321 ms for single keys. All 11 changes seen and committed |
+| Keys during a paste | Combined: four quick Nexts went 2 → 3, then straight to the last slide in one paste (545 ms from the first of the three combined keys) |
+| Black screen, back | 182 ms to black, 230 ms back to the slide |
+
+- **Measuring can slow the show down.** The first run gave 0.8–3.6 s per slide
+  and missed two slides: it read 36 screen pixels before and during every
+  paste, and each read waits for a display refresh (E6). The presenter now
+  works out in memory where the new slide differs from what is on screen and
+  polls three of those points. Rule: never read more than a few screen pixels
+  per slide.
+- **Not built yet:** the screen picker (Tk does not load in the ARM64 Python,
+  its DLL is missing, so it will be a small Win32 window; it needs two
+  displays to test, E18), the presenter view, E11's calibration paste, and
+  clearing out the cache.
+- **The verdict on the feel is the user's:** run it without `--auto` and
+  drive it from the keyboard.
