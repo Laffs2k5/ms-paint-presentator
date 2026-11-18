@@ -120,34 +120,44 @@ Paint maximised at a measured 100% zoom. "Fits" means no scrollbars (UIA
 ScrollPattern), the whole canvas visible, and the canvas exactly 1:1 on screen.
 This machine's taskbar is on the left, so it takes width, not height.
 
-| Monitor | Scaling | Work area | Viewport (maximised) | Largest canvas that fits | **Slide** (viewport − 66) | Pixel test |
-|---|---|---|---|---|---|---|
-| 2560×1440 | 100% | 2512×1440 | 2512×1229 | 2448×1165 (3 of 4 runs) | **2446×1163** (4 of 4) | identical |
-| 2880×1920 (laptop) | 200% | 2784×1920 | 2784×1499 | 2720×1435 | **2718×1433** (4 of 4) | identical |
+| Monitor | Scaling | Work area | Viewport (maximised) | Largest canvas that fits | Pixel-identical slide |
+|---|---|---|---|---|---|
+| 2560×1440 | 100% | 2512×1440 | 2512×1229 | 2448×1165 (3 of 4 runs); 2446×1163 (4 of 4) | **2446×1163** (E14), 2424×1165 |
+| 2880×1920 (laptop) | 200% | 2784×1920 | 2784×1499 | 2720×1435 (4 of 4); 2718×1433 (4 of 4) | **2716×1434** (E14), 2720×1435 |
 
-"Identical" means the screen grab of the pasted test pattern matches the source
-exactly: 0 of 2.8–3.9 million pixels differ. Each pattern pixel encodes its own
-coordinates, so any shift or scaling would show.
+"Pixel-identical" means the screen grab of the pasted test pattern matches the
+source exactly: 0 of 2.8–3.9 million pixels differ. Each pattern pixel encodes
+its own coordinates, so any shift or scaling would show.
 
-**The rule:**
+**Size rule (fit):**
 
 > viewport = (work-area width, work-area height − 210.5 × scale), rounded half up
 > (211 px at 100%, 421 px at 200%; a maximised window has no side borders)
 >
-> slide = viewport − 66 px on each axis
+> largest slide that reliably fits = viewport − 66 px on each axis
 
 - **Paint keeps 64 px around the canvas** (32 per side), in *physical* pixels at
   both 100% and 200%. At exactly 64 px the scrollbar decision varies between
   runs, so the rule keeps 1 px of slack per side.
-- **viewport − slide must be even on both axes.** With an odd difference Paint
-  centres the canvas on a half pixel: the image snaps cleanly to whole pixels,
-  but the canvas border line is drawn across the slide's last row or column
-  (seen: exactly one column wrong at 2425 wide, a margin of 87).
+
+**Edge rows (pixel-identical):** at some sizes Paint draws the canvas border
+line across the slide's last row or column (or first). It depends on the
+size, the viewport and the scaling, and no single formula fitted both screens:
+
+| Screen | Seen clean | Seen with one edge row or column overdrawn |
+|---|---|---|
+| 100%, viewport 2512×1229 | viewport − slide even (66, 64) | odd: 69 rows, 87 columns |
+| 200%, viewport 2784×1499 | slide height even (margins 65, 67, 69, 71), and 64 | slide height odd (margins 66, 68, 70, 72, 74, 76) |
+
+So the size from the fit rule can still lose an edge row (2718×1433 does).
+The presenter should **calibrate at start**: paste a test pattern at the
+candidate size, check it is pixel-identical, and step down a pixel per axis
+until it is. That fits the adaptive design and covers scalings not tested here.
 
 **Predicted for 16:10 reference screens** (taskbar at the bottom, 48 px × scale;
 100% and 200% measured, other scalings extrapolated, so verify on the screen):
 
-| Screen | Scaling | Viewport | Slide | Slide aspect |
+| Screen | Scaling | Viewport | Slide (fit rule, before calibration) | Slide aspect |
 |---|---|---|---|---|
 | 1280×800 | 100% | 1280×541 | **1214×475** | 2.56:1 |
 | 1920×1200 | 100% | 1920×941 | **1854×875** | 2.12:1 |
@@ -178,3 +188,37 @@ while the screen does not. An adaptive presenter has to measure at start.
   E6's 150 ms target, so E6 is the next priority.
 - **Notifications cover the slide.** A Teams toast appeared over the canvas in
   one run. Turn on Do Not Disturb before presenting.
+
+## E14. Commit a pasted slide cleanly (2026-11-18): **pass**
+
+Script: [`poc/experiments/e14_commit_paste.py`](../poc/experiments/e14_commit_paste.py).
+A paste lands as a floating selection: a dashed border and a floating toolbar
+over the slide (about 4,500–30,000 differing pixels). Each method was applied
+once the paste showed, then the screen was polled (about every 0.2 s) until it
+matched the source exactly. 2560×1440 at 100%, slide 2446×1163:
+
+| Method | Clean within | Input | Verdict |
+|---|---|---|---|
+| Nothing | never | – | decorations stay; the outline also keeps animating |
+| **Key `S`** (Select tool) | **0.06–0.32 s** | one keypress | **use this** |
+| Click in the margin | 0.12–0.34 s | mouse click (cursor put back) | works; moves the mouse and can hit a resize handle (E11) |
+| UIA invoke of Crop (`CropButton`) | 0.18–0.40 s | none | works without keys or mouse; candidate if E2 needs a background commit |
+| Ctrl+A, then Esc | 0.49–0.70 s (incl. a 0.3 s pause) | three keys | works, slower |
+| Key `P` (Pencil) | never | one keypress | commits, but see below |
+| Esc / Enter | – | – | Esc discards the paste, Enter does nothing (E11) |
+
+- **Keep the Select tool active.** Drawing tools (Pencil, Brush, Eraser) show a
+  floating brush size/opacity panel at the left of the viewport, which covers
+  the left edge of a full-width slide (the 19 px strip key `P` left behind).
+  Key `S` commits the paste and keeps Select, so the panel never appears. It
+  also toggles between rectangle and free-form select, which is harmless.
+- **Single-letter tool shortcuts exist** in Windows 11 Paint: `P` Pencil, `E`
+  Eraser, `B` Fill, `I` Colour picker, `T` Text, `Z` Zoom, `S` Select
+  ([community list](https://magpie.bearblog.dev/keyboard-shortcuts-for-windows-11-ms-paint/)).
+  Microsoft's support pages did not list them.
+- **The decorations still show briefly**: from when the paste appears until the
+  commit lands, roughly 0.2–0.3 s. E13 judges whether that is acceptable.
+  Sending `S` as soon as a selection exists (DoomPaint watches the Crop button
+  become enabled) keeps it short.
+- **The size decides the edge rows**, not the method. The 200% sweep in E11's
+  table was done with key `S`.

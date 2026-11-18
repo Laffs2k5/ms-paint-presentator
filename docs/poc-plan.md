@@ -105,9 +105,10 @@ Paint build. Note which paster the self-test picks (Ctrl+V or UIA menu) and the
 ## 4. Decision gates after the POC
 
 1. **Slide resolution:** the display area (E11) of the presenting display, with
-   E6 confirming that pasting at that size is fast enough. E11's rule: slide =
+   E6 confirming that pasting at that size is fast enough. E11's rule: slide ≤
    (work-area width, work-area height − 210.5 × scale) − 66 px on each axis,
-   for example 1854×875 on a 1920×1200 screen at 100%. Decided: render at start
+   for example 1854×875 on a 1920×1200 screen at 100%, then calibrated at start
+   by a test paste so no edge row is overdrawn (E14). Decided: render at start
    for the measured display area, keeping the reference shape, centred.
 2. **Focus model:** E2 decides between a background paste (free presenter view) and
    Paint in the foreground (no-activate presenter view or phone view).
