@@ -25,10 +25,13 @@ These are fixed, not open questions. Experiments measure within them.
   the chrome is subtracted its display area is much wider than 16:10, and that
   is the shape slides are designed for.
 - **Slides are never scaled or distorted by Paint.** No Fit to window and no
-  fractional zoom. A slide is rendered at exactly the display area's size, so
-  one slide pixel is one screen pixel.
-- **The presenter adapts to the screen** (proposed): it measures the display
-  area when the presentation starts and renders the slides to that size.
+  fractional zoom. One slide pixel is one screen pixel.
+- **The presenter adapts to the screen.** When the presentation starts it
+  measures the display area and renders each slide at the largest size of the
+  reference shape that fits. On another screen shape the slide keeps its shape
+  and is **centred, with Paint's own background around it**: the canvas is the
+  slide's size, not the display area's. Slides do not reflow. Keep viewport −
+  slide even on both axes (E11).
 
 ## 0. Environment facts to capture first
 
@@ -104,10 +107,8 @@ Paint build. Note which paster the self-test picks (Ctrl+V or UIA menu) and the
 1. **Slide resolution:** the display area (E11) of the presenting display, with
    E6 confirming that pasting at that size is fast enough. E11's rule: slide =
    (work-area width, work-area height − 210.5 × scale) − 66 px on each axis,
-   for example 1854×875 on a 1920×1200 screen at 100%. Open questions: render
-   at start for the measured display area (adaptive) or pre-render for known
-   screens; and when the presenting screen's display area has a different shape
-   from the reference screen's, whether slides reflow or are centred inside it.
+   for example 1854×875 on a 1920×1200 screen at 100%. Decided: render at start
+   for the measured display area, keeping the reference shape, centred.
 2. **Focus model:** E2 decides between a background paste (free presenter view) and
    Paint in the foreground (no-activate presenter view or phone view).
 3. **Back navigation:** undo stack (E7) or re-paste.
