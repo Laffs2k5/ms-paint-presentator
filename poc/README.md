@@ -22,6 +22,7 @@ uv run python ..\experiments\e11_display_area.py --out $env:TEMP\e11
 | E1 clipboard formats | [`e1_formats.py`](experiments/e1_formats.py) | Which format Paint reads (call log), alpha per format, paste speed per format. Closes the error dialog itself |
 | E7 undo history | [`e7_undo_history.py`](experiments/e7_undo_history.py) | Pastes N slides, then walks Ctrl+Z and Ctrl+Y: depth, step time, Paint's memory |
 | E4 UI Automation survey | [`e4_uia_survey.py`](experiments/e4_uia_survey.py) | Menus, drop-downs, Layers panel, zoom: type, AutomationId, name, patterns, toggle state |
+| E8 clipboard history | [`e8_clipboard_history.py`](experiments/e8_clipboard_history.py) + [`clipboard_history.ps1`](experiments/clipboard_history.ps1) | Per opt-out format: does the slide land in Win+V history, does Paint still paste |
 | E2/E3 background paste | [`e2_background_paste.py`](experiments/e2_background_paste.py) | Per candidate: does Paint paste (and commit) while another window keeps focus |
 
 [`experiments/doompaint_clipserve.py`](experiments/doompaint_clipserve.py) is
@@ -37,5 +38,10 @@ with its licence notice. E6 uses it.
   the script fails.
 - **For timing runs, turn off clipboard sharing** in PowerToys Mouse Without
   Borders. It reads every image put on the clipboard.
+- **Experiments put slides into your clipboard history (Win+V).** Every slide
+  offered as a new `CF_DIB` clipboard item can be recorded, and history keeps
+  only 25 items, so a run can push out your own. Turn clipboard history off
+  while experimenting, or accept that. Do not clean up with the WinRT delete
+  API: after `DeleteItemFromHistory` on one item the whole history was gone (E8).
 - **Don't commit screen grabs.** Notification toasts that pop up during a run
   (Teams, Outlook) end up in them, with names and addresses.
