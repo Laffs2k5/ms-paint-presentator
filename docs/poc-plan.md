@@ -71,7 +71,7 @@ point depends on them.
      scale factor, with any 1 px of rounding cropped or padded (E12).
      Cache the result per deck and slide size.
   4. Pre-flight checks, then wait for the first Next.
-- **The loading painting** follows the designer's concept «Himmelen lekker»
+- **The loading painting** follows the designer's concept, The sky leaks
   ([spec](loading-painting.md)). While the slides render, the presenter draws a
   deliberately crappy painting live in Paint, with Paint's own tools (E15–E17):
   - a hand-drawn title: letter outlines from an installed font, taken at

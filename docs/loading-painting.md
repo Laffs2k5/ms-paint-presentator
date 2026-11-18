@@ -1,9 +1,9 @@
-# The loading painting: «Himmelen lekker»
+# The loading painting: The sky leaks
 
 The concept for the loading painting (the plan's presenter design), from the
 user's designer, 2026-11-18. Summarised here in our own words, as the spec
 the presenter implements; the designer's PDF and prototype stay with the user.
-Name: *Himmelen lekker*, "the sky leaks".
+Name: *The sky leaks*.
 
 ## The story
 
@@ -84,8 +84,8 @@ In reserve:
 - Size 90 by accident: one huge blob, then Ctrl+Z.
 - The eraser after the bucket: it erases with white and leaves a white hole
   in the blue sky.
-- A speech bubble from the sun: «Er det … Paint?», answered «ja» in Comic
-  Sans.
+- A speech bubble from the sun: "Is that … Paint?", answered "yes" in
+  Comic Sans.
 - A star shape dragged out crooked and far too big.
 - An airbrush cloud that turns too dense because the pen lingers.
 
