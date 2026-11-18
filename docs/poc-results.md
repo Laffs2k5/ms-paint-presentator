@@ -392,3 +392,48 @@ a 50% blue block, the rest fully transparent):
 - One `CF_DIBV5` speed reading (25 ms) was a false positive: its probe colour
   was already on screen from the PNG run. The script now uses probe colours
   unique per format.
+
+**E1 addendum: PNG must be a new clipboard object per slide** (found in E7).
+Swapping a PNG inside the live data object (DoomPaint's in-place update) does
+not work: Paint asks for it once (`GetData PNG`) but then pastes its cached
+copy of the previous image, with no error. `CF_DIB` swapped in place is read
+fresh every time (as in E6). So for PNG, put a new OLE data object on the
+clipboard for each slide. That is safe from E6's race: the OLE object is
+reference-counted, so a read in flight keeps the old object alive (E7 pasted
+220 PNG slides that way with no miss and no error dialog).
+
+## E7. Undo stack as slide history (2026-11-18): **pass**
+
+Script: [`poc/experiments/e7_undo_history.py`](../poc/experiments/e7_undo_history.py).
+Paste N distinct PNG slides (each committed with `S`), then Ctrl+Z until the
+history runs out, then Ctrl+Y until it runs out. Laptop panel at 200%, on
+battery, Paint in front.
+
+| Run | Pasted | Undo went back | Redo went forward | Paint memory (private) |
+|---|---|---|---|---|
+| 50 × 2716×1434 | 50 of 50 | **all 50**, to the blank canvas | all 50 | 236 → 1,144 MB |
+| 120 × 2716×1434 | 120 of 120 | **68** (oldest 52 dropped) | 68 | levels off at 1,414 MB from about slide 68 |
+| 150 × 2048×1024 | 150 of 150 | **101** (oldest 49 dropped) | 101 | levels off at about 1,190 MB from about slide 100 |
+
+- **One slide is one undo step** (paste and `S` commit together).
+- **Undo and redo are about 7× faster than pasting:** Ctrl+Z 33 ms p50 /
+  51–59 ms p95, Ctrl+Y 41 ms p50 / 67 ms p95, against about 250 ms per paste.
+  Every undone and redone slide checked was **pixel-identical**, with no
+  selection marks.
+- **Each step costs a full uncompressed frame:** about 15.7 MB per slide at
+  2716×1434 (one BGRA frame is 14.9 MB), and Paint gives little back while
+  walking the history.
+- **The depth is limited.** Both capped runs fit "about 100 steps or about
+  1 GiB of frames, whichever comes first": 68 × 14.9 MiB ≈ 1,010 MiB, while
+  101 × 8 MiB ≈ 808 MiB stopped at the step count. Two data points, so treat
+  it as observed, not proven. Predicted depth for the 1920×1200 projector's
+  1854×875 slides (6.2 MiB): about 100.
+- A new paste after some undos cuts off the redo chain, as in any editor.
+
+**What this means for navigation (gate 3):** stepping back and forth through
+recent slides with Ctrl+Z / Ctrl+Y is fast and clean; jumping further back
+than the history holds needs a re-paste. A deck that fits the depth can even
+be preloaded: paste every slide at start, undo back to the first, and then
+every "next" is a 40 ms Ctrl+Y. That costs up to about 1 GiB in Paint and the
+preload is visible, so it would have to happen before the audience looks (or
+be part of the show).

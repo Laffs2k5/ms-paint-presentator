@@ -119,7 +119,11 @@ Paint build. Note which paster the self-test picks (Ctrl+V or UIA menu) and the
    keeps the presenter view free but relies on Paint internals and is about
    60–120 ms slower; foreground uses Paint's public shortcuts. Either way,
    self-test the route at start and fall back to the other.
-3. **Back navigation:** undo stack (E7) or re-paste.
+3. **Back navigation:** undo stack (E7) or re-paste. E7 result: undo/redo is about 7×
+   faster than a paste (33–41 ms vs about 250 ms) and pixel-clean, but holds
+   only about 100 slides or about 1 GiB of frames, whichever is less (68 at
+   2716×1434). So: undo/redo within recent history, re-paste beyond it; a
+   short deck can be preloaded into the history.
 4. **Host language:** Python vs C#. C# is the likely pick if E2 needs message
    hooks and we want a single exe.
 5. **Authoring:** Slidev primary + Marp + PPTX adapters (per doc 03), unless E12
