@@ -103,6 +103,9 @@ JSON. The MCP server is for Claude Desktop/Cowork, or if you prefer typed tools.
 
 ## Notes and known gaps
 
+- **`uia-dump` redacts the signed-in account.** Paint's account button is named
+  `Signed in as <full name>`, and dumps get committed. The redaction matches the
+  English text only, so check a dump from a localised Paint by hand.
 - **Localised UI:** AutomationIds are stable across languages, but *names* aren't.
   `zoom fit` looks up the button named "Fit to window", which fails on a Norwegian
   UI. Run `uia-dump`, find its AutomationId, and switch the lookup.

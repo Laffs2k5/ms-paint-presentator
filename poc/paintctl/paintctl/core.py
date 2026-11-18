@@ -460,6 +460,18 @@ def screenshot(hwnd: int, path: str, region: str = "window") -> dict:
 
 
 # --- UIA exploration -----------------------------------------------------------------
+# Paint's account button is named "Signed in as <full name>". Dumps get
+# committed, so never write the account holder's name. English UI only: check
+# dumps from a localised Paint by hand.
+_REDACT = [(re.compile(r"^(Signed in as ).+$"), r"\1[redacted]")]
+
+
+def _redact(name: str) -> str:
+    for pattern, repl in _REDACT:
+        name = pattern.sub(repl, name)
+    return name
+
+
 def uia_dump(hwnd: int, max_depth: int = 6) -> list[dict]:
     """Flat list of the UIA tree: control type, name, AutomationId, class,
     rectangle. Use it to discover anchors (layers panel, full screen, ...)."""
@@ -470,7 +482,8 @@ def uia_dump(hwnd: int, max_depth: int = 6) -> list[dict]:
         try:
             r = el.rectangle
             rows.append({"depth": depth, "control_type": el.control_type,
-                         "name": el.name, "automation_id": el.automation_id,
+                         "name": _redact(el.name),
+                         "automation_id": el.automation_id,
                          "class_name": el.class_name,
                          "rect": Rect.of(r).to_dict()})
         except Exception as exc:
