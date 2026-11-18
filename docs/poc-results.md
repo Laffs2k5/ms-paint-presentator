@@ -204,6 +204,7 @@ matched the source exactly. 2560×1440 at 100%, slide 2446×1163:
 | Click in the margin | 0.12–0.34 s | mouse click (cursor put back) | works; moves the mouse and can hit a resize handle (E11) |
 | UIA invoke of Crop (`CropButton`) | 0.18–0.40 s | none | works without keys or mouse; candidate if E2 needs a background commit |
 | Ctrl+A, then Esc | 0.49–0.70 s (incl. a 0.3 s pause) | three keys | works, slower |
+| Posted `S` to `InputSiteWindowClass` | 0.3–0.4 s | none, works with Paint in the background | see E2/E3 |
 | Key `P` (Pencil) | never | one keypress | commits, but see below |
 | Esc / Enter | – | – | Esc discards the paste, Enter does nothing (E11) |
 
@@ -269,3 +270,68 @@ for comparison:
   so something keeps reading after the paste shows: Paint itself or Windows
   clipboard history. Not verified which.
 - Single pastes into a fresh window (E11, E14) are not affected.
+
+**E6 addendum: battery, and the paste trigger** (laptop undocked, on battery,
+Balanced power plan; 2716×1434, 15 pastes each,
+[`e6_paste_speed.py`](../poc/experiments/e6_paste_speed.py) `--trigger`/`--background`):
+
+| Trigger | Paint in front | Commit | Paint reads it (p50 / p95) | On screen (p50 / p95 / max) |
+|---|---|---|---|---|
+| Ctrl+V (`SendInput`) | yes | `S` (`SendInput`) | 11 / 97 ms | 297 / 444 / 516 ms |
+| posted `WM_COMMAND` | yes | `S` (`SendInput`) | 7 / 81 ms | 353 / 514 / 516 ms |
+| posted `WM_COMMAND` | no | posted `S` (E2) | 19 / 84 ms | 416 / 467 / 534 ms |
+| posted `WM_COMMAND` | no | none (each paste lands on the last, still floating) | 292 / 382 ms | 633 / 837 / 900 ms |
+
+- **On battery Paint is slower and less steady:** Ctrl+V p50 297 ms against
+  252 ms docked on mains power (E6 above), and p95 444 against 269 ms.
+  **Present with the charger connected.**
+- **Commit every slide.** Pasting onto a still-floating selection is much
+  slower: Paint takes about 300 ms just to read the clipboard.
+
+## E2/E3. Paste without focus or keystrokes (2026-11-18): **pass**
+
+Script: [`poc/experiments/e2_background_paste.py`](../poc/experiments/e2_background_paste.py).
+A stand-in "presenter view" window of our own stays in front, over Paint's
+toolbar. Each candidate must make Paint read the live OLE clipboard and show
+the slide, with the stand-in still in front. Laptop panel, 200%, 2716×1434.
+
+| Candidate | Paint reads it | Slide shows | Stand-in keeps focus |
+|---|---|---|---|
+| **post `WM_COMMAND` 0xE125 to the main window** (`MSPaintApp`) | **8 ms** | **yes** | **yes** |
+| post `WM_COMMAND` 0xE125 to `MSPaintView` | 11 ms | yes | yes |
+| *send* `WM_COMMAND` 0xE125 to the main window | no | no | yes |
+| post `WM_PASTE` to the main window or `MSPaintView` | no | no | yes |
+| post `WM_CHAR` 0x16 (Ctrl+V) to `MSPaintView` | no | no | yes |
+| UIA Edit > Paste menu | 733 ms | yes | **no**: Paint activates and the menu shows |
+
+0xE125 is `ID_EDIT_PASTE`, MFC's standard Edit > Paste command. Paint's main
+window is still an MFC frame (`MSPaintApp`, with an `AfxWnd140u` child); its
+canvas and toolbar are a WinUI 3 island (`Microsoft.UI.Content.DesktopChildSiteBridge`
+with an `InputSiteWindowClass` child). A *sent* command probably fails because
+COM forbids the clipboard call inside a synchronous cross-thread message; not
+verified.
+
+**Committing in the background** (the paste is a floating selection, E14):
+
+| Candidate | Clean (pixel-identical) | Stand-in keeps focus |
+|---|---|---|
+| **post `S` (WM_KEYDOWN/WM_KEYUP) to `InputSiteWindowClass`** | **yes, 0.3–0.4 s** (2 of 2, plus the final run) | **yes** |
+| post `S` to the main window, `MSPaintView` or `DesktopChildSiteBridge` | no | yes |
+| UIA invoke of Crop | yes | **no**: Paint activates |
+| UIA SelectionItem on the Select or Brushes tool | no | **no**: Paint activates |
+| a second posted paste | no (commits the previous one, the new one floats) | yes |
+
+Found by the user watching the screen: an early run looked "not clean" only
+because the stand-in window's drop shadow fell on the canvas. Keep anything
+that must not show away from the canvas, shadows included.
+
+- **A slide change can run entirely in the background:** post the paste
+  command to the main window, then post `S` to the input-site window. No
+  focus change, no `SendInput`, no mouse. On battery it shows in 416 ms p50
+  against 297 ms for foreground Ctrl+V (E6 addendum).
+- **It relies on internals a Paint update could change:** an MFC command ID
+  and a WinUI window class. The foreground route uses only Paint's public
+  keyboard shortcuts. The presenter should self-test at start (paste a test
+  slide by each route and check it, as DoomPaint does for its paste path) and
+  fall back to the foreground route.
+- UIA on Paint's WinUI controls (invoke, select) activates Paint every time.

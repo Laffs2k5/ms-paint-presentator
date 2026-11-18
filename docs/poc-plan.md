@@ -114,7 +114,11 @@ Paint build. Note which paster the self-test picks (Ctrl+V or UIA menu) and the
    laptop panel), **with the live OLE clipboard only**: a clipboard rewrite per
    slide drops pastes and pops a modal error dialog from about 2.8 MP.
 2. **Focus model:** E2 decides between a background paste (free presenter view) and
-   Paint in the foreground (no-activate presenter view or phone view).
+   Paint in the foreground (no-activate presenter view or phone view). E2 result:
+   both work. Background (posted paste command, posted `S` to the input site)
+   keeps the presenter view free but relies on Paint internals and is about
+   60–120 ms slower; foreground uses Paint's public shortcuts. Either way,
+   self-test the route at start and fall back to the other.
 3. **Back navigation:** undo stack (E7) or re-paste.
 4. **Host language:** Python vs C#. C# is the likely pick if E2 needs message
    hooks and we want a single exe.

@@ -3,7 +3,7 @@
 Run presentations in Microsoft Paint instead of PowerPoint. Windows 11 only.
 
 Status: **POC in progress.** Environment captured and `paintctl` working on
-Windows 11 ARM64, the DoomPaint baseline runs, and E11, E14 and E6 pass. Next: E2/E3, pasting without focus or keystrokes. See [POC results](docs/poc-results.md).
+Windows 11 ARM64, the DoomPaint baseline runs, and E11, E14, E6 and E2/E3 pass. Next: E1, which image formats Paint accepts. See [POC results](docs/poc-results.md).
 
 ## Research
 
