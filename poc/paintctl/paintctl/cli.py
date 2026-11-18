@@ -4,6 +4,7 @@
     paintctl list
     paintctl info
     paintctl maximize | restore | focus
+    paintctl close [--discard]                      # --discard: "Don't save"
     paintctl resize WIDTH HEIGHT [--x X --y Y]      # outer window size
     paintctl fit-viewport WIDTH HEIGHT              # canvas viewport size
     paintctl zoom PERCENT|fit
@@ -42,6 +43,9 @@ def main(argv: list[str] | None = None) -> int:
     sub.add_parser("maximize")
     sub.add_parser("restore")
     sub.add_parser("focus")
+    s = sub.add_parser("close")
+    s.add_argument("--discard", action="store_true",
+                   help="answer \"Don't save\" if Paint asks to save")
 
     s = sub.add_parser("resize")
     s.add_argument("width", type=int)
@@ -85,6 +89,8 @@ def main(argv: list[str] | None = None) -> int:
                 result = core.info(hwnd)
             elif a.cmd == "focus":
                 result = {"foreground": core.focus(hwnd)}
+            elif a.cmd == "close":
+                result = {"closed": core.close(hwnd, a.discard)}
             elif a.cmd == "resize":
                 core.set_window_rect(hwnd, a.width, a.height, a.x, a.y)
                 result = core.info(hwnd)

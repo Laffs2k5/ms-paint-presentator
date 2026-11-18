@@ -1,7 +1,7 @@
 """paintctl as an MCP server (stdio), so Claude Code / Claude Desktop on the
 Windows laptop can drive and measure Paint with structured results.
 
-    claude mcp add paintctl -- uv run --directory C:\\path\\to\\poc\\paintctl paintctl-mcp
+    claude mcp add paintctl -- uv run --extra mcp --directory C:\\path\\to\\poc\\paintctl paintctl-mcp
 """
 from __future__ import annotations
 
@@ -45,7 +45,7 @@ def paint_info(hwnd: int | None = None) -> dict:
     """Geometry of Paint in physical screen pixels: monitor mode and DPI scale,
     window/visible-frame/client rects, the canvas viewport rect (render area),
     the canvas rect on screen, canvas size in document pixels, zoom percent,
-    and derived values (visible canvas rect, document pixels that fit the
+    whether the viewport scrolls, and derived values (visible canvas rect, document pixels that fit the
     viewport at the current zoom)."""
     return core.info(_hwnd(hwnd))
 
@@ -71,6 +71,13 @@ def paint_window(action: str, width: int | None = None, height: int | None = Non
     else:
         raise ValueError(f"unknown action {action!r}")
     return core.info(h)
+
+
+@mcp.tool()
+def paint_close(discard: bool = False, hwnd: int | None = None) -> dict:
+    """Close a Paint window. discard=True answers "Don't save" if Paint asks
+    to save unsaved changes; otherwise the prompt is left open."""
+    return {"closed": core.close(_hwnd(hwnd), discard)}
 
 
 @mcp.tool()

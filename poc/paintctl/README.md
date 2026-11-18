@@ -51,6 +51,7 @@ uv run paintctl maximize ; uv run paintctl restore ; uv run paintctl focus
 uv run paintctl screenshot out.png --region viewport   # window|client|viewport|canvas
 uv run paintctl uia-dump --depth 8 > uia.json          # discover AutomationIds
 uv run paintctl list                                   # all Paint windows (hwnd, title)
+uv run paintctl close --discard                        # close; "Don't save" if prompted
 ```
 
 `--hwnd N` (before the subcommand) targets a specific window when several are open.
@@ -70,6 +71,7 @@ uv run paintctl list                                   # all Paint windows (hwnd
 | **`canvas_px`** | Document size from the status bar (`CanvasSizeTextBlock`). Missing in a narrow window, see below |
 | `zoom_percent` | From `ZoomValuesComboBox`. A truncated integer: Fit to window can be 121.6% and read "121%" |
 | `canvas_clipped` | `canvas_on_screen` is smaller than `canvas_px` × zoom: the canvas is scrolled or bigger than the viewport |
+| `scrollable` | `horizontal`/`vertical` from the viewport's UIA ScrollPattern: whether Paint shows scrollbars. Both `false` = the whole canvas fits |
 | `canvas_visible_on_screen` | viewport ∩ canvas |
 | `canvas_fully_visible` | Whole canvas on screen. `null` when it can't be checked (no `canvas_px`) |
 | `viewport_in_canvas_px` | How many document pixels fit the viewport at the current zoom |
@@ -97,8 +99,8 @@ Claude Desktop (`%APPDATA%\Claude\claude_desktop_config.json`):
 ```
 
 Tools: `paint_launch`, `paint_list`, `paint_info`, `paint_window`
-(maximize/restore/focus/resize/fit_viewport), `paint_zoom`, `paint_screenshot`
-(returns the image), `paint_uia_dump`.
+(maximize/restore/focus/resize/fit_viewport), `paint_close`, `paint_zoom`,
+`paint_screenshot` (returns the image), `paint_uia_dump`.
 
 Claude Code running natively on Windows can also just call the CLI and parse the
 JSON. The MCP server is for Claude Desktop/Cowork, or if you prefer typed tools.
@@ -125,6 +127,11 @@ JSON. The MCP server is for Claude Desktop/Cowork, or if you prefer typed tools.
   zoom it picks varied between runs in the same maximised window.
 - **`launch` does not bring Paint to the foreground.** Run `focus` before
   anything that sends keystrokes.
+- **Closing:** Paint hides its window within ~50 ms of `WM_CLOSE` but can take
+  0.3–6 s more to destroy it, so `close` waits for the window to be hidden. The
+  save prompt is a WinUI dialog whose buttons have locale-independent
+  AutomationIds: `PrimaryButton` (Save), `SecondaryButton` (Don't save),
+  `CloseButton` (Cancel).
 - **Window managers can move Paint.** PowerToys FancyZones moves windows into
   zones on launch (if Paint was snapped before) and when displays change.
   Exclude `mspaint.exe` in FancyZones for clean measurements.

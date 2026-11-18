@@ -204,6 +204,31 @@ def focus(hwnd: int, timeout: float = 3.0) -> bool:
     return win32gui.GetForegroundWindow() == hwnd
 
 
+def close(hwnd: int, discard: bool = False, timeout: float = 6.0) -> bool:
+    """Close a Paint window. If Paint asks to save unsaved changes, discard=True
+    answers "Don't save" (the dialog's ``SecondaryButton``, an AutomationId
+    that does not depend on the UI language); otherwise the prompt stays open.
+    Returns True once the window is hidden: Paint hides it within ~50 ms but
+    can take anywhere from 0.3 to 6 s more to destroy it."""
+    def gone() -> bool:
+        return not (win32gui.IsWindow(hwnd) and win32gui.IsWindowVisible(hwnd))
+
+    win32gui.PostMessage(hwnd, win32con.WM_CLOSE, 0, 0)
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        time.sleep(0.3)
+        if gone():
+            return True
+        if discard:
+            try:
+                _uia_window(hwnd).child_window(
+                    auto_id="SecondaryButton",
+                    control_type="Button").wrapper_object().invoke()
+            except Exception:
+                pass  # no prompt (yet)
+    return gone()
+
+
 def maximize(hwnd: int) -> None:
     win32gui.ShowWindow(hwnd, win32con.SW_MAXIMIZE)
     time.sleep(0.3)
@@ -287,6 +312,18 @@ def zoom_percent(win) -> int | None:
         return None
 
 
+def scroll_state(win) -> dict | None:
+    """Whether Paint lets the viewport scroll, from the UIA ScrollPattern. Not
+    scrollable on both axes means the whole canvas fits with no scrollbars."""
+    try:
+        sp = win.child_window(auto_id="scrollViewer", control_type="Pane") \
+            .wrapper_object().iface_scroll
+        return {"horizontal": bool(sp.CurrentHorizontallyScrollable),
+                "vertical": bool(sp.CurrentVerticallyScrollable)}
+    except Exception:
+        return None
+
+
 def _find_child_by_class(hwnd: int, cls: str) -> int | None:
     hits: list[int] = []
 
@@ -358,6 +395,7 @@ def info(hwnd: int) -> dict:
     img = _uia_rect(win, auto_id="image", control_type="Group")
     size = canvas_pixel_size(win)
     zoom = zoom_percent(win)
+    scroll = scroll_state(win)
     hints = {
         # Paint's status bar is responsive: in a narrow window (seen at 960
         # logical px) it drops the canvas size text block altogether.
@@ -365,7 +403,8 @@ def info(hwnd: int) -> dict:
                      "size: widen Paint)",
     }
     for name, val in (("viewport", vp), ("canvas_on_screen", img),
-                      ("canvas_px", size), ("zoom_percent", zoom)):
+                      ("canvas_px", size), ("zoom_percent", zoom),
+                      ("scrollable", scroll)):
         if val is None:
             errors.append(f"{name}: UIA lookup failed{hints.get(name, '')}")
     out["viewport"] = vp.to_dict() if vp else None          # where the canvas can show
@@ -373,6 +412,7 @@ def info(hwnd: int) -> dict:
     out["canvas_px"] = ({"width": size[0], "height": size[1]}
                         if size else None)                   # document pixels
     out["zoom_percent"] = zoom
+    out["scrollable"] = scroll  # {"horizontal", "vertical"}: scrollbars shown
     # UIA clips the canvas rect to the viewport, so a canvas that is scrolled
     # or larger than the viewport reports a *smaller* rect, not one that sticks
     # out. Detect that by comparing with the size the zoom implies. The zoom box
