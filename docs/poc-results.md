@@ -727,7 +727,7 @@ Paint in front). Positions are in canvas pixels, found by the stamp's colour.
   With a scrolled canvas a paste would likely land at the top-left of the
   visible part; not tested.
 
-## E10. The presenter's keys through a low-level hook (2026-11-18): **pass** for the keyboard; the remote is still to be recorded
+## E10. The presenter's keys through a low-level hook (2026-11-18): **pass**
 
 Script: [`poc/experiments/e10_keys.py`](../poc/experiments/e10_keys.py).
 A `WH_KEYBOARD_LL` hook on its own thread, as the plan's design says: it takes
@@ -779,8 +779,8 @@ is not set here, so this is Windows' default):
   a small process of its own.
 - Check the hook with the heartbeat now and then, and reinstall it if it goes
   quiet.
-- **Still to do:** run `e10_keys.py --listen 30` and press each button on the
-  presenter remote, to record what it sends.
+- **No presenter remote:** the user presents from the keyboard, so there are
+  no remote keys to record. `e10_keys.py --listen 30` is there if one turns up.
 
 ## E12. Render a deck at a measured pixel size (2026-11-18): **pass**
 
@@ -831,7 +831,7 @@ The user's Edge profiles were never used, and no Edge process was stopped.
 The loading painting has about 3 to 11 seconds to fill for a 40-slide deck;
 a cache of rendered slides (per deck and size) makes the next start instant.
 
-## E19. Interruptions (2026-11-18): **partly answered**; the toast tests need a rerun with Do not disturb off
+## E19. Interruptions (2026-11-18): **answered**
 
 Script: [`poc/experiments/e19_interruptions.py`](../poc/experiments/e19_interruptions.py),
 with [`toast.ps1`](../poc/experiments/toast.ps1) to show and remove a test
@@ -842,16 +842,16 @@ memory; only counts of changed pixels are reported.
 | Question | Result |
 |---|---|
 | Can the documented API see Do not disturb? | **No.** `SHQueryUserNotificationState` said "accepts notifications" while Windows 11's Do not disturb was on (the taskbar showed its bell; a look at the screen confirmed it) |
-| Does a toast show over maximised Paint? | Not with Do not disturb on: the toast corner did not change and no window appeared. **Not yet tested with it off** |
-| Windows' presentation mode (`PresentationSettings.exe /start`, a documented tool on laptops) | The state becomes "presentation mode" and `/stop` puts it back. Whether it holds toasts back could not be told, with Do not disturb already holding them |
+| Does a toast show over maximised Paint? | **Yes**, with Do not disturb off: about 17,000 pixels of the toast corner changed (188 with it on, when nothing showed). Paint stayed in front: the toast does not take the focus |
+| Windows' presentation mode (`PresentationSettings.exe /start`, a documented tool on laptops) | The state becomes "presentation mode" and `/stop` puts it back, but **it does not hold toasts back**: the same toast showed over Paint |
 | Does Paint pop anything up at launch? | Only the "100%" zoom tooltip, by the status bar's zoom slider (from setting the zoom), clear of the canvas. The same in 3 of 3 launches; no What's new or sign-in prompts |
 | Keep the display awake (`SetThreadExecutionState` with `ES_CONTINUOUS`, `ES_DISPLAY_REQUIRED`, `ES_SYSTEM_REQUIRED`) | Accepted. `powercfg /requests` would show it, but needs an elevated prompt |
 
-**For the presenter's pre-flight check:** it cannot read Do not disturb
-through a documented API (the state lives in undocumented places), so it
-should ask the speaker to switch it on, or warn. Presentation mode is
-detectable and can be switched on and off by the presenter, but whether it
-holds toasts back is open.
+The first run had Do not disturb on, which hid the toast; the user switched it
+off for a second run.
 
-**Still to do:** with Do not disturb off for a minute, rerun the script: does a
-toast show over Paint, and does presentation mode hold it back?
+**For the presenter's pre-flight check:** toasts do show over the slides, and
+only Do not disturb stops them. Presentation mode does not, and Paint
+maximised does not count as full screen. The documented API cannot read Do
+not disturb (the state lives in undocumented places), so the check asks the
+speaker to switch it on.
