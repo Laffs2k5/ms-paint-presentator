@@ -29,6 +29,7 @@ uv run python ..\experiments\e11_display_area.py --out $env:TEMP\e11
 | E16 tools and colours | [`e16_tools.py`](experiments/e16_tools.py) | How each tool, brush, shape, colour, size and the text font can be chosen by script, the palette's RGB, and what Paint keeps after a relaunch (it restores what it changed) |
 | E17 placing a paste | [`e17_place_paste.py`](experiments/e17_place_paste.py) | Where a small paste lands, how arrow keys and a pen drag move it, an alpha stamp moved over a background, paste time by stamp size |
 | E10 keys | [`e10_keys.py`](experiments/e10_keys.py) | A low-level keyboard hook: swallowing the show keys while Paint is in front, keys for other apps, key-to-slide latency, what a stalled callback does, the heartbeat, the `RegisterHotKey` fallback. `--listen 30` prints a presenter remote's keys |
+| E12 rendering | [`e12_render.py`](experiments/e12_render.py) | A sample deck rendered by Marp, Slidev and PowerPoint at given pixel sizes: exact sizes, layout per size, border width, notes, render time. Needs the Node tools installed in a temp folder (see its docstring); Edge runs headless with throwaway profiles |
 
 [`experiments/doompaint_clipserve.py`](experiments/doompaint_clipserve.py) is
 DoomPaint's live OLE clipboard (MIT, © Mark Russinovich), vendored unchanged

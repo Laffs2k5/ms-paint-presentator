@@ -781,3 +781,52 @@ is not set here, so this is Windows' default):
   quiet.
 - **Still to do:** run `e10_keys.py --listen 30` and press each button on the
   presenter remote, to record what it sends.
+
+## E12. Render a deck at a measured pixel size (2026-11-18): **pass**
+
+Script: [`poc/experiments/e12_render.py`](../poc/experiments/e12_render.py).
+A four-slide sample deck (its own text; slide 3 has three click steps, slide 4
+a 400×200 box with a 1 px border) rendered by Marp (marp-cli 4.5.1), Slidev
+(@slidev/cli 53.1.0, theme-default 0.25.0) and PowerPoint (16.0.20527, through
+COM), at the projector's slide size 1854×875 and this laptop's 2650×1251. The
+Node tools were installed in a temp folder, not the repo. Marp and Slidev
+render through the installed Edge, headless; both start it with a throwaway
+profile of their own (Marp a `marp-cli-*` folder, Slidev/Playwright a
+non-persistent context), which the script keeps in a dedicated temp folder.
+The user's Edge profiles were never used, and no Edge process was stopped.
+
+**Two ways to reach the pixel size:**
+
+| | Canvas set to the pixel size | **Fixed design canvas, rendered at a scale** |
+|---|---|---|
+| How | Marp theme `section` sized W×H; Slidev `canvasWidth` W | Marp: 1280×604 canvas, `--image-scale` W/1280. Slidev: 980 wide, `--scale` W/980. PowerPoint: slide in points, `Slide.Export` at W×H |
+| Size | exact | PowerPoint exact; **Marp and Slidev can be 1 px off in height** (2650×1250, 1854×876) because the design canvas is rounded to whole CSS pixels |
+| Layout (slide 2's text, as a fraction of the slide) | **changes with the screen:** Marp 0.044–0.292 of the width at 1854, 0.031–0.205 at 2650; Slidev 0.030–0.177 against 0.021–0.124 | **the same on every screen**, within 0.001, for all three |
+| 1 px border | 1 px, crisp | as wide as the scale makes it (2–3 px, anti-aliased): drawn at that size, not resampled |
+
+- **Use the fixed design canvas.** With the canvas set to the pixel size, the
+  text keeps its CSS pixel size, so it shrinks relative to the slide on a
+  bigger screen. That is a reflow, which the presentation constraints rule
+  out. PowerPoint does the right thing by itself: a slide is vector and scales.
+- **Crop or pad the odd row.** When Marp or Slidev comes out 1 px off, crop or
+  pad one background row to the measured size. That is lossless (no
+  resampling) and keeps viewport − slide even (E11).
+- **Speaker notes** came back complete and in order from all three: Marp
+  `--notes`, Slidev's rule (a slide's last HTML comment), PowerPoint's notes
+  page through COM.
+- **Slidev's `--with-clicks`** gives one image per click step (slide 3 gave 4),
+  so build steps are whole slides, as the design says. PowerPoint's
+  `Slide.Export` ignores animations: builds there would need one slide per
+  step.
+- Slidev's PNG export defaults to scale 2; always pass `--scale`.
+
+**Render time** (scale mode, 2650×1251):
+
+| Deck | Marp | Slidev | PowerPoint |
+|---|---|---|---|
+| 4 slides (7 Slidev images) | 2.5 s | 6.2 s | 0.2 s + 0.5 s to start |
+| 40 slides (43 Slidev images) | 6.2 s | 11.0 s | 2.0 s + 0.5 s to start |
+| So, roughly | 2 s + 0.1 s per slide | 5 s + 0.14 s per image | 0.5 s + 0.05 s per slide |
+
+The loading painting has about 3 to 11 seconds to fill for a 40-slide deck;
+a cache of rendered slides (per deck and size) makes the next start instant.

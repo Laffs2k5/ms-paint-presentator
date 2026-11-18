@@ -64,7 +64,9 @@ point depends on them.
   2. Open Paint maximised there at 100%, apply the E4 checklist, measure the
      display area and calibrate with a test paste (E11).
   3. Render every slide from the source at exactly that pixel size, never
-     resampled (E12). Cache the result per deck and slide size.
+     resampled: the deck's fixed design canvas in the reference shape, drawn
+     at a scale factor, with any 1 px of rounding cropped or padded (E12).
+     Cache the result per deck and slide size.
   4. Pre-flight checks, then wait for the first Next.
 - **The loading painting.** While the slides render, the presenter draws a
   deliberately crappy painting live in Paint, with Paint's own tools (E15–E17):
@@ -154,7 +156,7 @@ Paint build. Note which paster the self-test picks (Ctrl+V or UIA menu) and the
 | **E8** | Keep slides out of Win+V history | Add `ExcludeClipboardContentFromMonitorProcessing` + `CanIncludeInClipboardHistory=0` + `CanUploadToCloudClipboard=0` | Win+V stays clean. **Done (E8): add `ExcludeClipboardContentFromMonitorProcessing`** |
 | **E5** | Does anything call `DAdvise`? | Implement it with `CreateDataAdviseHolder` and log | Documented yes or no. **No (E5)** |
 | **E10** | Keys and clicker | A low-level keyboard hook that swallows the show keys only while Paint or the presenter view is in front and lets injected keys through. The callback only queues the key (Windows silently drops a hook that is too slow). Keyboard first, then your presenter remote's keycodes. Fallback: `RegisterHotKey` while Paint is in front | Next/prev/black work, Paint never sees the keys, other apps keep theirs. **Pass for the keyboard (E10): swallowed keys never reach Paint, other apps keep theirs, no measurable latency. Windows waits only about 300 ms for the hook. The remote's keys are still to be recorded (`--listen`)** |
-| **E12** | Build pipeline smoke test | `npx @slidev/cli export --format png --with-clicks` and `npx @marp-team/marp-cli --images png` on a sample deck, plus a PowerPoint COM `Slide.Export` of a sample `.pptx`, each at an exact pixel size measured at start (for example 1854×875) | PNGs at exactly that size, rendered from the source rather than resampled; time per slide recorded (it paces the loading painting); notes extracted |
+| **E12** | Build pipeline smoke test | `npx @slidev/cli export --format png --with-clicks` and `npx @marp-team/marp-cli --images png` on a sample deck, plus a PowerPoint COM `Slide.Export` of a sample `.pptx`, each at an exact pixel size measured at start (for example 1854×875) | PNGs at exactly that size, rendered from the source rather than resampled; time per slide recorded (it paces the loading painting); notes extracted. **Pass (E12): all three, with notes. Render a fixed design canvas at a scale factor (setting the canvas to the pixel size reflows the text); crop or pad the 1 px of rounding. 40 slides take 2.5 s (PowerPoint) to 11 s (Slidev)** |
 | **E14** | Commit a pasted slide cleanly | A paste is a floating selection with a dashed border and a toolbar over it. Esc discards it, Enter does nothing, and a click outside commits but moves the mouse and can hit a resize handle (E11). Try: the next paste committing the previous one, switching tool through UIA, keyboard tool shortcuts, a click while the cursor is hidden | Slide shows with no selection marks and no visible mouse movement, pixel-identical |
 | **E15** | Draw in Paint with synthetic input (the loading painting) | Strokes with the Pencil and a brush by three routes: `SendInput` mouse drags (move the real cursor), synthetic pen input (`InjectSyntheticPointerInput`: pressure, and the cursor stays put), mouse messages posted to `InputSiteWindowClass` (as `S` in E2). Find how fast points can be fed before Paint drops or smooths them | A scripted stroke lands where intended and shows live, at hand-drawing speed. **Pass (E15): pen and mouse both exact and live; the pen leaves the cursor alone and has pressure on the Watercolor and Oil brushes; posted messages draw nothing** |
 | **E16** | Pick tools, colours and sizes by script | Brush types, brush size, palette and custom colours, Shapes, Fill and Text, through keys or UIA (E4 covered only Pencil, Eraser and Brushes). Check whether Paint carries our choices into the user's next session | Every tool the loading painting uses can be selected by script, and the user's settings can be restored. **Pass (E16): keys, menus, pen taps and the size slider choose everything; only the Text font survives a relaunch, and it is restored. Edit colors is off-limits** |
@@ -206,4 +208,6 @@ Paint build. Note which paster the self-test picks (Ctrl+V or UIA menu) and the
    Windows waits only about 300 ms before it passes the key on and holds up the
    whole keyboard. Fine for the POC; C#, or a small hook process, is safer.
 5. **Authoring:** Slidev primary + Marp + PPTX adapters (per doc 03), unless E12
-   surprises us.
+   surprises us. E12: all three render at a measured size from source, with
+   notes; Slidev also exports each click step. PowerPoint is the fastest
+   (0.05 s per slide) and exports at the exact size.
