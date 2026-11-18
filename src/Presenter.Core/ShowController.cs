@@ -43,22 +43,40 @@ public sealed class ShowController
     public Navigator Navigator { get; }
     public IReadOnlyList<SlideChange> Changes => _changes;
 
+    /// <summary>What the canvas shows now (to paste again after a display change).</summary>
+    public Frame Current => Navigator.Blanked is { } colour ? new Frame.Blank(colour) : new Frame.Slide(Navigator.Index);
+
+    /// <param name="navigator">Carry on from an earlier controller's position
+    /// (after a display change), instead of starting anew.</param>
     public ShowController(IStage stage, ISlideSet slides, ChannelReader<KeyPress> keys,
-                          bool startAtPainting = true, Action<string>? log = null)
+                          bool startAtPainting = true, Action<string>? log = null, Navigator? navigator = null)
     {
         _stage = stage;
         _slides = slides;
         _keys = keys;
         _log = log;
-        Navigator = new Navigator(startAtPainting);
+        Navigator = navigator ?? new Navigator(startAtPainting);
     }
 
-    /// <summary>Run until the speaker ends the show (Esc) or <paramref name="ct"/> fires.</summary>
+    /// <summary>Paste what the canvas should show again (after a display change).</summary>
+    public async Task ShowCurrentAsync(CancellationToken ct = default)
+    {
+        var frame = Current;
+        if (frame is Frame.Slide { Index: var i } && !_slides.IsReady(i)) await _slides.WaitReadyAsync(i, ct).ConfigureAwait(false);
+        long t0 = Stopwatch.GetTimestamp();
+        long? seen = await _stage.ShowAsync(frame, ct).ConfigureAwait(false);
+        _log?.Invoke($"{frame} again: {(seen is { } s ? $"{(s - t0) * 1000.0 / Stopwatch.Frequency:F0} ms" : "not confirmed")}");
+    }
+
+    /// <summary>Run until the speaker ends the show (Esc). When <paramref name="ct"/>
+    /// fires it throws <see cref="OperationCanceledException"/> instead, and a
+    /// later call carries on where this one stopped.</summary>
     public async Task RunAsync(CancellationToken ct)
     {
         var batch = new List<KeyPress>();
-        while (!ct.IsCancellationRequested)
+        while (true)
         {
+            ct.ThrowIfCancellationRequested();
             batch.Clear();
             batch.Add(await _keys.ReadAsync(ct).ConfigureAwait(false));
             await Task.Delay(10, ct).ConfigureAwait(false);  // a key's twin (key repeat, a remote's double code)

@@ -71,6 +71,27 @@ public class ShowControllerTests
     }
 
     [Fact]
+    public async Task CancellingThrowsAndARunCarriesOn()
+    {
+        var keys = Channel.CreateUnbounded<KeyPress>();
+        var stage = new FakeStage(TimeSpan.Zero);
+        var c = new ShowController(stage, new FakeSlides(9, 9), keys.Reader, startAtPainting: false);
+        using var cts = new CancellationTokenSource();
+        var run = c.RunAsync(cts.Token);
+        keys.Writer.TryWrite(K(0x27));
+        await Task.Delay(100);
+        cts.Cancel();
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => run);
+        Assert.Equal(new Frame.Slide(2), c.Current);
+        var again = c.RunAsync(CancellationToken.None);  // after a display change
+        keys.Writer.TryWrite(K(0x27));
+        await Task.Delay(100);
+        keys.Writer.TryWrite(K(0x1B));
+        await again.WaitAsync(TimeSpan.FromSeconds(5));
+        Assert.Equal([new Frame.Slide(2), new Frame.Slide(3)], stage.Shown);
+    }
+
+    [Fact]
     public async Task EscEnds()
     {
         var keys = Channel.CreateUnbounded<KeyPress>();
