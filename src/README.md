@@ -53,7 +53,7 @@ show of a deck starts at once. Details: [Presenter.Slides](Presenter.Slides/READ
 | Option | What it does |
 |---|---|
 | `--monitor N` | Present on display N (or a GDI name like `\\.\DISPLAY2`) without the picker |
-| `--pick` | Show the screen picker even with one display (it shows by itself with two or more) |
+| (none) | The screen picker comes first, with the pre-flight reminders; Enter takes the highlighted display |
 | `--no-painting` | Skip the loading painting |
 | `--title "…"` | The loading painting's title (default: Paint Presentator) |
 

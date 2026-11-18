@@ -33,7 +33,7 @@ internal sealed record PresentOptions
             switch (args[i])
             {
                 case "--monitor": o.Monitor = Next(); break;
-                case "--pick": o.Pick = true; break;
+                case "--pick": o.Pick = true; break;  // the default now; kept for old command lines
                 case "--no-painting": o.Painting = false; break;
                 case "--title": o.Title = Next(); break;
                 case "--auto": o.Auto = true; break;
@@ -75,7 +75,9 @@ internal static class PresentCommand
         // the screen: named, picked, or the only one there is
         Presenter.Windows.Monitor monitor;
         ScreenOption option;
-        if (o.Monitor is not null || (!o.Pick && Monitors.All().Count == 1))
+        // the picker pops up first (the user's design), with the pre-flight
+        // reminders; --monitor goes straight to a display
+        if (o.Monitor is not null)
         {
             monitor = Monitors.Find(o.Monitor);
             option = ScreenOptions.For(monitor);

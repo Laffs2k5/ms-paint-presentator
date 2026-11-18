@@ -8,12 +8,12 @@ CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
 const string Usage = """
     presenter: present a slide deck live in Microsoft Paint.
 
-      presenter present <deck> [--monitor N] [--pick] [--no-painting] [--title "…"]
+      presenter present <deck> [--monitor N] [--no-painting] [--title "…"]
           Show a deck in Paint. <deck>: a PowerPoint file (.pptx, .ppt), a
           PDF, a Marp Markdown file, a Slidev project, or a folder of slide
           images; rendered by the deck's own tool at the size the screen
-          needs, through a cache. With two displays or more (or --pick) the
-          screen picker asks where.
+          needs, through a cache. The screen picker asks where first (with
+          the pre-flight reminders); --monitor N goes straight to display N.
           Keys: Right/Space/PageDown next, Left/PageUp back, Home the loading
           painting, End the last slide, digits + Enter jump, B/W black/white
           screen, Esc ends.
