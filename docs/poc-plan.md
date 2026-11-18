@@ -33,6 +33,71 @@ These are fixed, not open questions. Experiments measure within them.
   slide's size, not the display area's. Slides do not reflow. Keep viewport −
   slide even on both axes (E11).
 
+## Presenter design (decided)
+
+Decided from the results so far. Experiments still open are named where a
+point depends on them.
+
+- **A slide change is a paste.** Each slide is a PNG in a new OLE clipboard
+  object (E1, E7), pasted and committed with `S` (E14). PNG is the only image
+  format offered, plus the clipboard-history opt-out (E8). Paint never notices
+  a clipboard change by itself (E5), so there is no way around the paste.
+- **Navigation is re-paste only.** Back, Home, End and go-to-slide paste their
+  target like Next does, so every slide is one paste away. The undo stack (E7)
+  is not used: its depth is limited, any paste or stray click cuts off redo,
+  and its state can drift from the deck's.
+- **Keys come through a low-level keyboard hook, not a window** (E10). Paint
+  stays in front with its title bar active. The hook swallows the show keys
+  only while Paint or the presenter view is in front, so other apps keep their
+  keys, and it lets our own injected keys through. The keys are PowerPoint's
+  slide-show set, which presenter remotes are built for: Next on Right, Down,
+  Space, Enter, PageDown, N; Previous on Left, Up, Backspace, PageUp, P; Home,
+  End, a number + Enter to jump; B or `.` black, W or `,` white; Esc ends. With
+  Paint in front the slide change uses Paint's shortcuts (Ctrl+V, `S`); with
+  the presenter view in front, the background route (E2). If security software
+  objects to the hook, fall back to `RegisterHotKey` while Paint is in front.
+- **Slides are rendered at start, for the chosen screen.** The start-up flow:
+  1. **Screen picker** when there are several displays: each with resolution,
+     scaling and predicted slide size, an Identify button that shows a big
+     number on each screen, the non-laptop screen as default, and the last
+     choice remembered.
+  2. Open Paint maximised there at 100%, apply the E4 checklist, measure the
+     display area and calibrate with a test paste (E11).
+  3. Render every slide from the source at exactly that pixel size, never
+     resampled (E12). Cache the result per deck and slide size.
+  4. Pre-flight checks, then wait for the first Next.
+- **The loading painting.** While the slides render, the presenter draws a
+  deliberately crappy painting live in Paint, with Paint's own tools (E15–E17):
+  - a hand-drawn title: letter outlines from an installed font, taken at
+    runtime so no font data ships with the repo, wobbled (uneven baseline,
+    overshoot, a shaky hand) and drawn stroke by stroke, random on every run;
+  - a progress bar coloured in as rendering really progresses;
+  - classic Paint mishaps, staged: the bucket fill that leaks through a
+    one-pixel gap and floods the sky.
+
+  The painting stays on the canvas until the first Next. If live drawing does
+  not work, ready-made pieces are stamped in place by paste instead (E17).
+
+Planned features:
+
+- **Presenter view** on the other screen: current and next slide, notes, a
+  timer, slide n of N. It needs no focus, since the hook gets the keys.
+- **Pre-flight checks:**
+  - the charger is connected (Paint is slower and less steady on battery, E6);
+  - Do not disturb is on (E19);
+  - the screen is kept awake for the whole show (`SetThreadExecutionState`);
+  - the paste routes pass a self-test (E2).
+- **Build steps are whole slides** (Slidev `--with-clicks`), so Back works the
+  same way for them. Black and white screens are pre-rendered slides too.
+- **Recovery:**
+  - close Paint's "Can't complete operation" dialog automatically (`paintctl dismiss`);
+  - measure and render again behind a fresh loading painting when the display
+    changes (E18);
+  - relaunch Paint and resume at the current slide if it closes.
+- **The mouse stays Paint's.** The presenter parks the cursor off the canvas,
+  and the speaker can pick up Paint's pen and draw on a slide; the next slide
+  pastes over it.
+
 ## 0. Environment facts to capture first
 
 ```powershell
@@ -86,10 +151,15 @@ Paint build. Note which paster the self-test picks (Ctrl+V or UIA menu) and the
 | **E4** | What can UIA drive? | Accessibility Insights / `inspect.exe` / `paintctl uia-dump`: Edit > Paste menu item (there is no toolbar Paste button), Layers panel, zoom | AutomationIds table recorded. **Done (E4), plus a start-up checklist** |
 | **E8** | Keep slides out of Win+V history | Add `ExcludeClipboardContentFromMonitorProcessing` + `CanIncludeInClipboardHistory=0` + `CanUploadToCloudClipboard=0` | Win+V stays clean. **Done (E8): add `ExcludeClipboardContentFromMonitorProcessing`** |
 | **E5** | Does anything call `DAdvise`? | Implement it with `CreateDataAdviseHolder` and log | Documented yes or no. **No (E5)** |
-| **E10** | Clicker | Your presenter remote's keycodes via an LL hook, swallowed before Paint | Next/prev/black work, Paint unaffected |
-| **E12** | Build pipeline smoke test | `npx @slidev/cli export --format png --with-clicks` and `npx @marp-team/marp-cli --images png` on a sample deck, plus a PowerPoint COM `Slide.Export` of a sample `.pptx` | PNGs at the right size, notes extracted |
+| **E10** | Keys and clicker | A low-level keyboard hook that swallows the show keys only while Paint or the presenter view is in front and lets injected keys through. The callback only queues the key (Windows silently drops a hook that is too slow). Keyboard first, then your presenter remote's keycodes. Fallback: `RegisterHotKey` while Paint is in front | Next/prev/black work, Paint never sees the keys, other apps keep theirs |
+| **E12** | Build pipeline smoke test | `npx @slidev/cli export --format png --with-clicks` and `npx @marp-team/marp-cli --images png` on a sample deck, plus a PowerPoint COM `Slide.Export` of a sample `.pptx`, each at an exact pixel size measured at start (for example 1854×875) | PNGs at exactly that size, rendered from the source rather than resampled; time per slide recorded (it paces the loading painting); notes extracted |
 | **E14** | Commit a pasted slide cleanly | A paste is a floating selection with a dashed border and a toolbar over it. Esc discards it, Enter does nothing, and a click outside commits but moves the mouse and can hit a resize handle (E11). Try: the next paste committing the previous one, switching tool through UIA, keyboard tool shortcuts, a click while the cursor is hidden | Slide shows with no selection marks and no visible mouse movement, pixel-identical |
-| **E13** | End-to-end mini presenter | Folder of PNGs → arrow keys → paste. Measure the feel | "Snappy" by your own judgement |
+| **E15** | Draw in Paint with synthetic input (the loading painting) | Strokes with the Pencil and a brush by three routes: `SendInput` mouse drags (move the real cursor), synthetic pen input (`InjectSyntheticPointerInput`: pressure, and the cursor stays put), mouse messages posted to `InputSiteWindowClass` (as `S` in E2). Find how fast points can be fed before Paint drops or smooths them | A scripted stroke lands where intended and shows live, at hand-drawing speed |
+| **E16** | Pick tools, colours and sizes by script | Brush types, brush size, palette and custom colours, Shapes, Fill and Text, through keys or UIA (E4 covered only Pencil, Eraser and Brushes). Check whether Paint carries our choices into the user's next session | Every tool the loading painting uses can be selected by script, and the user's settings can be restored |
+| **E17** | Place a small paste | Where a paste smaller than the canvas lands, whether it can be moved before `S` (arrow keys, a drag), and what it costs against a full-size paste | Pieces stamped at a chosen spot: the loading painting's fallback if E15 fails |
+| **E18** | Display changes mid-show | Unplug and replug the projector, change resolution and scaling, switch between duplicate and extend (`DisplaySwitch.exe`), with FancyZones on. Record what Paint does and which events arrive. Includes the projector run E11 has not had yet | The show survives, or recovers by measuring and rendering again behind a fresh loading painting |
+| **E19** | Interruptions | Do notifications show over maximised Paint? Can Do not disturb be detected or turned on? Does Paint show tips or a what's-new panel at launch? | A pre-flight check fixes each one or warns the presenter |
+| **E13** | End-to-end mini presenter | Screen picker → loading painting while the slides render → slides by key (paste and `S`) → presenter view on the other screen. Measure the feel | "Snappy" by your own judgement, and the loading painting looks hand-made |
 
 ## 3. Suggested POC tooling
 
@@ -109,7 +179,8 @@ Paint build. Note which paster the self-test picks (Ctrl+V or UIA menu) and the
    (work-area width, work-area height − 210.5 × scale) − 66 px on each axis,
    for example 1854×875 on a 1920×1200 screen at 100%, then calibrated at start
    by a test paste so no edge row is overdrawn (E14). Decided: render at start
-   for the measured display area, keeping the reference shape, centred. E6:
+   for the measured display area of the chosen screen, keeping the reference
+   shape, centred, while the loading painting is drawn. E6:
    fast enough (p95 133 ms at 1854×875; 200–270 ms on 1440p and the 200%
    laptop panel), **with the live OLE clipboard only**: a clipboard rewrite per
    slide drops pastes and pops a modal error dialog from about 2.8 MP.
@@ -118,12 +189,15 @@ Paint build. Note which paster the self-test picks (Ctrl+V or UIA menu) and the
    both work. Background (posted paste command, posted `S` to the input site)
    keeps the presenter view free but relies on Paint internals and is about
    60–120 ms slower; foreground uses Paint's public shortcuts. Either way,
-   self-test the route at start and fall back to the other.
+   self-test the route at start and fall back to the other. **Decided:** Paint
+   in front, keys through a low-level hook (E10); the foreground route by
+   default, the background route when the presenter view is in front.
 3. **Back navigation:** undo stack (E7) or re-paste. E7 result: undo/redo is about 7×
    faster than a paste (33–41 ms vs about 250 ms) and pixel-clean, but holds
    only about 100 slides or about 1 GiB of frames, whichever is less (68 at
-   2716×1434). So: undo/redo within recent history, re-paste beyond it; a
-   short deck can be preloaded into the history.
+   2716×1434). **Decided: re-paste only.** The undo stack's edges are too
+   sharp: limited depth, redo cut off by any paste or stray click, and state
+   that can drift from the deck's.
 4. **Host language:** Python vs C#. C# is the likely pick if E2 needs message
    hooks and we want a single exe.
 5. **Authoring:** Slidev primary + Marp + PPTX adapters (per doc 03), unless E12
