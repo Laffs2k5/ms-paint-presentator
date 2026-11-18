@@ -1,0 +1,21 @@
+[project]
+name = "paintctl"
+version = "0.1.0"
+description = "Launch, size, measure and capture Windows 11 Paint (CLI + MCP server)"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+dependencies = [
+    "pywin32>=306",
+    "pywinauto>=0.6.9",
+    "pillow>=10",
+    "mcp>=1.2",
+]
+
+[project.scripts]
+paintctl = "paintctl.cli:main"
+paintctl-mcp = "paintctl.mcp_server:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
