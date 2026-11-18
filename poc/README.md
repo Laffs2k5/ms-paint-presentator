@@ -17,6 +17,12 @@ uv run python ..\experiments\e11_display_area.py --out $env:TEMP\e11
 | Experiment | Script | What it prints |
 |---|---|---|
 | E11 display area | [`e11_display_area.py`](experiments/e11_display_area.py) | Per monitor: display area, slide size (`slide_rule` = viewport − 66), pixel test |
+| E14 commit a paste | [`e14_commit_paste.py`](experiments/e14_commit_paste.py) | Per commit method: clean or not, how fast, mouse moved |
+| E6 paste speed | [`e6_paste_speed.py`](experiments/e6_paste_speed.py) | Per slide size: Ctrl+V → GetData and Ctrl+V → on screen (p50/p95/max) |
+
+[`experiments/doompaint_clipserve.py`](experiments/doompaint_clipserve.py) is
+DoomPaint's live OLE clipboard (MIT, © Mark Russinovich), vendored unchanged
+with its licence notice. E6 uses it.
 
 ## Before running an experiment
 
