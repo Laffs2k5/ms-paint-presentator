@@ -111,9 +111,11 @@ class _MultiDataObject:
                         "GetCanonicalFormatEtc", "SetData", "EnumFormatEtc",
                         "DAdvise", "DUnadvise", "EnumDAdvise"]
 
-    def __init__(self, formats, log):
+    def __init__(self, formats, log, accept_advise: bool = False):
         self._formats = formats  # [(cf, bytes)] in offering order
         self._log = log
+        self._accept_advise = accept_advise  # E5: accept DAdvise instead of refusing
+        self._sinks: dict[int, object] = {}
 
     def _note(self, what, cf=None, tymed=None):
         self._log.append({"t": time.perf_counter(), "call": what,
@@ -147,19 +149,31 @@ class _MultiDataObject:
         raise COMException(scode=_E_NOTIMPL)
 
     def GetCanonicalFormatEtc(self, *a):
+        self._note("GetCanonicalFormatEtc")
         raise COMException(scode=_E_NOTIMPL)
 
     def SetData(self, *a):
+        self._note("SetData")
         raise COMException(scode=_E_NOTIMPL)
 
-    def DAdvise(self, *a):
-        self._note("DAdvise")  # E5 asks whether anything calls this
-        raise COMException(scode=_OLE_E_ADVISENOTSUPPORTED)
+    def DAdvise(self, fe, advf, sink):
+        # E5 asks whether anything ever calls this
+        self._note("DAdvise", fe[0] if fe else None, fe[4] if fe else None)
+        self._log[-1]["advf"] = advf
+        if not self._accept_advise:
+            raise COMException(scode=_OLE_E_ADVISENOTSUPPORTED)
+        conn = len(self._sinks) + 1
+        self._sinks[conn] = sink  # keep the subscriber; nothing is sent to it
+        return conn
 
-    def DUnadvise(self, *a):
-        raise COMException(scode=_OLE_E_ADVISENOTSUPPORTED)
+    def DUnadvise(self, conn):
+        self._note("DUnadvise")
+        if not self._accept_advise:
+            raise COMException(scode=_OLE_E_ADVISENOTSUPPORTED)
+        self._sinks.pop(conn, None)
 
     def EnumDAdvise(self, *a):
+        self._note("EnumDAdvise")
         raise COMException(scode=_OLE_E_ADVISENOTSUPPORTED)
 
 
@@ -183,7 +197,7 @@ class MultiFormatClipboard:
         self._obj._log = self.log
         self._obj._formats = formats  # one reference swap: atomic under the GIL
 
-    def offer(self, formats: list[tuple[int, bytes]]) -> None:
+    def offer(self, formats: list[tuple[int, bytes]], accept_advise: bool = False) -> None:
         """Put a new data object on the clipboard (replaces the previous)."""
         self.stop()
         self.log = []
@@ -191,7 +205,7 @@ class MultiFormatClipboard:
 
         def run():
             pythoncom.OleInitialize()
-            self._obj = _MultiDataObject(formats, self.log)
+            self._obj = _MultiDataObject(formats, self.log, accept_advise)
             do = wrap(self._obj, pythoncom.IID_IDataObject)
             for _ in range(20):
                 try:

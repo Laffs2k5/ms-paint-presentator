@@ -23,6 +23,7 @@ uv run python ..\experiments\e11_display_area.py --out $env:TEMP\e11
 | E7 undo history | [`e7_undo_history.py`](experiments/e7_undo_history.py) | Pastes N slides, then walks Ctrl+Z and Ctrl+Y: depth, step time, Paint's memory |
 | E4 UI Automation survey | [`e4_uia_survey.py`](experiments/e4_uia_survey.py) | Menus, drop-downs, Layers panel, zoom: type, AutomationId, name, patterns, toggle state |
 | E8 clipboard history | [`e8_clipboard_history.py`](experiments/e8_clipboard_history.py) + [`clipboard_history.ps1`](experiments/clipboard_history.ps1) | Per opt-out format: does the slide land in Win+V history, does Paint still paste |
+| E5 DAdvise | [`e5_dadvise.py`](experiments/e5_dadvise.py) | Every IDataObject call per phase (offered, pasted, focus round-trip, pasted again), DAdvise refused or accepted |
 | E2/E3 background paste | [`e2_background_paste.py`](experiments/e2_background_paste.py) | Per candidate: does Paint paste (and commit) while another window keeps focus |
 
 [`experiments/doompaint_clipserve.py`](experiments/doompaint_clipserve.py) is
