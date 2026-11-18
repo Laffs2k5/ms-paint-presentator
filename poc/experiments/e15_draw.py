@@ -56,7 +56,8 @@ import win32con
 import win32gui
 from paintctl import core
 from PIL import ImageGrab
-from pywinauto.findwindows import ElementAmbiguousError
+from pywinauto.findwindows import ElementAmbiguousError, ElementNotFoundError
+from pywinauto.timings import TimeoutError as WaitTimeoutError
 
 CELL = 250
 CANVAS = (2000, 1000)  # 8 x 4 cells
@@ -430,11 +431,19 @@ def active_tool(paint: int) -> str:
 
 def select_brush(paint: int, brush: str = "Brush") -> str:
     """Select a brush. SelectionItem.Select on the Brushes button does not switch
-    tools; picking from its menu does."""
+    tools; picking from its menu does. Right after Paint starts the menu may not
+    open on the first try (E13), so expand again before giving up."""
     win = core._uia_window(paint)
-    win.child_window(auto_id="BrushesSplitButton").wrapper_object().expand()
-    time.sleep(0.5)
-    win.child_window(title=brush, control_type="MenuItem").wrapper_object().invoke()
+    for attempt in range(3):
+        win.child_window(auto_id="BrushesSplitButton").wrapper_object().expand()
+        time.sleep(0.5 + 0.5 * attempt)
+        try:
+            win.child_window(title=brush, control_type="MenuItem").wait(
+                "exists", timeout=2).invoke()
+            break
+        except (ElementNotFoundError, WaitTimeoutError):
+            if attempt == 2:
+                raise
     time.sleep(0.4)
     return active_tool(paint)
 
