@@ -335,3 +335,60 @@ that must not show away from the canvas, shadows included.
   slide by each route and check it, as DoomPaint does for its paste path) and
   fall back to the foreground route.
 - UIA on Paint's WinUI controls (invoke, select) activates Paint every time.
+
+## E1. Clipboard formats and alpha (2026-11-18): **pass**
+
+Script: [`poc/experiments/e1_formats.py`](../poc/experiments/e1_formats.py).
+An OLE `IDataObject` of its own offers `PNG` (registered format), `CF_DIBV5`
+(32-bit BGRA with an alpha mask, sRGB) and `CF_DIB` in any mix, and logs
+Paint's calls. Laptop panel at 200%, 2716×1434, on battery, Paint in front.
+
+**Preference: Paint takes PNG.** Offered all three, Paint pasted the PNG in
+both offering orders, so the order does not matter. Its calls, in ms after
+Ctrl+V (`PNG > CF_DIBV5 > CF_DIB` offered):
+
+| ms | Call |
+|---|---|
+| −0.6 | `EnumFormatEtc` |
+| 6 | `GetData CF_DIB` |
+| 32 | `GetData PNG`, then `GetDataHere`, then `GetData PNG` again |
+| 235 | `GetData CF_DIBV5` |
+
+- Paint asks for formats directly whatever is advertised: with only `CF_DIBV5`
+  offered it asked for `CF_DIB`, `CF_DIBV5` and `PNG`; with only `CF_DIB` it
+  also tried `image/png`.
+- It reads the format it uses more than once (PNG twice, `CF_DIB` up to three
+  times), and something reads again about 230 ms later (Paint or Windows
+  clipboard history; not verified).
+- **No call to `DAdvise`** in any log (first answer for E5).
+
+**Alpha** (overlay pasted over a committed opaque slide: an opaque red block,
+a 50% blue block, the rest fully transparent):
+
+| Format | Pastes | Opaque red | 50% blue | Transparent area |
+|---|---|---|---|---|
+| **PNG** | yes | exact red | **blended exactly** (61.4, 60.3, 171.3 vs 61.7, 60.5, 171.1 expected) | **slide shows through, exactly** |
+| `CF_DIB` 32-bit | yes | exact red | solid blue: alpha ignored | black: alpha ignored |
+| `CF_DIBV5` (as encoded here) | **no**: modal error dialog, opaque or not | – | – | – |
+
+**Speed** (opaque slide, 5 pastes each, Ctrl+V → on screen):
+
+| Format | Clipboard size | On screen |
+|---|---|---|
+| `CF_DIB` 24-bit | 11.7 MB | 274–292 ms (median 277) |
+| PNG | 0.2 MB (this test pattern; real slides compress less) | 273–295 ms (median 276) |
+
+- **Use PNG, offered alone:** Paint prefers it, it is the only format with
+  working alpha, it keeps the clipboard small, and it is as fast as `CF_DIB`.
+  Paint's own processing is the bottleneck, not the transfer. Offering several
+  formats only makes Paint read more of them.
+- **PNG alpha opens up overlays:** a build step (a bullet appearing, a
+  highlight) can be pasted as a transparent PNG over the committed slide.
+- **Never offer a format that has not been proven.** An unreadable format
+  stops the show with a modal "Can't complete operation" dialog, and every
+  paste fails until it is closed. The presenter should be able to close it
+  itself, as `paintctl dismiss` now does. Why this `CF_DIBV5` fails was not
+  investigated, since PNG covers alpha.
+- One `CF_DIBV5` speed reading (25 ms) was a false positive: its probe colour
+  was already on screen from the PNG run. The script now uses probe colours
+  unique per format.
