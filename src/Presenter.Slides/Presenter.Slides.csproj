@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Decks from other tools: recognising them, rendering their slides at a
+       pixel size with the deck's own toolchain, and the cache. -->
+  <PropertyGroup>
+    <TargetFramework>$(WindowsTfm)</TargetFramework>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Presenter.Core\Presenter.Core.csproj" />
+  </ItemGroup>
+</Project>

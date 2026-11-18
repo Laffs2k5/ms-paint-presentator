@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- The presenter's logic: navigation, the controller, geometry. No Windows
+       calls, so all of it can be unit-tested. -->
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+  </PropertyGroup>
+</Project>

@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- presenter.exe: present a deck in Paint; doctor; render. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>$(WindowsTfm)</TargetFramework>
+    <AssemblyName>presenter</AssemblyName>
+    <RootNamespace>Presenter.Cli</RootNamespace>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Presenter.Core\Presenter.Core.csproj" />
+    <ProjectReference Include="..\Presenter.Windows\Presenter.Windows.csproj" />
+    <ProjectReference Include="..\Presenter.Slides\Presenter.Slides.csproj" />
+  </ItemGroup>
+</Project>
