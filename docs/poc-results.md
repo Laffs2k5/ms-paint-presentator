@@ -982,3 +982,39 @@ once.
   Not measured: how long each tool takes to export the PDF.
 - **Build steps are lost** unless the tool exports one page per step (Slidev
   `--with-clicks` can).
+
+## E25. Past PowerPoint decks (2026-11-18): **pass for a synthetic deck**; the user's real decks are still to try
+
+Script: [`poc/experiments/e25_legacy_ppt.py`](../poc/experiments/e25_legacy_ppt.py).
+A made-up "legacy" deck: 4:3 (720×540 pt), entrance animations on click (Fly
+In by paragraph, Appear on a shape), a hidden slide, a font the laptop lacks,
+a picture. Saved as `.pptx` and as an old `.ppt` (PowerPoint 97-2003),
+reopened read-only and exported slide by slide at the largest 4:3 size for the
+laptop's viewport (2784×1499: 1910×1431, E11's rule).
+
+| | `.pptx` | `.ppt` |
+|---|---|---|
+| Open | 0.06 s | 0.17 s |
+| Export, 4 slides | 0.30 s | 0.32 s |
+| Exported size | 1910×1431, every slide | the same |
+| Animated content in the export | all there: the box and every bullet (the **final state**) | the same |
+| Hidden slide | exported like any other; flagged by `SlideShowTransition.Hidden` | the same |
+| Animations readable up front | `TimeLine.MainSequence.Count` (4 effects on slide 2) | the same |
+
+- **Old `.ppt` files work** through the same path, slightly slower to open.
+- **Build steps are lost, nothing else:** `Slide.Export` draws every animated
+  object in place. A deck with builds shows each slide complete; splitting
+  builds into steps (PPspliT-style, research 03 §4) is a later option.
+- **Skip hidden slides** to match PowerPoint's own show; the adapter reads the
+  flag.
+- **Use exact-aspect sizes:** `Slide.Export` scales to exactly the width and
+  height asked, so 1910×1431 for a 4:3 slide is stretched by 0.1%. The size
+  rule should pick sizes that keep the deck's shape exactly (for 4:3, a width
+  divisible by 4; 1908×1431 here) and still keep viewport − slide even (E11).
+- **Fonts:** the Windows font list is the wrong check. It flagged Office's
+  own default fonts (Aptos, Aptos Display), which Office fetches by itself, as
+  missing. A font that is really missing is substituted exactly as in
+  PowerPoint's own show on the same laptop, so the presenter can at most
+  warn.
+- **Not covered yet:** embedded video or audio (the export would show a still
+  frame), and real decks: transitions, SmartArt, charts, linked files.
