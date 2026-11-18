@@ -1,0 +1,2747 @@
+[
+  {
+    "depth": 0,
+    "control_type": "Window",
+    "name": "canvas-1280x720.png - Paint",
+    "automation_id": "",
+    "class_name": "MSPaintApp",
+    "rect": {
+      "left": 40,
+      "top": -8,
+      "right": 2568,
+      "bottom": 1448,
+      "width": 2528,
+      "height": 1456
+    }
+  },
+  {
+    "depth": 1,
+    "control_type": "Pane",
+    "name": "PopupHost",
+    "automation_id": "",
+    "class_name": "Microsoft.UI.Content.PopupWindowSiteBridge",
+    "rect": {
+      "left": 2419,
+      "top": 64,
+      "right": 2510,
+      "bottom": 105,
+      "width": 91,
+      "height": 41
+    }
+  },
+  {
+    "depth": 2,
+    "control_type": "Pane",
+    "name": "",
+    "automation_id": "",
+    "class_name": "InputSiteWindowClass",
+    "rect": {
+      "left": 48,
+      "top": 23,
+      "right": 2560,
+      "bottom": 1440,
+      "width": 2512,
+      "height": 1417
+    }
+  },
+  {
+    "depth": 3,
+    "control_type": "Window",
+    "name": "Popup",
+    "automation_id": "",
+    "class_name": "Popup",
+    "rect": {
+      "left": 0,
+      "top": 0,
+      "right": 0,
+      "bottom": 0,
+      "width": 0,
+      "height": 0
+    }
+  },
+  {
+    "depth": 4,
+    "control_type": "ToolTip",
+    "name": "What's new",
+    "automation_id": "",
+    "class_name": "ToolTip",
+    "rect": {
+      "left": 2423,
+      "top": 65,
+      "right": 2506,
+      "bottom": 97,
+      "width": 83,
+      "height": 32
+    }
+  },
+  {
+    "depth": 5,
+    "control_type": "Text",
+    "name": "What's new",
+    "automation_id": "",
+    "class_name": "TextBlock",
+    "rect": {
+      "left": 2433,
+      "top": 72,
+      "right": 2496,
+      "bottom": 88,
+      "width": 63,
+      "height": 16
+    }
+  },
+  {
+    "depth": 1,
+    "control_type": "Pane",
+    "name": "PopupHost",
+    "automation_id": "",
+    "class_name": "Microsoft.UI.Content.PopupWindowSiteBridge",
+    "rect": {
+      "left": 2378,
+      "top": 1370,
+      "right": 2439,
+      "bottom": 1409,
+      "width": 61,
+      "height": 39
+    }
+  },
+  {
+    "depth": 2,
+    "control_type": "Pane",
+    "name": "",
+    "automation_id": "",
+    "class_name": "InputSiteWindowClass",
+    "rect": {
+      "left": 48,
+      "top": 23,
+      "right": 2560,
+      "bottom": 1440,
+      "width": 2512,
+      "height": 1417
+    }
+  },
+  {
+    "depth": 3,
+    "control_type": "Window",
+    "name": "Popup",
+    "automation_id": "",
+    "class_name": "Popup",
+    "rect": {
+      "left": 0,
+      "top": 0,
+      "right": 0,
+      "bottom": 0,
+      "width": 0,
+      "height": 0
+    }
+  },
+  {
+    "depth": 4,
+    "control_type": "ToolTip",
+    "name": "100%",
+    "automation_id": "",
+    "class_name": "ToolTip",
+    "rect": {
+      "left": 2382,
+      "top": 1371,
+      "right": 2435,
+      "bottom": 1401,
+      "width": 53,
+      "height": 30
+    }
+  },
+  {
+    "depth": 5,
+    "control_type": "Text",
+    "name": "100%",
+    "automation_id": "",
+    "class_name": "TextBlock",
+    "rect": {
+      "left": 2391,
+      "top": 1375,
+      "right": 2426,
+      "bottom": 1395,
+      "width": 35,
+      "height": 20
+    }
+  },
+  {
+    "depth": 1,
+    "control_type": "Pane",
+    "name": "",
+    "automation_id": "",
+    "class_name": "Microsoft.UI.Content.DesktopChildSiteBridge",
+    "rect": {
+      "left": 48,
+      "top": 23,
+      "right": 2560,
+      "bottom": 1440,
+      "width": 2512,
+      "height": 1417
+    }
+  },
+  {
+    "depth": 2,
+    "control_type": "Pane",
+    "name": "",
+    "automation_id": "",
+    "class_name": "InputSiteWindowClass",
+    "rect": {
+      "left": 48,
+      "top": 23,
+      "right": 2560,
+      "bottom": 1440,
+      "width": 2512,
+      "height": 1417
+    }
+  },
+  {
+    "depth": 3,
+    "control_type": "Custom",
+    "name": "",
+    "automation_id": "",
+    "class_name": "",
+    "rect": {
+      "left": 48,
+      "top": 23,
+      "right": 2560,
+      "bottom": 1440,
+      "width": 2512,
+      "height": 1417
+    }
+  },
+  {
+    "depth": 4,
+    "control_type": "MenuBar",
+    "name": "",
+    "automation_id": "",
+    "class_name": "",
+    "rect": {
+      "left": 48,
+      "top": 23,
+      "right": 207,
+      "bottom": 63,
+      "width": 159,
+      "height": 40
+    }
+  },
+  {
+    "depth": 5,
+    "control_type": "MenuItem",
+    "name": "File",
+    "automation_id": "",
+    "class_name": "Microsoft.UI.Xaml.Controls.MenuBarItem",
+    "rect": {
+      "left": 52,
+      "top": 27,
+      "right": 93,
+      "bottom": 59,
+      "width": 41,
+      "height": 32
+    }
+  },
+  {
+    "depth": 5,
+    "control_type": "MenuItem",
+    "name": "Edit",
+    "automation_id": "",
+    "class_name": "Microsoft.UI.Xaml.Controls.MenuBarItem",
+    "rect": {
+      "left": 101,
+      "top": 27,
+      "right": 145,
+      "bottom": 59,
+      "width": 44,
+      "height": 32
+    }
+  },
+  {
+    "depth": 5,
+    "control_type": "MenuItem",
+    "name": "View",
+    "automation_id": "",
+    "class_name": "Microsoft.UI.Xaml.Controls.MenuBarItem",
+    "rect": {
+      "left": 153,
+      "top": 27,
+      "right": 203,
+      "bottom": 59,
+      "width": 50,
+      "height": 32
+    }
+  },
+  {
+    "depth": 4,
+    "control_type": "Button",
+    "name": "Save",
+    "automation_id": "",
+    "class_name": "AppBarButton",
+    "rect": {
+      "left": 216,
+      "top": 27,
+      "right": 248,
+      "bottom": 59,
+      "width": 32,
+      "height": 32
+    }
+  },
+  {
+    "depth": 4,
+    "control_type": "Button",
+    "name": "Share",
+    "automation_id": "",
+    "class_name": "AppBarButton",
+    "rect": {
+      "left": 261,
+      "top": 27,
+      "right": 293,
+      "bottom": 59,
+      "width": 32,
+      "height": 32
+    }
+  },
+  {
+    "depth": 4,
+    "control_type": "Button",
+    "name": "Undo",
+    "automation_id": "",
+    "class_name": "AppBarButton",
+    "rect": {
+      "left": 306,
+      "top": 27,
+      "right": 338,
+      "bottom": 59,
+      "width": 32,
+      "height": 32
+    }
+  },
+  {
+    "depth": 4,
+    "control_type": "Button",
+    "name": "Redo",
+    "automation_id": "",
+    "class_name": "AppBarButton",
+    "rect": {
+      "left": 346,
+      "top": 27,
+      "right": 378,
+      "bottom": 59,
+      "width": 32,
+      "height": 32
+    }
+  },
+  {
+    "depth": 4,
+    "control_type": "Button",
+    "name": "What's new",
+    "automation_id": "",
+    "class_name": "AppBarButton",
+    "rect": {
+      "left": 2456,
+      "top": 27,
+      "right": 2488,
+      "bottom": 59,
+      "width": 32,
+      "height": 32
+    }
+  },
+  {
+    "depth": 4,
+    "control_type": "Button",
+    "name": "Signed in as [redacted]",
+    "automation_id": "",
+    "class_name": "AppBarButton",
+    "rect": {
+      "left": 2492,
+      "top": 27,
+      "right": 2524,
+      "bottom": 59,
+      "width": 32,
+      "height": 32
+    }
+  },
+  {
+    "depth": 4,
+    "control_type": "Button",
+    "name": "Open settings",
+    "automation_id": "SettingsButton",
+    "class_name": "AppBarButton",
+    "rect": {
+      "left": 2524,
+      "top": 27,
+      "right": 2556,
+      "bottom": 59,
+      "width": 32,
+      "height": 32
+    }
+  },
+  {
+    "depth": 4,
+    "control_type": "Group",
+    "name": "",
+    "automation_id": "",
+    "class_name": "LandmarkTarget",
+    "rect": {
+      "left": 48,
+      "top": 64,
+      "right": 2560,
+      "bottom": 173,
+      "width": 2512,
+      "height": 109
+    }
+  },
+  {
+    "depth": 5,
+    "control_type": "Pane",
+    "name": "",
+    "automation_id": "ScrollViewer",
+    "class_name": "ScrollViewer",
+    "rect": {
+      "left": 48,
+      "top": 64,
+      "right": 2534,
+      "bottom": 172,
+      "width": 2486,
+      "height": 108
+    }
+  },
+  {
+    "depth": 6,
+    "control_type": "Group",
+    "name": "Selection",
+    "automation_id": "",
+    "class_name": "NamedContainerAutomationPeer",
+    "rect": {
+      "left": 48,
+      "top": 68,
+      "right": 161,
+      "bottom": 168,
+      "width": 113,
+      "height": 100
+    }
+  },
+  {
+    "depth": 7,
+    "control_type": "RadioButton",
+    "name": "Select",
+    "automation_id": "",
+    "class_name": "Microsoft.UI.Xaml.Controls.SplitButton",
+    "rect": {
+      "left": 60,
+      "top": 81,
+      "right": 100,
+      "bottom": 135,
+      "width": 40,
+      "height": 54
+    }
+  },
+  {
+    "depth": 8,
+    "control_type": "Image",
+    "name": "",
+    "automation_id": "",
+    "class_name": "Image",
+    "rect": {
+      "left": 68,
+      "top": 88,
+      "right": 92,
+      "bottom": 112,
+      "width": 24,
+      "height": 24
+    }
+  },
+  {
+    "depth": 7,
+    "control_type": "Button",
+    "name": "Object Select",
+    "automation_id": "",
+    "class_name": "ToggleButton",
+    "rect": {
+      "left": 108,
+      "top": 81,
+      "right": 148,
+      "bottom": 121,
+      "width": 40,
+      "height": 40
+    }
+  },
+  {
+    "depth": 8,
+    "control_type": "Image",
+    "name": "",
+    "automation_id": "",
+    "class_name": "Image",
+    "rect": {
+      "left": 116,
+      "top": 89,
+      "right": 140,
+      "bottom": 113,
+      "width": 24,
+      "height": 24
+    }
+  },
+  {
+    "depth": 6,
+    "control_type": "Group",
+    "name": "Image",
+    "automation_id": "",
+    "class_name": "NamedContainerAutomationPeer",
+    "rect": {
+      "left": 161,
+      "top": 68,
+      "right": 320,
+      "bottom": 168,
+      "width": 159,
+      "height": 100
+    }
+  },
+  {
+    "depth": 7,
+    "control_type": "Button",
+    "name": "Crop",
+    "automation_id": "CropButton",
+    "class_name": "Button",
+    "rect": {
+      "left": 173,
+      "top": 72,
+      "right": 205,
+      "bottom": 104,
+      "width": 32,
+      "height": 32
+    }
+  },
+  {
+    "depth": 7,
+    "control_type": "Button",
+    "name": "Remove background",
+    "automation_id": "",
+    "class_name": "Button",
+    "rect": {
+      "left": 173,
+      "top": 112,
+      "right": 205,
+      "bottom": 144,
+      "width": 32,
+      "height": 32
+    }
+  },
+  {
+    "depth": 8,
+    "control_type": "Image",
+    "name": "",
+    "automation_id": "",
+    "class_name": "Image",
+    "rect": {
+      "left": 177,
+      "top": 116,
+      "right": 201,
+      "bottom": 140,
+      "width": 24,
+      "height": 24
+    }
+  },
+  {
+    "depth": 7,
+    "control_type": "Button",
+    "name": "Rotate",
+    "automation_id": "RotateDropdown",
+    "class_name": "Microsoft.UI.Xaml.Controls.DropDownButton",
+    "rect": {
+      "left": 213,
+      "top": 72,
+      "right": 267,
+      "bottom": 104,
+      "width": 54,
+      "height": 32
+    }
+  },
+  {
+    "depth": 8,
+    "control_type": "Image",
+    "name": "",
+    "automation_id": "",
+    "class_name": "Image",
+    "rect": {
+      "left": 222,
+      "top": 80,
+      "right": 238,
+      "bottom": 96,
+      "width": 16,
+      "height": 16
+    }
+  },
+  {
+    "depth": 7,
+    "control_type": "Button",
+    "name": "Flip",
+    "automation_id": "Flip",
+    "class_name": "Microsoft.UI.Xaml.Controls.DropDownButton",
+    "rect": {
+      "left": 213,
+      "top": 112,
+      "right": 267,
+      "bottom": 144,
+      "width": 54,
+      "height": 32
+    }
+  },
+  {
+    "depth": 8,
+    "control_type": "Image",
+    "name": "",
+    "automation_id": "",
+    "class_name": "Image",
+    "rect": {
+      "left": 222,
+      "top": 120,
+      "right": 238,
+      "bottom": 136,
+      "width": 16,
+      "height": 16
+    }
+  },
+  {
+    "depth": 7,
+    "control_type": "Button",
+    "name": "Resize and skew",
+    "automation_id": "",
+    "class_name": "Button",
+    "rect": {
+      "left": 275,
+      "top": 92,
+      "right": 307,
+      "bottom": 124,
+      "width": 32,
+      "height": 32
+    }
+  },
+  {
+    "depth": 8,
+    "control_type": "Image",
+    "name": "",
+    "automation_id": "",
+    "class_name": "Image",
+    "rect": {
+      "left": 279,
+      "top": 96,
+      "right": 303,
+      "bottom": 120,
+      "width": 24,
+      "height": 24
+    }
+  },
+  {
+    "depth": 6,
+    "control_type": "Group",
+    "name": "Tools",
+    "automation_id": "",
+    "class_name": "NamedContainerAutomationPeer",
+    "rect": {
+      "left": 320,
+      "top": 68,
+      "right": 457,
+      "bottom": 168,
+      "width": 137,
+      "height": 100
+    }
+  },
+  {
+    "depth": 7,
+    "control_type": "Button",
+    "name": "Pencil",
+    "automation_id": "PencilTool",
+    "class_name": "ToggleButton",
+    "rect": {
+      "left": 332,
+      "top": 72,
+      "right": 364,
+      "bottom": 104,
+      "width": 32,
+      "height": 32
+    }
+  },
+  {
+    "depth": 8,
+    "control_type": "Image",
+    "name": "",
+    "automation_id": "",
+    "class_name": "Image",
+    "rect": {
+      "left": 340,
+      "top": 80,
+      "right": 356,
+      "bottom": 96,
+      "width": 16,
+      "height": 16
+    }
+  },
+  {
+    "depth": 7,
+    "control_type": "Button",
+    "name": "Fill",
+    "automation_id": "",
+    "class_name": "ToggleButton",
+    "rect": {
+      "left": 372,
+      "top": 72,
+      "right": 404,
+      "bottom": 104,
+      "width": 32,
+      "height": 32
+    }
+  },
+  {
+    "depth": 8,
+    "control_type": "Image",
+    "name": "",
+    "automation_id": "",
+    "class_name": "Image",
+    "rect": {
+      "left": 380,
+      "top": 80,
+      "right": 396,
+      "bottom": 96,
+      "width": 16,
+      "height": 16
+    }
+  },
+  {
+    "depth": 7,
+    "control_type": "Button",
+    "name": "Text",
+    "automation_id": "",
+    "class_name": "ToggleButton",
+    "rect": {
+      "left": 412,
+      "top": 72,
+      "right": 444,
+      "bottom": 104,
+      "width": 32,
+      "height": 32
+    }
+  },
+  {
+    "depth": 8,
+    "control_type": "Image",
+    "name": "",
+    "automation_id": "",
+    "class_name": "Image",
+    "rect": {
+      "left": 420,
+      "top": 80,
+      "right": 436,
+      "bottom": 96,
+      "width": 16,
+      "height": 16
+    }
+  },
+  {
+    "depth": 7,
+    "control_type": "Button",
+    "name": "Eraser",
+    "automation_id": "EraserTool",
+    "class_name": "ToggleButton",
+    "rect": {
+      "left": 332,
+      "top": 112,
+      "right": 364,
+      "bottom": 144,
+      "width": 32,
+      "height": 32
+    }
+  },
+  {
+    "depth": 8,
+    "control_type": "Image",
+    "name": "",
+    "automation_id": "",
+    "class_name": "Image",
+    "rect": {
+      "left": 340,
+      "top": 120,
+      "right": 356,
+      "bottom": 136,
+      "width": 16,
+      "height": 16
+    }
+  },
+  {
+    "depth": 7,
+    "control_type": "Button",
+    "name": "Color picker",
+    "automation_id": "",
+    "class_name": "ToggleButton",
+    "rect": {
+      "left": 372,
+      "top": 112,
+      "right": 404,
+      "bottom": 144,
+      "width": 32,
+      "height": 32
+    }
+  },
+  {
+    "depth": 8,
+    "control_type": "Image",
+    "name": "",
+    "automation_id": "",
+    "class_name": "Image",
+    "rect": {
+      "left": 380,
+      "top": 120,
+      "right": 396,
+      "bottom": 136,
+      "width": 16,
+      "height": 16
+    }
+  },
+  {
+    "depth": 7,
+    "control_type": "Button",
+    "name": "Magnifier",
+    "automation_id": "",
+    "class_name": "ToggleButton",
+    "rect": {
+      "left": 412,
+      "top": 112,
+      "right": 444,
+      "bottom": 144,
+      "width": 32,
+      "height": 32
+    }
+  },
+  {
+    "depth": 8,
+    "control_type": "Image",
+    "name": "",
+    "automation_id": "",
+    "class_name": "Image",
+    "rect": {
+      "left": 420,
+      "top": 120,
+      "right": 436,
+      "bottom": 136,
+      "width": 16,
+      "height": 16
+    }
+  },
+  {
+    "depth": 6,
+    "control_type": "Group",
+    "name": "Brushes",
+    "automation_id": "",
+    "class_name": "NamedContainerAutomationPeer",
+    "rect": {
+      "left": 457,
+      "top": 68,
+      "right": 525,
+      "bottom": 168,
+      "width": 68,
+      "height": 100
+    }
+  },
+  {
+    "depth": 7,
+    "control_type": "RadioButton",
+    "name": "Brushes",
+    "automation_id": "BrushesSplitButton",
+    "class_name": "Microsoft.UI.Xaml.Controls.SplitButton",
+    "rect": {
+      "left": 471,
+      "top": 81,
+      "right": 511,
+      "bottom": 135,
+      "width": 40,
+      "height": 54
+    }
+  },
+  {
+    "depth": 8,
+    "control_type": "Image",
+    "name": "",
+    "automation_id": "",
+    "class_name": "Image",
+    "rect": {
+      "left": 479,
+      "top": 88,
+      "right": 503,
+      "bottom": 112,
+      "width": 24,
+      "height": 24
+    }
+  },
+  {
+    "depth": 6,
+    "control_type": "Group",
+    "name": "Stickers",
+    "automation_id": "",
+    "class_name": "NamedContainerAutomationPeer",
+    "rect": {
+      "left": 525,
+      "top": 68,
+      "right": 592,
+      "bottom": 168,
+      "width": 67,
+      "height": 100
+    }
+  },
+  {
+    "depth": 7,
+    "control_type": "Button",
+    "name": "Stickers",
+    "automation_id": "",
+    "class_name": "Microsoft.UI.Xaml.Controls.DropDownButton",
+    "rect": {
+      "left": 541,
+      "top": 85,
+      "right": 575,
+      "bottom": 131,
+      "width": 34,
+      "height": 46
+    }
+  },
+  {
+    "depth": 6,
+    "control_type": "Group",
+    "name": "Shapes",
+    "automation_id": "",
+    "class_name": "NamedContainerAutomationPeer",
+    "rect": {
+      "left": 592,
+      "top": 68,
+      "right": 881,
+      "bottom": 168,
+      "width": 289,
+      "height": 100
+    }
+  },
+  {
+    "depth": 7,
+    "control_type": "List",
+    "name": "",
+    "automation_id": "",
+    "class_name": "GridView",
+    "rect": {
+      "left": 600,
+      "top": 68,
+      "right": 772,
+      "bottom": 148,
+      "width": 172,
+      "height": 80
+    }
+  },
+  {
+    "depth": 8,
+    "control_type": "ListItem",
+    "name": "Line",
+    "automation_id": "",
+    "class_name": "GridViewItem",
+    "rect": {
+      "left": 605,
+      "top": 73,
+      "right": 627,
+      "bottom": 95,
+      "width": 22,
+      "height": 22
+    }
+  },
+  {
+    "depth": 9,
+    "control_type": "Button",
+    "name": "Line",
+    "automation_id": "",
+    "class_name": "ToggleButton",
+    "rect": {
+      "left": 606,
+      "top": 74,
+      "right": 626,
+      "bottom": 94,
+      "width": 20,
+      "height": 20
+    }
+  },
+  {
+    "depth": 10,
+    "control_type": "Image",
+    "name": "",
+    "automation_id": "",
+    "class_name": "Image",
+    "rect": {
+      "left": 607,
+      "top": 75,
+      "right": 625,
+      "bottom": 93,
+      "width": 18,
+      "height": 18
+    }
+  },
+  {
+    "depth": 8,
+    "control_type": "ListItem",
+    "name": "Curve",
+    "automation_id": "",
+    "class_name": "GridViewItem",
+    "rect": {
+      "left": 627,
+      "top": 73,
+      "right": 649,
+      "bottom": 95,
+      "width": 22,
+      "height": 22
+    }
+  },
+  {
+    "depth": 9,
+    "control_type": "Button",
+    "name": "Curve",
+    "automation_id": "",
+    "class_name": "ToggleButton",
+    "rect": {
+      "left": 628,
+      "top": 74,
+      "right": 648,
+      "bottom": 94,
+      "width": 20,
+      "height": 20
+    }
+  },
+  {
+    "depth": 10,
+    "control_type": "Image",
+    "name": "",
+    "automation_id": "",
+    "class_name": "Image",
+    "rect": {
+      "left": 629,
+      "top": 75,
+      "right": 647,
+      "bottom": 93,
+      "width": 18,
+      "height": 18
+    }
+  },
+  {
+    "depth": 8,
+    "control_type": "ListItem",
+    "name": "Oval",
+    "automation_id": "",
+    "class_name": "GridViewItem",
+    "rect": {
+      "left": 649,
+      "top": 73,
+      "right": 671,
+      "bottom": 95,
+      "width": 22,
+      "height": 22
+    }
+  },
+  {
+    "depth": 9,
+    "control_type": "Button",
+    "name": "Oval",
+    "automation_id": "",
+    "class_name": "ToggleButton",
+    "rect": {
+      "left": 650,
+      "top": 74,
+      "right": 670,
+      "bottom": 94,
+      "width": 20,
+      "height": 20
+    }
+  },
+  {
+    "depth": 10,
+    "control_type": "Image",
+    "name": "",
+    "automation_id": "",
+    "class_name": "Image",
+    "rect": {
+      "left": 651,
+      "top": 75,
+      "right": 669,
+      "bottom": 93,
+      "width": 18,
+      "height": 18
+    }
+  },
+  {
+    "depth": 8,
+    "control_type": "ListItem",
+    "name": "Rectangle",
+    "automation_id": "",
+    "class_name": "GridViewItem",
+    "rect": {
+      "left": 671,
+      "top": 73,
+      "right": 693,
+      "bottom": 95,
+      "width": 22,
+      "height": 22
+    }
+  },
+  {
+    "depth": 9,
+    "control_type": "Button",
+    "name": "Rectangle",
+    "automation_id": "",
+    "class_name": "ToggleButton",
+    "rect": {
+      "left": 672,
+      "top": 74,
+      "right": 692,
+      "bottom": 94,
+      "width": 20,
+      "height": 20
+    }
+  },
+  {
+    "depth": 10,
+    "control_type": "Image",
+    "name": "",
+    "automation_id": "",
+    "class_name": "Image",
+    "rect": {
+      "left": 673,
+      "top": 75,
+      "right": 691,
+      "bottom": 93,
+      "width": 18,
+      "height": 18
+    }
+  },
+  {
+    "depth": 8,
+    "control_type": "ListItem",
+    "name": "Rounded rectangle",
+    "automation_id": "",
+    "class_name": "GridViewItem",
+    "rect": {
+      "left": 693,
+      "top": 73,
+      "right": 715,
+      "bottom": 95,
+      "width": 22,
+      "height": 22
+    }
+  },
+  {
+    "depth": 9,
+    "control_type": "Button",
+    "name": "Rounded rectangle",
+    "automation_id": "",
+    "class_name": "ToggleButton",
+    "rect": {
+      "left": 694,
+      "top": 74,
+      "right": 714,
+      "bottom": 94,
+      "width": 20,
+      "height": 20
+    }
+  },
+  {
+    "depth": 10,
+    "control_type": "Image",
+    "name": "",
+    "automation_id": "",
+    "class_name": "Image",
+    "rect": {
+      "left": 695,
+      "top": 75,
+      "right": 713,
+      "bottom": 93,
+      "width": 18,
+      "height": 18
+    }
+  },
+  {
+    "depth": 8,
+    "control_type": "ListItem",
+    "name": "Polygon",
+    "automation_id": "",
+    "class_name": "GridViewItem",
+    "rect": {
+      "left": 715,
+      "top": 73,
+      "right": 737,
+      "bottom": 95,
+      "width": 22,
+      "height": 22
+    }
+  },
+  {
+    "depth": 9,
+    "control_type": "Button",
+    "name": "Polygon",
+    "automation_id": "",
+    "class_name": "ToggleButton",
+    "rect": {
+      "left": 716,
+      "top": 74,
+      "right": 736,
+      "bottom": 94,
+      "width": 20,
+      "height": 20
+    }
+  },
+  {
+    "depth": 10,
+    "control_type": "Image",
+    "name": "",
+    "automation_id": "",
+    "class_name": "Image",
+    "rect": {
+      "left": 717,
+      "top": 75,
+      "right": 735,
+      "bottom": 93,
+      "width": 18,
+      "height": 18
+    }
+  },
+  {
+    "depth": 8,
+    "control_type": "ListItem",
+    "name": "Triangle",
+    "automation_id": "",
+    "class_name": "GridViewItem",
+    "rect": {
+      "left": 737,
+      "top": 73,
+      "right": 759,
+      "bottom": 95,
+      "width": 22,
+      "height": 22
+    }
+  },
+  {
+    "depth": 9,
+    "control_type": "Button",
+    "name": "Triangle",
+    "automation_id": "",
+    "class_name": "ToggleButton",
+    "rect": {
+      "left": 738,
+      "top": 74,
+      "right": 758,
+      "bottom": 94,
+      "width": 20,
+      "height": 20
+    }
+  },
+  {
+    "depth": 10,
+    "control_type": "Image",
+    "name": "",
+    "automation_id": "",
+    "class_name": "Image",
+    "rect": {
+      "left": 739,
+      "top": 75,
+      "right": 757,
+      "bottom": 93,
+      "width": 18,
+      "height": 18
+    }
+  },
+  {
+    "depth": 8,
+    "control_type": "ListItem",
+    "name": "Right triangle",
+    "automation_id": "",
+    "class_name": "GridViewItem",
+    "rect": {
+      "left": 605,
+      "top": 95,
+      "right": 627,
+      "bottom": 117,
+      "width": 22,
+      "height": 22
+    }
+  },
+  {
+    "depth": 9,
+    "control_type": "Button",
+    "name": "Right triangle",
+    "automation_id": "",
+    "class_name": "ToggleButton",
+    "rect": {
+      "left": 606,
+      "top": 96,
+      "right": 626,
+      "bottom": 116,
+      "width": 20,
+      "height": 20
+    }
+  },
+  {
+    "depth": 10,
+    "control_type": "Image",
+    "name": "",
+    "automation_id": "",
+    "class_name": "Image",
+    "rect": {
+      "left": 607,
+      "top": 97,
+      "right": 625,
+      "bottom": 115,
+      "width": 18,
+      "height": 18
+    }
+  },
+  {
+    "depth": 8,
+    "control_type": "ListItem",
+    "name": "Diamond",
+    "automation_id": "",
+    "class_name": "GridViewItem",
+    "rect": {
+      "left": 627,
+      "top": 95,
+      "right": 649,
+      "bottom": 117,
+      "width": 22,
+      "height": 22
+    }
+  },
+  {
+    "depth": 9,
+    "control_type": "Button",
+    "name": "Diamond",
+    "automation_id": "",
+    "class_name": "ToggleButton",
+    "rect": {
+      "left": 628,
+      "top": 96,
+      "right": 648,
+      "bottom": 116,
+      "width": 20,
+      "height": 20
+    }
+  },
+  {
+    "depth": 10,
+    "control_type": "Image",
+    "name": "",
+    "automation_id": "",
+    "class_name": "Image",
+    "rect": {
+      "left": 629,
+      "top": 97,
+      "right": 647,
+      "bottom": 115,
+      "width": 18,
+      "height": 18
+    }
+  },
+  {
+    "depth": 8,
+    "control_type": "ListItem",
+    "name": "Pentagon",
+    "automation_id": "",
+    "class_name": "GridViewItem",
+    "rect": {
+      "left": 649,
+      "top": 95,
+      "right": 671,
+      "bottom": 117,
+      "width": 22,
+      "height": 22
+    }
+  },
+  {
+    "depth": 9,
+    "control_type": "Button",
+    "name": "Pentagon",
+    "automation_id": "",
+    "class_name": "ToggleButton",
+    "rect": {
+      "left": 650,
+      "top": 96,
+      "right": 670,
+      "bottom": 116,
+      "width": 20,
+      "height": 20
+    }
+  },
+  {
+    "depth": 10,
+    "control_type": "Image",
+    "name": "",
+    "automation_id": "",
+    "class_name": "Image",
+    "rect": {
+      "left": 651,
+      "top": 97,
+      "right": 669,
+      "bottom": 115,
+      "width": 18,
+      "height": 18
+    }
+  },
+  {
+    "depth": 8,
+    "control_type": "ListItem",
+    "name": "Hexagon",
+    "automation_id": "",
+    "class_name": "GridViewItem",
+    "rect": {
+      "left": 671,
+      "top": 95,
+      "right": 693,
+      "bottom": 117,
+      "width": 22,
+      "height": 22
+    }
+  },
+  {
+    "depth": 9,
+    "control_type": "Button",
+    "name": "Hexagon",
+    "automation_id": "",
+    "class_name": "ToggleButton",
+    "rect": {
+      "left": 672,
+      "top": 96,
+      "right": 692,
+      "bottom": 116,
+      "width": 20,
+      "height": 20
+    }
+  },
+  {
+    "depth": 10,
+    "control_type": "Image",
+    "name": "",
+    "automation_id": "",
+    "class_name": "Image",
+    "rect": {
+      "left": 673,
+      "top": 97,
+      "right": 691,
+      "bottom": 115,
+      "width": 18,
+      "height": 18
+    }
+  },
+  {
+    "depth": 8,
+    "control_type": "ListItem",
+    "name": "Right arrow",
+    "automation_id": "",
+    "class_name": "GridViewItem",
+    "rect": {
+      "left": 693,
+      "top": 95,
+      "right": 715,
+      "bottom": 117,
+      "width": 22,
+      "height": 22
+    }
+  },
+  {
+    "depth": 9,
+    "control_type": "Button",
+    "name": "Right arrow",
+    "automation_id": "",
+    "class_name": "ToggleButton",
+    "rect": {
+      "left": 694,
+      "top": 96,
+      "right": 714,
+      "bottom": 116,
+      "width": 20,
+      "height": 20
+    }
+  },
+  {
+    "depth": 10,
+    "control_type": "Image",
+    "name": "",
+    "automation_id": "",
+    "class_name": "Image",
+    "rect": {
+      "left": 695,
+      "top": 97,
+      "right": 713,
+      "bottom": 115,
+      "width": 18,
+      "height": 18
+    }
+  },
+  {
+    "depth": 8,
+    "control_type": "ListItem",
+    "name": "Left arrow",
+    "automation_id": "",
+    "class_name": "GridViewItem",
+    "rect": {
+      "left": 715,
+      "top": 95,
+      "right": 737,
+      "bottom": 117,
+      "width": 22,
+      "height": 22
+    }
+  },
+  {
+    "depth": 9,
+    "control_type": "Button",
+    "name": "Left arrow",
+    "automation_id": "",
+    "class_name": "ToggleButton",
+    "rect": {
+      "left": 716,
+      "top": 96,
+      "right": 736,
+      "bottom": 116,
+      "width": 20,
+      "height": 20
+    }
+  },
+  {
+    "depth": 10,
+    "control_type": "Image",
+    "name": "",
+    "automation_id": "",
+    "class_name": "Image",
+    "rect": {
+      "left": 717,
+      "top": 97,
+      "right": 735,
+      "bottom": 115,
+      "width": 18,
+      "height": 18
+    }
+  },
+  {
+    "depth": 8,
+    "control_type": "ListItem",
+    "name": "Up arrow",
+    "automation_id": "",
+    "class_name": "GridViewItem",
+    "rect": {
+      "left": 737,
+      "top": 95,
+      "right": 759,
+      "bottom": 117,
+      "width": 22,
+      "height": 22
+    }
+  },
+  {
+    "depth": 9,
+    "control_type": "Button",
+    "name": "Up arrow",
+    "automation_id": "",
+    "class_name": "ToggleButton",
+    "rect": {
+      "left": 738,
+      "top": 96,
+      "right": 758,
+      "bottom": 116,
+      "width": 20,
+      "height": 20
+    }
+  },
+  {
+    "depth": 10,
+    "control_type": "Image",
+    "name": "",
+    "automation_id": "",
+    "class_name": "Image",
+    "rect": {
+      "left": 739,
+      "top": 97,
+      "right": 757,
+      "bottom": 115,
+      "width": 18,
+      "height": 18
+    }
+  },
+  {
+    "depth": 8,
+    "control_type": "ListItem",
+    "name": "Down arrow",
+    "automation_id": "",
+    "class_name": "GridViewItem",
+    "rect": {
+      "left": 605,
+      "top": 117,
+      "right": 627,
+      "bottom": 139,
+      "width": 22,
+      "height": 22
+    }
+  },
+  {
+    "depth": 9,
+    "control_type": "Button",
+    "name": "Down arrow",
+    "automation_id": "",
+    "class_name": "ToggleButton",
+    "rect": {
+      "left": 606,
+      "top": 118,
+      "right": 626,
+      "bottom": 138,
+      "width": 20,
+      "height": 20
+    }
+  },
+  {
+    "depth": 10,
+    "control_type": "Image",
+    "name": "",
+    "automation_id": "",
+    "class_name": "Image",
+    "rect": {
+      "left": 607,
+      "top": 119,
+      "right": 625,
+      "bottom": 137,
+      "width": 18,
+      "height": 18
+    }
+  },
+  {
+    "depth": 8,
+    "control_type": "ListItem",
+    "name": "Four-point star",
+    "automation_id": "",
+    "class_name": "GridViewItem",
+    "rect": {
+      "left": 627,
+      "top": 117,
+      "right": 649,
+      "bottom": 139,
+      "width": 22,
+      "height": 22
+    }
+  },
+  {
+    "depth": 9,
+    "control_type": "Button",
+    "name": "Four-point star",
+    "automation_id": "",
+    "class_name": "ToggleButton",
+    "rect": {
+      "left": 628,
+      "top": 118,
+      "right": 648,
+      "bottom": 138,
+      "width": 20,
+      "height": 20
+    }
+  },
+  {
+    "depth": 10,
+    "control_type": "Image",
+    "name": "",
+    "automation_id": "",
+    "class_name": "Image",
+    "rect": {
+      "left": 629,
+      "top": 119,
+      "right": 647,
+      "bottom": 137,
+      "width": 18,
+      "height": 18
+    }
+  },
+  {
+    "depth": 8,
+    "control_type": "ListItem",
+    "name": "Five-point star",
+    "automation_id": "",
+    "class_name": "GridViewItem",
+    "rect": {
+      "left": 649,
+      "top": 117,
+      "right": 671,
+      "bottom": 139,
+      "width": 22,
+      "height": 22
+    }
+  },
+  {
+    "depth": 9,
+    "control_type": "Button",
+    "name": "Five-point star",
+    "automation_id": "",
+    "class_name": "ToggleButton",
+    "rect": {
+      "left": 650,
+      "top": 118,
+      "right": 670,
+      "bottom": 138,
+      "width": 20,
+      "height": 20
+    }
+  },
+  {
+    "depth": 10,
+    "control_type": "Image",
+    "name": "",
+    "automation_id": "",
+    "class_name": "Image",
+    "rect": {
+      "left": 651,
+      "top": 119,
+      "right": 669,
+      "bottom": 137,
+      "width": 18,
+      "height": 18
+    }
+  },
+  {
+    "depth": 8,
+    "control_type": "ListItem",
+    "name": "Six-point star",
+    "automation_id": "",
+    "class_name": "GridViewItem",
+    "rect": {
+      "left": 671,
+      "top": 117,
+      "right": 693,
+      "bottom": 139,
+      "width": 22,
+      "height": 22
+    }
+  },
+  {
+    "depth": 9,
+    "control_type": "Button",
+    "name": "Six-point star",
+    "automation_id": "",
+    "class_name": "ToggleButton",
+    "rect": {
+      "left": 672,
+      "top": 118,
+      "right": 692,
+      "bottom": 138,
+      "width": 20,
+      "height": 20
+    }
+  },
+  {
+    "depth": 10,
+    "control_type": "Image",
+    "name": "",
+    "automation_id": "",
+    "class_name": "Image",
+    "rect": {
+      "left": 673,
+      "top": 119,
+      "right": 691,
+      "bottom": 137,
+      "width": 18,
+      "height": 18
+    }
+  },
+  {
+    "depth": 8,
+    "control_type": "ListItem",
+    "name": "Rounded rectangular callout",
+    "automation_id": "",
+    "class_name": "GridViewItem",
+    "rect": {
+      "left": 693,
+      "top": 117,
+      "right": 715,
+      "bottom": 139,
+      "width": 22,
+      "height": 22
+    }
+  },
+  {
+    "depth": 9,
+    "control_type": "Button",
+    "name": "Rounded rectangular callout",
+    "automation_id": "",
+    "class_name": "ToggleButton",
+    "rect": {
+      "left": 694,
+      "top": 118,
+      "right": 714,
+      "bottom": 138,
+      "width": 20,
+      "height": 20
+    }
+  },
+  {
+    "depth": 10,
+    "control_type": "Image",
+    "name": "",
+    "automation_id": "",
+    "class_name": "Image",
+    "rect": {
+      "left": 695,
+      "top": 119,
+      "right": 713,
+      "bottom": 137,
+      "width": 18,
+      "height": 18
+    }
+  },
+  {
+    "depth": 8,
+    "control_type": "ListItem",
+    "name": "Oval callout",
+    "automation_id": "",
+    "class_name": "GridViewItem",
+    "rect": {
+      "left": 715,
+      "top": 117,
+      "right": 737,
+      "bottom": 139,
+      "width": 22,
+      "height": 22
+    }
+  },
+  {
+    "depth": 9,
+    "control_type": "Button",
+    "name": "Oval callout",
+    "automation_id": "",
+    "class_name": "ToggleButton",
+    "rect": {
+      "left": 716,
+      "top": 118,
+      "right": 736,
+      "bottom": 138,
+      "width": 20,
+      "height": 20
+    }
+  },
+  {
+    "depth": 10,
+    "control_type": "Image",
+    "name": "",
+    "automation_id": "",
+    "class_name": "Image",
+    "rect": {
+      "left": 717,
+      "top": 119,
+      "right": 735,
+      "bottom": 137,
+      "width": 18,
+      "height": 18
+    }
+  },
+  {
+    "depth": 8,
+    "control_type": "ListItem",
+    "name": "Cloud callout",
+    "automation_id": "",
+    "class_name": "GridViewItem",
+    "rect": {
+      "left": 737,
+      "top": 117,
+      "right": 759,
+      "bottom": 139,
+      "width": 22,
+      "height": 22
+    }
+  },
+  {
+    "depth": 9,
+    "control_type": "Button",
+    "name": "Cloud callout",
+    "automation_id": "",
+    "class_name": "ToggleButton",
+    "rect": {
+      "left": 738,
+      "top": 118,
+      "right": 758,
+      "bottom": 138,
+      "width": 20,
+      "height": 20
+    }
+  },
+  {
+    "depth": 10,
+    "control_type": "Image",
+    "name": "",
+    "automation_id": "",
+    "class_name": "Image",
+    "rect": {
+      "left": 739,
+      "top": 119,
+      "right": 757,
+      "bottom": 137,
+      "width": 18,
+      "height": 18
+    }
+  },
+  {
+    "depth": 8,
+    "control_type": "ListItem",
+    "name": "Heart",
+    "automation_id": "",
+    "class_name": "GridViewItem",
+    "rect": {
+      "left": 605,
+      "top": 139,
+      "right": 627,
+      "bottom": 147,
+      "width": 22,
+      "height": 8
+    }
+  },
+  {
+    "depth": 9,
+    "control_type": "Button",
+    "name": "Heart",
+    "automation_id": "",
+    "class_name": "ToggleButton",
+    "rect": {
+      "left": 606,
+      "top": 140,
+      "right": 626,
+      "bottom": 147,
+      "width": 20,
+      "height": 7
+    }
+  },
+  {
+    "depth": 10,
+    "control_type": "Image",
+    "name": "",
+    "automation_id": "",
+    "class_name": "Image",
+    "rect": {
+      "left": 607,
+      "top": 141,
+      "right": 625,
+      "bottom": 147,
+      "width": 18,
+      "height": 6
+    }
+  },
+  {
+    "depth": 8,
+    "control_type": "ListItem",
+    "name": "Lightning",
+    "automation_id": "",
+    "class_name": "GridViewItem",
+    "rect": {
+      "left": 627,
+      "top": 139,
+      "right": 649,
+      "bottom": 147,
+      "width": 22,
+      "height": 8
+    }
+  },
+  {
+    "depth": 9,
+    "control_type": "Button",
+    "name": "Lightning",
+    "automation_id": "",
+    "class_name": "ToggleButton",
+    "rect": {
+      "left": 628,
+      "top": 140,
+      "right": 648,
+      "bottom": 147,
+      "width": 20,
+      "height": 7
+    }
+  },
+  {
+    "depth": 10,
+    "control_type": "Image",
+    "name": "",
+    "automation_id": "",
+    "class_name": "Image",
+    "rect": {
+      "left": 629,
+      "top": 141,
+      "right": 647,
+      "bottom": 147,
+      "width": 18,
+      "height": 6
+    }
+  },
+  {
+    "depth": 7,
+    "control_type": "Button",
+    "name": "Shape outline",
+    "automation_id": "",
+    "class_name": "Microsoft.UI.Xaml.Controls.DropDownButton",
+    "rect": {
+      "left": 776,
+      "top": 72,
+      "right": 830,
+      "bottom": 104,
+      "width": 54,
+      "height": 32
+    }
+  },
+  {
+    "depth": 7,
+    "control_type": "Button",
+    "name": "Shape fill",
+    "automation_id": "",
+    "class_name": "Microsoft.UI.Xaml.Controls.DropDownButton",
+    "rect": {
+      "left": 776,
+      "top": 112,
+      "right": 830,
+      "bottom": 144,
+      "width": 54,
+      "height": 32
+    }
+  },
+  {
+    "depth": 7,
+    "control_type": "Button",
+    "name": "Size",
+    "automation_id": "",
+    "class_name": "Microsoft.UI.Xaml.Controls.DropDownButton",
+    "rect": {
+      "left": 830,
+      "top": 83,
+      "right": 868,
+      "bottom": 133,
+      "width": 38,
+      "height": 50
+    }
+  },
+  {
+    "depth": 8,
+    "control_type": "Image",
+    "name": "",
+    "automation_id": "",
+    "class_name": "Image",
+    "rect": {
+      "left": 837,
+      "top": 90,
+      "right": 861,
+      "bottom": 114,
+      "width": 24,
+      "height": 24
+    }
+  },
+  {
+    "depth": 6,
+    "control_type": "Group",
+    "name": "Colors",
+    "automation_id": "",
+    "class_name": "NamedContainerAutomationPeer",
+    "rect": {
+      "left": 891,
+      "top": 71,
+      "right": 1221,
+      "bottom": 164,
+      "width": 330,
+      "height": 93
+    }
+  },
+  {
+    "depth": 7,
+    "control_type": "RadioButton",
+    "name": "Color 1: Black",
+    "automation_id": "",
+    "class_name": "RadioButton",
+    "rect": {
+      "left": 891,
+      "top": 71,
+      "right": 927,
+      "bottom": 107,
+      "width": 36,
+      "height": 36
+    }
+  },
+  {
+    "depth": 7,
+    "control_type": "RadioButton",
+    "name": "Color 2: White",
+    "automation_id": "",
+    "class_name": "RadioButton",
+    "rect": {
+      "left": 891,
+      "top": 109,
+      "right": 927,
+      "bottom": 145,
+      "width": 36,
+      "height": 36
+    }
+  },
+  {
+    "depth": 7,
+    "control_type": "List",
+    "name": "",
+    "automation_id": "",
+    "class_name": "GridView",
+    "rect": {
+      "left": 933,
+      "top": 72,
+      "right": 1173,
+      "bottom": 144,
+      "width": 240,
+      "height": 72
+    }
+  },
+  {
+    "depth": 8,
+    "control_type": "ListItem",
+    "name": "Black",
+    "automation_id": "",
+    "class_name": "GridViewItem",
+    "rect": {
+      "left": 933,
+      "top": 72,
+      "right": 957,
+      "bottom": 96,
+      "width": 24,
+      "height": 24
+    }
+  },
+  {
+    "depth": 8,
+    "control_type": "ListItem",
+    "name": "Gray",
+    "automation_id": "",
+    "class_name": "GridViewItem",
+    "rect": {
+      "left": 957,
+      "top": 72,
+      "right": 981,
+      "bottom": 96,
+      "width": 24,
+      "height": 24
+    }
+  },
+  {
+    "depth": 8,
+    "control_type": "ListItem",
+    "name": "Dark red",
+    "automation_id": "",
+    "class_name": "GridViewItem",
+    "rect": {
+      "left": 981,
+      "top": 72,
+      "right": 1005,
+      "bottom": 96,
+      "width": 24,
+      "height": 24
+    }
+  },
+  {
+    "depth": 8,
+    "control_type": "ListItem",
+    "name": "Red",
+    "automation_id": "",
+    "class_name": "GridViewItem",
+    "rect": {
+      "left": 1005,
+      "top": 72,
+      "right": 1029,
+      "bottom": 96,
+      "width": 24,
+      "height": 24
+    }
+  },
+  {
+    "depth": 8,
+    "control_type": "ListItem",
+    "name": "Orange",
+    "automation_id": "",
+    "class_name": "GridViewItem",
+    "rect": {
+      "left": 1029,
+      "top": 72,
+      "right": 1053,
+      "bottom": 96,
+      "width": 24,
+      "height": 24
+    }
+  },
+  {
+    "depth": 8,
+    "control_type": "ListItem",
+    "name": "Yellow",
+    "automation_id": "",
+    "class_name": "GridViewItem",
+    "rect": {
+      "left": 1053,
+      "top": 72,
+      "right": 1077,
+      "bottom": 96,
+      "width": 24,
+      "height": 24
+    }
+  },
+  {
+    "depth": 8,
+    "control_type": "ListItem",
+    "name": "Green",
+    "automation_id": "",
+    "class_name": "GridViewItem",
+    "rect": {
+      "left": 1077,
+      "top": 72,
+      "right": 1101,
+      "bottom": 96,
+      "width": 24,
+      "height": 24
+    }
+  },
+  {
+    "depth": 8,
+    "control_type": "ListItem",
+    "name": "Turquoise",
+    "automation_id": "",
+    "class_name": "GridViewItem",
+    "rect": {
+      "left": 1101,
+      "top": 72,
+      "right": 1125,
+      "bottom": 96,
+      "width": 24,
+      "height": 24
+    }
+  },
+  {
+    "depth": 8,
+    "control_type": "ListItem",
+    "name": "Indigo",
+    "automation_id": "",
+    "class_name": "GridViewItem",
+    "rect": {
+      "left": 1125,
+      "top": 72,
+      "right": 1149,
+      "bottom": 96,
+      "width": 24,
+      "height": 24
+    }
+  },
+  {
+    "depth": 8,
+    "control_type": "ListItem",
+    "name": "Purple",
+    "automation_id": "",
+    "class_name": "GridViewItem",
+    "rect": {
+      "left": 1149,
+      "top": 72,
+      "right": 1173,
+      "bottom": 96,
+      "width": 24,
+      "height": 24
+    }
+  },
+  {
+    "depth": 8,
+    "control_type": "ListItem",
+    "name": "White",
+    "automation_id": "",
+    "class_name": "GridViewItem",
+    "rect": {
+      "left": 933,
+      "top": 96,
+      "right": 957,
+      "bottom": 120,
+      "width": 24,
+      "height": 24
+    }
+  },
+  {
+    "depth": 8,
+    "control_type": "ListItem",
+    "name": "Light gray",
+    "automation_id": "",
+    "class_name": "GridViewItem",
+    "rect": {
+      "left": 957,
+      "top": 96,
+      "right": 981,
+      "bottom": 120,
+      "width": 24,
+      "height": 24
+    }
+  },
+  {
+    "depth": 8,
+    "control_type": "ListItem",
+    "name": "Brown",
+    "automation_id": "",
+    "class_name": "GridViewItem",
+    "rect": {
+      "left": 981,
+      "top": 96,
+      "right": 1005,
+      "bottom": 120,
+      "width": 24,
+      "height": 24
+    }
+  },
+  {
+    "depth": 8,
+    "control_type": "ListItem",
+    "name": "Rose",
+    "automation_id": "",
+    "class_name": "GridViewItem",
+    "rect": {
+      "left": 1005,
+      "top": 96,
+      "right": 1029,
+      "bottom": 120,
+      "width": 24,
+      "height": 24
+    }
+  },
+  {
+    "depth": 8,
+    "control_type": "ListItem",
+    "name": "Gold",
+    "automation_id": "",
+    "class_name": "GridViewItem",
+    "rect": {
+      "left": 1029,
+      "top": 96,
+      "right": 1053,
+      "bottom": 120,
+      "width": 24,
+      "height": 24
+    }
+  },
+  {
+    "depth": 8,
+    "control_type": "ListItem",
+    "name": "Light yellow",
+    "automation_id": "",
+    "class_name": "GridViewItem",
+    "rect": {
+      "left": 1053,
+      "top": 96,
+      "right": 1077,
+      "bottom": 120,
+      "width": 24,
+      "height": 24
+    }
+  },
+  {
+    "depth": 8,
+    "control_type": "ListItem",
+    "name": "Lime",
+    "automation_id": "",
+    "class_name": "GridViewItem",
+    "rect": {
+      "left": 1077,
+      "top": 96,
+      "right": 1101,
+      "bottom": 120,
+      "width": 24,
+      "height": 24
+    }
+  },
+  {
+    "depth": 8,
+    "control_type": "ListItem",
+    "name": "Light turquoise",
+    "automation_id": "",
+    "class_name": "GridViewItem",
+    "rect": {
+      "left": 1101,
+      "top": 96,
+      "right": 1125,
+      "bottom": 120,
+      "width": 24,
+      "height": 24
+    }
+  },
+  {
+    "depth": 8,
+    "control_type": "ListItem",
+    "name": "Blue-gray",
+    "automation_id": "",
+    "class_name": "GridViewItem",
+    "rect": {
+      "left": 1125,
+      "top": 96,
+      "right": 1149,
+      "bottom": 120,
+      "width": 24,
+      "height": 24
+    }
+  },
+  {
+    "depth": 8,
+    "control_type": "ListItem",
+    "name": "Lavender",
+    "automation_id": "",
+    "class_name": "GridViewItem",
+    "rect": {
+      "left": 1149,
+      "top": 96,
+      "right": 1173,
+      "bottom": 120,
+      "width": 24,
+      "height": 24
+    }
+  },
+  {
+    "depth": 7,
+    "control_type": "Button",
+    "name": "Edit colors",
+    "automation_id": "",
+    "class_name": "Button",
+    "rect": {
+      "left": 1181,
+      "top": 88,
+      "right": 1221,
+      "bottom": 128,
+      "width": 40,
+      "height": 40
+    }
+  },
+  {
+    "depth": 8,
+    "control_type": "Image",
+    "name": "",
+    "automation_id": "",
+    "class_name": "Image",
+    "rect": {
+      "left": 1187,
+      "top": 94,
+      "right": 1215,
+      "bottom": 122,
+      "width": 28,
+      "height": 28
+    }
+  },
+  {
+    "depth": 6,
+    "control_type": "Group",
+    "name": "Copilot",
+    "automation_id": "",
+    "class_name": "NamedContainerAutomationPeer",
+    "rect": {
+      "left": 1233,
+      "top": 68,
+      "right": 1298,
+      "bottom": 168,
+      "width": 65,
+      "height": 100
+    }
+  },
+  {
+    "depth": 7,
+    "control_type": "Button",
+    "name": "Copilot",
+    "automation_id": "CopilotDropDownButton",
+    "class_name": "Microsoft.UI.Xaml.Controls.DropDownButton",
+    "rect": {
+      "left": 1249,
+      "top": 85,
+      "right": 1283,
+      "bottom": 131,
+      "width": 34,
+      "height": 46
+    }
+  },
+  {
+    "depth": 6,
+    "control_type": "Group",
+    "name": "Layers",
+    "automation_id": "",
+    "class_name": "NamedContainerAutomationPeer",
+    "rect": {
+      "left": 1298,
+      "top": 68,
+      "right": 1363,
+      "bottom": 168,
+      "width": 65,
+      "height": 100
+    }
+  },
+  {
+    "depth": 7,
+    "control_type": "Button",
+    "name": "",
+    "automation_id": "",
+    "class_name": "ToggleButton",
+    "rect": {
+      "left": 1311,
+      "top": 88,
+      "right": 1351,
+      "bottom": 128,
+      "width": 40,
+      "height": 40
+    }
+  },
+  {
+    "depth": 8,
+    "control_type": "Image",
+    "name": "",
+    "automation_id": "",
+    "class_name": "Image",
+    "rect": {
+      "left": 1319,
+      "top": 96,
+      "right": 1343,
+      "bottom": 120,
+      "width": 24,
+      "height": 24
+    }
+  },
+  {
+    "depth": 5,
+    "control_type": "Button",
+    "name": "Toolbar options",
+    "automation_id": "OptionsButton",
+    "class_name": "Button",
+    "rect": {
+      "left": 2534,
+      "top": 146,
+      "right": 2556,
+      "bottom": 168,
+      "width": 22,
+      "height": 22
+    }
+  },
+  {
+    "depth": 4,
+    "control_type": "Pane",
+    "name": "",
+    "automation_id": "scrollViewer",
+    "class_name": "ScrollViewer",
+    "rect": {
+      "left": 48,
+      "top": 173,
+      "right": 2560,
+      "bottom": 1402,
+      "width": 2512,
+      "height": 1229
+    }
+  },
+  {
+    "depth": 5,
+    "control_type": "Group",
+    "name": "Using Select tool on Canvas",
+    "automation_id": "image",
+    "class_name": "NamedContainerAutomationPeer",
+    "rect": {
+      "left": 664,
+      "top": 427,
+      "right": 1943,
+      "bottom": 1147,
+      "width": 1279,
+      "height": 720
+    }
+  },
+  {
+    "depth": 4,
+    "control_type": "Text",
+    "name": "1280 × 720px",
+    "automation_id": "CanvasSizeTextBlock",
+    "class_name": "TextBlock",
+    "rect": {
+      "left": 344,
+      "top": 1414,
+      "right": 436,
+      "bottom": 1430,
+      "width": 92,
+      "height": 16
+    }
+  },
+  {
+    "depth": 4,
+    "control_type": "Text",
+    "name": "Size: 4.2KB",
+    "automation_id": "FileSizeTextBlock",
+    "class_name": "TextBlock",
+    "rect": {
+      "left": 484,
+      "top": 1414,
+      "right": 542,
+      "bottom": 1430,
+      "width": 58,
+      "height": 16
+    }
+  },
+  {
+    "depth": 4,
+    "control_type": "Button",
+    "name": "Fit to window",
+    "automation_id": "",
+    "class_name": "Button",
+    "rect": {
+      "left": 2208,
+      "top": 1409,
+      "right": 2246,
+      "bottom": 1435,
+      "width": 38,
+      "height": 26
+    }
+  },
+  {
+    "depth": 4,
+    "control_type": "ComboBox",
+    "name": "Zoom",
+    "automation_id": "ZoomValuesComboBox",
+    "class_name": "ComboBox",
+    "rect": {
+      "left": 2250,
+      "top": 1403,
+      "right": 2350,
+      "bottom": 1440,
+      "width": 100,
+      "height": 37
+    }
+  },
+  {
+    "depth": 5,
+    "control_type": "Edit",
+    "name": "Zoom",
+    "automation_id": "EditableText",
+    "class_name": "TextBox",
+    "rect": {
+      "left": 0,
+      "top": 0,
+      "right": 0,
+      "bottom": 0,
+      "width": 0,
+      "height": 0
+    }
+  },
+  {
+    "depth": 4,
+    "control_type": "Button",
+    "name": "Zoom out",
+    "automation_id": "",
+    "class_name": "Button",
+    "rect": {
+      "left": 2354,
+      "top": 1412,
+      "right": 2386,
+      "bottom": 1432,
+      "width": 32,
+      "height": 20
+    }
+  },
+  {
+    "depth": 4,
+    "control_type": "Slider",
+    "name": "Zoom",
+    "automation_id": "ZoomSliderControl",
+    "class_name": "Slider",
+    "rect": {
+      "left": 2390,
+      "top": 1406,
+      "right": 2520,
+      "bottom": 1438,
+      "width": 130,
+      "height": 32
+    }
+  },
+  {
+    "depth": 4,
+    "control_type": "Button",
+    "name": "Zoom in",
+    "automation_id": "",
+    "class_name": "Button",
+    "rect": {
+      "left": 2524,
+      "top": 1412,
+      "right": 2556,
+      "bottom": 1432,
+      "width": 32,
+      "height": 20
+    }
+  },
+  {
+    "depth": 1,
+    "control_type": "TitleBar",
+    "name": "",
+    "automation_id": "",
+    "class_name": "",
+    "rect": {
+      "left": 64,
+      "top": -5,
+      "right": 2560,
+      "bottom": 23,
+      "width": 2496,
+      "height": 28
+    }
+  },
+  {
+    "depth": 2,
+    "control_type": "MenuBar",
+    "name": "System",
+    "automation_id": "MenuBar",
+    "class_name": "",
+    "rect": {
+      "left": 48,
+      "top": 0,
+      "right": 70,
+      "bottom": 22,
+      "width": 22,
+      "height": 22
+    }
+  },
+  {
+    "depth": 3,
+    "control_type": "MenuItem",
+    "name": "System",
+    "automation_id": "",
+    "class_name": "",
+    "rect": {
+      "left": 48,
+      "top": 0,
+      "right": 70,
+      "bottom": 22,
+      "width": 22,
+      "height": 22
+    }
+  },
+  {
+    "depth": 2,
+    "control_type": "Button",
+    "name": "Minimize",
+    "automation_id": "",
+    "class_name": "",
+    "rect": {
+      "left": 2419,
+      "top": 0,
+      "right": 2466,
+      "bottom": 22,
+      "width": 47,
+      "height": 22
+    }
+  },
+  {
+    "depth": 2,
+    "control_type": "Button",
+    "name": "Restore",
+    "automation_id": "",
+    "class_name": "",
+    "rect": {
+      "left": 2466,
+      "top": 0,
+      "right": 2512,
+      "bottom": 22,
+      "width": 46,
+      "height": 22
+    }
+  },
+  {
+    "depth": 2,
+    "control_type": "Button",
+    "name": "Close",
+    "automation_id": "",
+    "class_name": "",
+    "rect": {
+      "left": 2512,
+      "top": 0,
+      "right": 2560,
+      "bottom": 22,
+      "width": 48,
+      "height": 22
+    }
+  }
+]

@@ -2,7 +2,8 @@
 
 Run presentations in Microsoft Paint instead of PowerPoint. Windows 11 only.
 
-Status: **research done → next: POC on a Windows 11 laptop.** Nothing to run yet.
+Status: **POC in progress.** Environment captured and `paintctl` working on
+Windows 11 ARM64. Next: the DoomPaint baseline. See [POC results](docs/poc-results.md).
 
 ## Research
 
@@ -23,9 +24,10 @@ Status: **research done → next: POC on a Windows 11 laptop.** Nothing to run y
 ## Tools
 
 - [`poc/paintctl`](poc/paintctl): CLI + MCP server to launch, size, maximise,
-  measure, zoom, screenshot and UIA-dump Paint (untested on Windows yet).
+  measure, zoom, screenshot and UIA-dump Paint. CLI tested on Windows 11.
 
-## Next
+## POC
 
 - [POC plan](docs/poc-plan.md): experiments to run on the laptop and the
   decisions they unlock.
+- [POC results](docs/poc-results.md): what each step found.
