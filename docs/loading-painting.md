@@ -13,7 +13,9 @@ but only if there is time. At the end it tries to fill the cloud with the
 bucket. The cloud has a hole, and the whole sky turns light blue. Then it
 signs, with a typo.
 
-Today's painting (E13: sun, title, progress bar) is kept and built on.
+It replaces E13's first painting (sun, title, progress bar).
+[`loading_painting.py`](../poc/experiments/loading_painting.py) paints it, and
+E13 runs it.
 
 ## Composition
 
@@ -29,7 +31,7 @@ offsets.
 | Cloud | centre at 78% or 22% across, 14% down; 14% wide, 6.5% high |
 | Sun and cloud | in opposite top corners; which side is random |
 | Birds | three small "m"s near the top middle |
-| Signature | bottom right, at 82% across, 95% down |
+| Signature | bottom right corner: a white box sized to the date, its right edge at 98.5% across and its bottom at 99% down. The text is about 6% of the height (the concept had 3.3%; the user wanted a larger date) |
 
 ## Sequence and time budgets
 
@@ -44,20 +46,20 @@ switches change only the colour (about 1.0 s) rather than the tool (about
 | 3 | Cloud | Brush · Black | 0.9 s | Not in fast mode. Lumpy outline with 3–5 bumps, **deliberately left open**: the gap is needed for the finale |
 | 4 | Frame | Brush · Black | 0.6 s (fast: 0.4 s) | Four crooked strokes that overshoot the corners |
 | 5 | Fill | Brush · Lime, 1.6× width | 1.4 s × the share of slides filled | A zigzag bite of 1/N of the frame per ready slide, a little outside the lines. After every element the pen comes back and catches up |
-| 6 | Decorations | | | Only if time allows (below), in this order |
-| 6a | Signature | Text · Black, Comic Sans | 4.0 s | Today's date with the last two digits swapped, corrected with Backspace. The text box is opaque white |
-| 6b | Birds | Brush · Black | 2.5 s | Two or three "m"s in different sizes |
+| 6 | Decorations | | | Only if time allows (below) |
+| 6a | Birds | Brush · Black | 2.5 s | Two or three "m"s in different sizes |
 | 7 | Waiting | Brush · Lime | | Nothing left to decorate: the pen waits at the frame and adds one bite per slide that becomes ready |
 | 8 | Finale | Fill (bucket) · Light turquoise | about 2.5 s | Starts only at 100%. The pen hesitates in the cloud ("…hmm", 0.8 s), then clicks. The colour leaks through the gap and floods everything connected, but not the inside of closed letters |
+| 9 | Signature | Text · Black, Comic Sans, Background fill white | 4.0 s (measured: about 9 s) | Today's date with the last two digits swapped, corrected with Backspace, in an opaque white box. The concept had it among the decorations, before the finale; it moved after it (E27, below) |
 
 ## Honest progress
 
 1. The fill follows slides that are ready, never the clock.
 2. After each decoration the pen goes back to the frame and catches up.
 3. Sun and cloud come right after the title when preparation is long
-   enough. The signature and the birds start only if the estimated remaining
-   time (measured pace × slides left) covers their cost with at most 1 s to
-   spare.
+   enough. The birds start only if the estimated remaining time (measured
+   pace × slides left) covers their cost with at most 1 s to spare. The
+   signature always comes last, after the finale.
 4. With the decorations used up, the pen waits at the frame.
 5. Fast mode, under 6 s of preparation: a faster title, no sun, cloud or
    decorations; the bucket fills the sky directly. Under 9 s: no sun.
@@ -120,8 +122,22 @@ The concept was simulated in a browser. E27 checked its open points in Paint:
   twice**: Paint drops the last segment of a stroke, and a ring drawn in one
   stroke leaked through it. A thin anti-aliased rim stays along the strokes.
 
-Still open:
+Building it (E13's third round) answered the rest:
 
-- **Keys while painting:** the keyboard hook must be on during the painting
-  so the first key can stop it, which means the painter's own keys (Fill `B`,
-  Backspace) must carry the presenter's tag or the hook swallows them (E10).
+- **Keys while painting:** the keyboard hook is on during the painting, so
+  the first key can stop it. The painter's own keys (Fill `B`, Text `T`,
+  Backspace) carry the presenter's tag (E10); the typed date goes in as
+  Unicode characters, which are not show keys.
+- **The font size:** only the sizes in the size box's list can be chosen, by
+  selecting the item; a value set through UIA or typed into the box is
+  ignored. The date takes the largest listed size not above 6% of the
+  canvas height: 48 pt on a 1283 px canvas.
+- **Paint keeps the Text font and its size across sessions.** The painter
+  writes both to a file before changing them and puts them back after the
+  show; a run that dies half way is put right by the next one.
+- **Committing the text:** a pen tap on the canvas outside the box, then
+  another tool. A tool change alone dropped the typed text in some runs.
+- **Timing:** with 7 slides and 12 s of preparation the painting takes 24 s
+  (the concept's simulation gave 19.2 s for 15 s). The signature takes about
+  9 s of it, mostly choosing the font, size, fill and colours through UIA:
+  the next thing to speed up.

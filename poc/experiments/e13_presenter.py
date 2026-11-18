@@ -11,12 +11,15 @@ The plan's presenter design, end to end, on one screen:
    fixed design canvas at a scale factor, one row cropped or padded if the
    rounding is off (E12). Edge runs headless with a throwaway profile kept in
    the work folder. Rendered slides are cached per deck and size.
-3. Meanwhile, draw the loading painting live in Paint with the synthetic pen
-   (E15) and Paint's own tools (E16): an airbrushed sun, a progress-bar frame
-   drawn with the Rectangle tool, the deck's title as wobbly hand-drawn
-   letters (an installed font's outlines, taken at runtime, random every run),
-   and the bar coloured in with the crayon as the slides really render. The
-   painting stays until the first key.
+3. Meanwhile, paint the loading painting live in Paint with the synthetic pen
+   (E15) and Paint's own tools (E16): the designer's concept, The sky leaks
+   (docs/loading-painting.md, loading_painting.py). The title, a sun and a
+   cloud if there is time, a frame filled as the slides really render, then
+   the bucket leaks through the cloud and the date is signed with a typo. The
+   keyboard hook is on while it paints: the first key stops the painting and
+   goes straight to slide 1. --simulate-prep paces the fill as if rendering
+   took that long (with cached slides), --seed fixes the painting's chance,
+   --interrupt-after presses Right after that many seconds.
 4. The show: a keyboard hook takes the show keys while Paint is in front
    (E10). Each slide is a new PNG clipboard object (E1, E7, opted out of
    clipboard history, E8), pasted with Ctrl+V and committed with `S` (E14),
@@ -28,8 +31,8 @@ The plan's presenter design, end to end, on one screen:
    press to slide on screen.
 
 Not in this version: the screen picker (Tk does not load in the ARM64 Python,
-so it will be a small Win32 window; it needs two displays to test, see E18),
-the presenter view and the cache's clean-up.
+so it will be a small Win32 window; it needs two displays to test, see E18)
+and the cache's clean-up. There is no presenter view (the user's call).
 
 Needs the Node tools from E12 in --work. Run from poc/paintctl:
 
@@ -163,6 +166,9 @@ class Render(threading.Thread):
         self.dir = work / "e13-cache" / f"{key}-{size[0]}x{size[1]}"
         self.done, self.files, self.error, self.cached, self.seconds = 0, [], None, False, None
 
+    def cached_ready(self) -> bool:
+        return (self.dir / "complete").exists()
+
     def run(self):
         t0 = time.perf_counter()
         try:
@@ -261,115 +267,6 @@ def glyph_contours(text: str, font: str = "Comic Sans MS", px: int = 200) -> lis
     return contours
 
 
-def wobble(contour, rng: random.Random, amp: float, step: float = 5.0):
-    """Resample every `step` px and add a shaky hand: a random offset per
-    stroke, two slow waves, and a small overshoot past the end."""
-    pts = [contour[0]]
-    for (x0, y0), (x1, y1) in zip(contour, contour[1:]):
-        n = max(1, int(math.hypot(x1 - x0, y1 - y0) / step))
-        pts += [(x0 + (x1 - x0) * k / n, y0 + (y1 - y0) * k / n) for k in range(1, n + 1)]
-    if len(pts) > 2:  # overshoot along the last direction
-        (xa, ya), (xb, yb) = pts[-2], pts[-1]
-        pts += [(xb + (xb - xa) * k, yb + (yb - ya) * k) for k in (1, 2)]
-    dx, dy = rng.uniform(-amp, amp), rng.uniform(-amp, amp)
-    fx, fy = rng.uniform(0, 6.3), rng.uniform(0, 6.3)
-    out = []
-    for i, (x, y) in enumerate(pts):
-        s = i * step
-        out.append((x + dx + 0.6 * amp * math.sin(s / 70 + fx),
-                    y + dy + 0.6 * amp * math.sin(s / 53 + fy)))
-    return out
-
-
-# --- the loading painting -----------------------------------------------------------------------------
-class Painter:
-    def __init__(self, paint: int, origin: tuple[int, int], size: tuple[int, int], pen):
-        self.paint, self.origin, self.size, self.pen = paint, origin, size, pen
-        self.rng = random.Random()
-        self.tool = None
-        w, h = size
-        self.bar = (round(w * 0.12), round(h * 0.78), round(w * 0.88), round(h * 0.86))
-        self.filled = self.bar[0] + 4
-
-    def at(self, x, y):
-        return round(self.origin[0] + x), round(self.origin[1] + y)
-
-    def stroke(self, pts, ms: float = 3):
-        e15.stroke(self.pen, [self.at(x, y) for x, y in pts], ms)
-
-    def use(self, brush: str, colour: str, size: int):
-        if self.tool != (brush, colour, size):
-            e15.select_brush(self.paint, brush)
-            e16.pick_colour(self.paint, colour)
-            e16.slider(self.paint, "Size").SetValue(size)
-            self.tool = (brush, colour, size)
-
-    def sun(self):
-        """A scribbled crayon sun with wonky rays, top right."""
-        w, h = self.size
-        cx, cy, r = w * 0.9, h * 0.14, min(w, h) * 0.07
-        self.use("Crayon", "Orange", 22)
-        turns = 5
-        spiral = [(cx + r * t / (turns * 6.283) * math.cos(t) + self.rng.uniform(-2, 2),
-                   cy + r * t / (turns * 6.283) * math.sin(t) + self.rng.uniform(-2, 2))
-                  for t in [k * 0.2 for k in range(int(turns * 6.283 / 0.2) + 1)]]
-        self.stroke(spiral, 3)
-        for k in range(9):  # rays
-            a = k * 2 * math.pi / 9 + self.rng.uniform(-0.25, 0.25)
-            r0, r1 = 1.3 * r, (1.9 + self.rng.uniform(-0.2, 0.3)) * r
-            self.stroke([(cx + r0 * math.cos(a), cy + r0 * math.sin(a)),
-                         (cx + (r0 + r1) / 2 * math.cos(a + 0.05), cy + (r0 + r1) / 2 * math.sin(a + 0.05)),
-                         (cx + r1 * math.cos(a), cy + r1 * math.sin(a))], 12)
-
-    def bar_frame(self):
-        x0, y0, x1, y1 = self.bar
-        item = e16.ui(self.paint).child_window(title="Rectangle", control_type="ListItem").wrapper_object()
-        e16.tap(item)  # E16: shapes by pen tap
-        e16.pick_colour(self.paint, "Black")
-        self.tool = None
-        self.stroke([(x0 + (x1 - x0) * k / 10, y0 + (y1 - y0) * k / 10) for k in range(11)], 8)
-        time.sleep(0.3)
-        e16.key("S")  # commit the shape
-
-    def fill_to(self, frac: float):
-        x0, y0, x1, y1 = self.bar
-        target = x0 + 4 + (x1 - x0 - 8) * frac
-        if target <= self.filled + 2:
-            return
-        self.use("Crayon", "Lime", 12)
-        pts, x, up = [], self.filled, True
-        while x < target:
-            pts.append((x, (y0 + 6) if up else (y1 - 6)))
-            x += self.rng.uniform(7, 12)
-            up = not up
-        pts.append((target, y1 - 6))
-        self.stroke(pts, 3)
-        self.filled = target
-
-    def title(self, text: str, progress) -> int:
-        """Draw the title stroke by stroke; every few strokes, colour in the bar
-        up to the render's progress. Returns the number of strokes."""
-        w, h = self.size
-        raw = glyph_contours(text)
-        xs = [x for c in raw for x, _ in c]
-        ys = [y for c in raw for _, y in c]
-        bw, bh = max(xs) - min(xs), max(ys) - min(ys)
-        box = (w * 0.08, h * 0.2, w * 0.82, h * 0.6)
-        s = min((box[2] - box[0]) / bw, (box[3] - box[1]) / bh)
-        ox = box[0] + ((box[2] - box[0]) - bw * s) / 2 - min(xs) * s
-        oy = box[1] + ((box[3] - box[1]) - bh * s) / 2 - min(ys) * s
-        colour = self.rng.choice(["Indigo", "Red", "Purple", "Turquoise", "Dark red"])
-        strokes = [wobble([(ox + x * s, oy + y * s) for x, y in c], self.rng, amp=max(4.0, w / 350))
-                   for c in raw]
-        every = max(1, len(strokes) // 4)
-        for i, st in enumerate(strokes):
-            self.use("Crayon", colour, 10)
-            self.stroke(st, 3 if progress() < 1 else 1)  # hurry once the slides are ready
-            if (i + 1) % every == 0:
-                self.fill_to(progress())
-        return len(strokes)
-
-
 # --- the show ------------------------------------------------------------------------------------------
 class Show:
     def __init__(self, paint, origin, size, files, on_screen: Image.Image, debug_dir=None):
@@ -389,6 +286,7 @@ class Show:
         self.clip = e1.MultiFormatClipboard()
         self.screen = e6.ScreenProbe()
         self.idx = 0  # the loading painting is on the canvas
+        self.first = True  # the first key always goes to slide 1
         self.blanked = None
         self.changes = []  # (from, to, ms, keys combined)
 
@@ -470,6 +368,8 @@ class Show:
                     blank = action
             if end:
                 return
+            if self.first:  # whatever the key (the concept): straight to slide 1
+                target, blank, self.first = 1, None, False
             if blank in ("black", "white"):
                 png, img = self.blank[blank]
                 to = blank
@@ -517,6 +417,11 @@ def main() -> int:
     p.add_argument("--auto", action="store_true", help="drive the show with scripted keys")
     p.add_argument("--snapshot", type=Path, help="save the finished loading painting (canvas only)")
     p.add_argument("--debug-dir", type=Path, help="save the canvas when a paste is not seen")
+    p.add_argument("--simulate-prep", type=float, metavar="SECONDS",
+                   help="reveal the slides as ready over this many seconds, as if rendering took that long")
+    p.add_argument("--seed", type=int, help="the painting's random seed")
+    p.add_argument("--interrupt-after", type=float, metavar="SECONDS",
+                   help="press Right this long into the painting (tests stopping it)")
     a = p.parse_args()
     work = a.work.resolve()
     mons = e11.monitors()
@@ -537,6 +442,7 @@ def main() -> int:
 
     pen = e15.Pen()
     e16.PEN = pen
+    painter = origin = None
     paint = None
     try:
         predicted = predicted_viewport(mon)
@@ -564,18 +470,29 @@ def main() -> int:
         ox, oy, dx, dy = canvas_origin(paint)
         origin = (ox, oy)
         out["origin offset from UIA"] = [dx, dy]
-        t0 = time.perf_counter()
-        painter = Painter(paint, origin, size, pen)
-        painter.sun()
-        painter.bar_frame()
-        strokes = painter.title("Paint Presentator", lambda: render.done / render.total)
+        import loading_painting as lp  # imported here: it imports this module too
+        hook = e10.KeyHook({paint})  # on during the painting: the first key stops it
+        sim, t_start = a.simulate_prep, time.perf_counter()
+
+        def progress():
+            if sim:  # slides "become ready" over sim seconds, never before they are
+                k = int(render.total * (time.perf_counter() - t_start) / sim)
+                return lp.Progress(min(k, render.done, render.total), render.total)
+            return lp.Progress(render.done, render.total)
+
+        estimate = sim if sim else (0.0 if render.cached_ready() else 2 + 0.1 * render.total)
+        painter = lp.LoadingPainting(paint, origin, size, pen, "Paint Presentator", progress,
+                                     estimate, stop=lambda: not hook.events.empty(), seed=a.seed)
+        if a.interrupt_after:
+            threading.Timer(a.interrupt_after, lambda: e10.tap(0x27)).start()
+        result = painter.run()
+        out["painting"] = {k: v for k, v in result.items() if k != "steps"}
+        out["painting"]["prep estimate s"] = estimate
+        out["painting steps"] = result["steps"]
         render.join(120)
-        painter.fill_to(1.0)
-        e16.key("S")  # the Select tool: no brush panel, and pastes commit with S
-        out["painting"] = {"seconds": round(time.perf_counter() - t0, 1), "title strokes": strokes}
         out["render"] = {"seconds": render.seconds, "slides": render.total, "cached": render.cached,
                          "error": render.error}
-        log(f"painting done in {out['painting']['seconds']} s; render {out['render']}")
+        log(f"painting: {out['painting']}; render {out['render']}")
         time.sleep(0.5)
         c = settled_canvas(paint)  # has the canvas moved since it was measured?
         now = (c["left"] + dx, c["top"] + dy)  # UIA's rectangle plus the measured offset
@@ -590,11 +507,10 @@ def main() -> int:
         if render.error:
             raise RuntimeError(render.error)
         show = Show(paint, origin, size, render.files, painting, a.debug_dir)
-        hook = e10.KeyHook({paint})
         stop = threading.Event()
         if a.auto:
             threading.Thread(target=auto_keys, args=(stop,), daemon=True).start()
-        else:
+        elif not result["interrupted"]:
             log("Ready: Right, Space or Enter for the first slide; Esc ends.")
         try:
             show.run(hook)
@@ -608,6 +524,13 @@ def main() -> int:
             out["key to slide ms"] = {"median": statistics.median(ms), "max": max(ms), "n": len(ms)}
     finally:
         ctypes.windll.kernel32.SetThreadExecutionState(0x80000000)
+        if paint and origin:  # Paint keeps the Text font across sessions (E16)
+            try:
+                import loading_painting as lp
+                if lp.restore_text_settings(paint, (origin[0] + 200, origin[1] + 200)):
+                    log("Text font and background fill put back")
+            except Exception as exc:  # noqa: BLE001
+                log(f"could not restore the Text settings: {exc}")
         pen.close()
         if paint:
             core.close(paint, discard=True)

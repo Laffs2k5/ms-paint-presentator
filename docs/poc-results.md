@@ -633,7 +633,7 @@ numbers are from the final run; earlier runs found the pitfalls below.
 | Colour slot | UIA select of "Color 1" / "Color 2" | – |
 | Colours (20) | A pen tap on the swatch (30 of 30 picks) | UIA: the swatches have no SelectionItem pattern |
 | Size, opacity | The Size and Opacity sliders (UIA RangeValue), there while a drawing tool is active: size 0–90, opacity 0–100 | – |
-| Text | `T`, drag a box with the pen, pick the font, type the text as Unicode key events (`KEYEVENTF_UNICODE`), commit with a pen tap outside the box or by choosing another tool through UIA | Letters sent as virtual-key presses (no text came out); `S` while a box is open types an S |
+| Text | `T`, drag a box with the pen, pick the font, type the text as Unicode key events (`KEYEVENTF_UNICODE`), commit with a pen tap outside the box or by choosing another tool through UIA (later the tool change dropped the text in some runs: use the tap, see E13's third round) | Letters sent as virtual-key presses (no text came out); `S` while a box is open types an S |
 | Custom colours | – | Edit colors, see below |
 
 A pen tap on a control is the general fallback: it clicks without moving the
@@ -666,7 +666,8 @@ was filled with Colour 2 (yellow, 255, 242, 0).
 the Brush), colours (Black, White), shape outline and fill (Solid outline, No
 fill), Pencil size (0) and opacity (100) all reset. **The Text tool's font is
 kept.** The script records the font at the start and puts it back, even when a
-run fails, then checks it after one more relaunch.
+run fails, then checks it after one more relaunch. (The Text font size is kept
+too, found later in E13's third round; this script does not change it.)
 
 **Pitfalls found:**
 
@@ -688,7 +689,9 @@ run fails, then checks it after one more relaunch.
   AutomationId `image` and the "Using … tool" name; the lookup retries.
 - **A tap with the Text tool on empty canvas opens a new box,** and if the font
   list is still open a tap only closes the list. Close a box by choosing
-  another tool through UIA.
+  another tool through UIA. (Later, E13's third round: that can drop the
+  box's text. To keep the text, tap outside the box first, then change tool
+  to drop the new empty box.)
 
 **For the loading painting:** compose it in the 20 palette colours above,
 choose tools by key, brushes and shape styles through their menus, colours by
@@ -904,6 +907,57 @@ keys: Next ×3, Back, End, Home, 3 + Enter, B twice, then four quick Nexts.
   presenter also waits for the canvas to sit centred before measuring, and
   later takes the origin from UIA's rectangle plus the offset measured while
   the canvas was blank (0, 1 px here).
+- **Third round: the designer's painting**, [The sky leaks](loading-painting.md)
+  ([`loading_painting.py`](../poc/experiments/loading_painting.py)), painted
+  live after E27. A scripted run with the cached slides, `--simulate-prep 12`
+  pacing the fill as if rendering took 12 s. Each time is when the step
+  started drawing:
+
+  | Time | Step |
+  |---|---|
+  | 1.8 s | The title, in Black this time (the colour is random), after choosing the Brush and its colour |
+  | 5.5 s | The sun |
+  | 8.0 s | The cloud, left open |
+  | 8.9 s | The frame |
+  | 10.2 s | The fill catches up: slides 1–5 of 7 |
+  | 11.9 s | Birds |
+  | 13.0 s | The fill: slides 6 and 7 |
+  | 14.3 s | The bucket hesitates in the cloud, then clicks; the sky turns turquoise through the gap |
+  | 15.6 s | The signature: Comic Sans, 48 pt, in a white box; the typo is put right with Backspace |
+  | 24.1 s | Done |
+
+  Then 230 ms median key to slide (n = 14), one Paint launch, and the
+  painting as slide 0. The keyboard hook is on while it paints: the first key
+  stops it and goes to slide 1. The painter's own keys (`B`, `T`, Backspace)
+  carry the presenter's tag, and the date goes in as Unicode characters
+  (`VK_PACKET`), which are not show keys.
+- **The signature is slow:** about 9 s against the concept's 4 s, mostly
+  choosing the font, size, Background fill and colours through UIA. The first
+  key cuts it short, but it is the next thing to speed up.
+- **What turned up while building it:**
+  - **The font size** box accepts a value through UIA's Value pattern, and
+    typed text, and Paint uses neither. Selecting an item of its list works,
+    so only the listed sizes (… 28, 36, 48, 72 …) can be had. The date asks
+    for 6% of the canvas height (the user wanted it larger than the concept's
+    3.3%) and gets the largest listed size not above that: 48 pt here, where
+    it had been Paint's 22.
+  - **Paint keeps the font size across sessions, not only the font** (E16
+    checked only the font). The painter writes both to a file before it
+    changes them and puts them back after the show, so a run that dies half
+    way is put right by the next one. Checked after a relaunch: Calibri, 22,
+    Background fill off.
+  - **Choosing another tool does not reliably commit a text box.** It
+    committed in the painting's first runs and in two probes, and dropped the
+    typed text in eight other probe runs (nothing on the canvas 4 s later). A
+    pen tap on the canvas outside the box committed it in all 7 runs it was
+    tried. With the Text tool the tap also opens a new, empty box, which the
+    tool change then drops.
+  - **A detour worth remembering:** in downscaled screenshots the Comic Sans
+    date looked like another font, which sent the debugging the wrong way,
+    and one of those probes changed the user's Paint font without putting it
+    back (put back to Calibri and checked). Judge a font by measuring, not by
+    eye: overlap the text's ink with renders of the candidate fonts (Comic Sans
+    scored 0.80, Calibri 0.47). And every probe restores what it changes.
 
 ## E20. A C# live clipboard object (2026-11-18): **pass**
 
