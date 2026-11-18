@@ -47,7 +47,7 @@ internal static unsafe class Native
     public const uint GA_ROOTOWNER = 3;
     public const int SW_RESTORE = 9, SW_MAXIMIZE = 3;
     public const uint SWP_NOZORDER = 0x0004, SWP_NOACTIVATE = 0x0010;
-    public const uint WM_CLOSE = 0x0010, WM_COMMAND = 0x0111, WM_KEYUP = 0x0101;
+    public const uint WM_CLOSE = 0x0010, WM_COMMAND = 0x0111, WM_KEYUP = 0x0101, WM_CHAR = 0x0102;
     public const byte VK_MENU = 0x12;
 
     [StructLayout(LayoutKind.Sequential)]

@@ -73,7 +73,7 @@ internal static class DoctorCommand
             Add("UI Automation", missing.Count == 0 ? Level.Pass : Level.Fail,
                 missing.Count == 0 ? "every element the presenter uses is there (E4)" : $"missing: {string.Join(", ", missing)} (a Paint update or a localised Paint?)");
 
-            var (ox, oy, dx, dy) = await stage.Run(p => { p!.Focus(); Keyboard.Tap('S'); Thread.Sleep(300); return p.MeasureOrigin(); });
+            var (ox, oy, dx, dy) = await stage.Run(p => { p!.Focus(); p.Key('S'); Thread.Sleep(300); return p.MeasureOrigin(); });
             Add("canvas origin", Math.Abs(dx) <= 2 && Math.Abs(dy) <= 2 ? Level.Pass : Level.Warn, $"UIA's rectangle is off by ({dx}, {dy}) px");
 
             // a calibration paste, read back pixel by pixel (E11)
@@ -117,8 +117,8 @@ internal static class DoctorCommand
             // the hook (E10)
             hook = new KeyHook(paint.Window);
             bool alive = hook.Alive();
-            await stage.Run(p => p!.Focus());
-            Keyboard.Tap(0x27, tagged: false);  // Right, as the speaker would
+            bool front = await stage.Run(p => p!.Focus());
+            if (front) Keyboard.Tap(0x27, tagged: false);  // Right, as the speaker would; only ever into Paint
             bool taken = await Task.Run(async () =>
             {
                 using var cts = new CancellationTokenSource(1000);
@@ -155,7 +155,7 @@ internal static class DoctorCommand
                 Try(() => t.Brush("Brush"));
                 Try(() => { t.Colour("Orange"); t.Colour("Black"); });
                 Try(() => t.Size(4));
-                Keyboard.Tap('S');
+                p!.Key('S');
                 t.TextBox(ox + 300, oy + 300, ox + 700, oy + 420);
                 t.RememberTextSettings();
                 string? font = t.CurrentFont();

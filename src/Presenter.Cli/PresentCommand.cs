@@ -128,7 +128,7 @@ internal static class PresentCommand
             var (ox, oy, dx, dy) = await stage.Run(p =>
             {
                 p!.Focus();
-                Keyboard.Tap('S');  // the Select tool: no brush panel over the canvas
+                p.Key('S');  // the Select tool: no brush panel over the canvas
                 Thread.Sleep(300);
                 return p.MeasureOrigin();
             });
@@ -167,7 +167,7 @@ internal static class PresentCommand
                 : stage;
             var controller = new ShowController(Staged(slides, size), slides, hook.Keys, startAtPainting: true, Log);
             using var stopAuto = new CancellationTokenSource();
-            Task autoKeys = o.Auto ? Task.Run(() => AutoKeys(stopAuto.Token)) : Task.CompletedTask;
+            Task autoKeys = o.Auto ? Task.Run(() => AutoKeys(() => paint?.InFront() == true, stopAuto.Token)) : Task.CompletedTask;
             Log("Ready: Right, Space or Enter for the first slide; Esc ends.");
             // no blocking collections while the show runs (research 05 §7.5, E23)
             var gcMode = System.Runtime.GCSettings.LatencyMode;
@@ -370,7 +370,11 @@ internal static class PresentCommand
             return new PaintingProgress(done, slides.Count);
         }
         if (o.InterruptAfter > 0)  // for tests: the speaker presses Right during the painting
-            _ = Task.Delay(TimeSpan.FromSeconds(o.InterruptAfter)).ContinueWith(_ => Keyboard.Tap(0x27, tagged: false));
+            _ = Task.Delay(TimeSpan.FromSeconds(o.InterruptAfter)).ContinueWith(_ =>
+            {
+                if (Presenter.Windows.PaintSession.ForegroundIsPaint()) Keyboard.Tap(0x27, tagged: false);
+                else Log("the test key was skipped: Paint is not in front");
+            });
         var (stopped, steps) = await stage.Run(p =>
         {
             var lp = new LoadingPainting(p!, tools, pen, origin, size, o.Title, Progress, stop.Token, o.Seed, Log);
@@ -389,7 +393,7 @@ internal static class PresentCommand
         return await stage.Run(p =>
         {
             p!.Focus();
-            Keyboard.Tap('S');
+            p.Key('S');
             Thread.Sleep(300);
             var (x, y, dx, dy) = p.MeasureOrigin();
             oldPen.Dispose();
@@ -413,7 +417,7 @@ internal static class PresentCommand
     /// <summary>Scripted "speaker" keys, untagged so the hook takes them as the
     /// speaker's (E13's script): next, back, the painting, a jump, black, a
     /// burst, Esc.</summary>
-    private static void AutoKeys(CancellationToken stop)
+    private static void AutoKeys(Func<bool> paintInFront, CancellationToken stop)
     {
         (int Vk, int WaitMs)[] script =
         [
@@ -429,7 +433,10 @@ internal static class PresentCommand
         foreach (var (vk, wait) in script)
         {
             if (stop.IsCancellationRequested) return;
-            Keyboard.Tap(vk, tagged: false);
+            // a test key goes only to Paint: never into whatever else is in front
+            for (int waited = 0; !paintInFront() && waited < 3000 && !stop.IsCancellationRequested; waited += 100) Thread.Sleep(100);
+            if (paintInFront()) Keyboard.Tap(vk, tagged: false);
+            else Log($"test key {vk:X2} skipped: Paint is not in front");
             Thread.Sleep(wait);
         }
     }

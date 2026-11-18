@@ -97,9 +97,13 @@ public sealed class PaintStage : IStage, IDisposable
         if (!background)
         {
             _clipboard.Offer(png);
-            Keyboard.Ctrl('V');
-            long? seen = WaitFor(paint, floats: true, timeoutMs: 2500);
-            Keyboard.Tap('S');
+            long? seen = null;
+            if (paint.InFront())  // Ctrl+V only into Paint, never into another app
+            {
+                Keyboard.Ctrl('V');
+                seen = WaitFor(paint, floats: true, timeoutMs: 2500);
+            }
+            paint.Key('S');  // posted instead if Paint lost the focus meanwhile
             if (seen is not null)
             {
                 if (WaitFor(paint, floats: false, timeoutMs: 1000) is null) _log?.Invoke("the commit was not seen within 1 s");

@@ -203,26 +203,60 @@ public sealed class PaintSession : IDisposable
     /// takes keys posted from outside (E2): `S` commits a paste without the focus.</summary>
     public void PostKey(int vk)
     {
-        if (_inputSite == 0 || !IsWindow(_inputSite))
-        {
-            _inputSite = 0;
-            EnumChildWindows(Window, (h, _) =>
-            {
-                var cls = new System.Text.StringBuilder(64);
-                GetClassNameW(h, cls, cls.Capacity);
-                if (cls.ToString() != "InputSiteWindowClass") return true;
-                _inputSite = h;
-                return false;
-            }, 0);
-            if (_inputSite == 0) throw new PaintException("Paint's input window was not found");
-        }
+        nint site = InputSite();
         nint scan = (nint)MapVirtualKeyW((uint)vk, 0) << 16;
-        PostMessageW(_inputSite, WM_KEYDOWN, (nuint)vk, 1 | scan);
-        PostMessageW(_inputSite, WM_KEYUP, (nuint)vk, 1 | scan | (1 << 30) | unchecked((nint)(1u << 31)));
+        PostMessageW(site, WM_KEYDOWN, (nuint)vk, 1 | scan);
+        PostMessageW(site, WM_KEYUP, (nuint)vk, 1 | scan | (1 << 30) | unchecked((nint)(1u << 31)));
+    }
+
+    private nint InputSite()
+    {
+        if (_inputSite != 0 && IsWindow(_inputSite)) return _inputSite;
+        _inputSite = 0;
+        EnumChildWindows(Window, (h, _) =>
+        {
+            var cls = new System.Text.StringBuilder(64);
+            GetClassNameW(h, cls, cls.Capacity);
+            if (cls.ToString() != "InputSiteWindowClass") return true;
+            _inputSite = h;
+            return false;
+        }, 0);
+        return _inputSite != 0 ? _inputSite : throw new PaintException("Paint's input window was not found");
+    }
+
+    /// <summary>
+    /// A key meant for Paint and nothing else. Synthetic keys go to whatever
+    /// window is in front, so a key sent while another window has the focus
+    /// lands in that app (a "b" was found typed into another program after a
+    /// test night). Sent, tagged, only while Paint is in front; otherwise
+    /// posted to Paint's own input window (E2), which needs no focus.
+    /// </summary>
+    public void Key(int vk)
+    {
+        if (InFront()) Keyboard.Tap(vk);
+        else PostKey(vk);
+    }
+
+    /// <summary>Text for Paint's open text box only: typed while Paint is in
+    /// front, else posted to its input window as characters.</summary>
+    public void TypeText(string text)
+    {
+        if (InFront())
+        {
+            Keyboard.Type(text);
+            return;
+        }
+        nint site = InputSite();
+        foreach (char c in text) PostMessageW(site, WM_CHAR, c, 1);
     }
 
     // --- focus, closing, dialogs ------------------------------------------------------------------
     public bool InFront() => GetAncestor(GetForegroundWindow(), GA_ROOTOWNER) == Window;
+
+    /// <summary>Whether a Paint window, any, is in front (for test keys).</summary>
+    public static bool ForegroundIsPaint() =>
+        Path.GetFileName(ProcessImage(GetAncestor(GetForegroundWindow(), GA_ROOTOWNER)) ?? "")
+            .Equals("mspaint.exe", StringComparison.OrdinalIgnoreCase);
 
     public bool Focus(int timeoutMs = 3000)
     {

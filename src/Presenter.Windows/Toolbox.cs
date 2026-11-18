@@ -31,7 +31,7 @@ public sealed class Toolbox(PaintSession paint, SyntheticPen pen)
     public void Press(int vk)
     {
         EnsureInFront();
-        Keyboard.Tap(vk);
+        paint.Key(vk);
         Thread.Sleep(250);
     }
 
@@ -39,7 +39,7 @@ public sealed class Toolbox(PaintSession paint, SyntheticPen pen)
     public void Type(string text)
     {
         EnsureInFront();
-        Keyboard.Type(text);
+        paint.TypeText(text);
     }
 
     private void EnsureInFront()
