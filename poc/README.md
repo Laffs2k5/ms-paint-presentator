@@ -33,6 +33,7 @@ uv run python ..\experiments\e11_display_area.py --out $env:TEMP\e11
 | E19 interruptions | [`e19_interruptions.py`](experiments/e19_interruptions.py) + [`toast.ps1`](experiments/toast.ps1) | The notification state Windows reports, a test toast over maximised Paint (with and without presentation mode), Paint's popups at launch, keep-awake. Shows one toast twice and removes it from history |
 | E13 mini presenter | [`e13_presenter.py`](experiments/e13_presenter.py) + [`e13_deck.md`](experiments/e13_deck.md) | The whole show: slide size, rendering (Marp, cached), the loading painting drawn live, then slides by key through the hook; times each slide change. `--auto` plays scripted keys; without it you drive it. Needs the Node tools from E12 |
 | E20 C# clipboard | [`e20_csharp_clipboard.py`](experiments/e20_csharp_clipboard.py) + [`dotnet/E20Clipboard`](dotnet/E20Clipboard) | The Python object against a C# WinForms `DataObject` and a C# `IDataObject` of our own: pastes, `GetData` timing, misses, Win+V. Build the C# side first (`dotnet build -c Release`) |
+| E23 C# hook under load | [`dotnet/E23Hook`](dotnet/E23Hook) (`dotnet run -c Release -- 10`) | A C# keyboard hook's key-to-callback time while the process allocates and collects, probes sent from a separate process; swallows its own probe key only |
 
 [`experiments/doompaint_clipserve.py`](experiments/doompaint_clipserve.py) is
 DoomPaint's live OLE clipboard (MIT, © Mark Russinovich), vendored unchanged

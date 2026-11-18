@@ -918,3 +918,32 @@ Python's `perf_counter`.
 - **Gotcha:** this laptop's culture writes 0,5 for 0.5. Anything the
   presenter writes for machines (logs, protocols, cache keys) must use the
   invariant culture.
+
+## E23. The C# keyboard hook under memory pressure (2026-11-18): **pass**
+
+Program: [`poc/dotnet/E23Hook`](../poc/dotnet/E23Hook) (C#, .NET 9, native
+ARM64, workstation GC with background collection). A `WH_KEYBOARD_LL` hook on
+its own thread swallows a probe key (unassigned code 0x97, so nothing reaches
+any app) sent every 20 ms, 500 per load, tagged with its sequence number. The
+probes come from a **separate, idle process**. A first version sent them from
+a thread of the same process, which the collections suspended too, so no
+probe was ever sent during a pause; it was thrown away. Both processes use
+`Stopwatch`, one clock.
+
+| Load (10 s each) | Missed | Send to callback: median / p99 / max | Gen 0 / gen 2 collections | Total GC pause | Longest full blocking pause |
+|---|---|---|---|---|---|
+| Idle | 0 | 0.08 / 1.6 / 2.0 ms | 0 / 0 | 0 | – |
+| 4 threads churning small objects and 1 MB arrays | 0 | 0.10 / 1.6 / 3.2 ms | 4,288 / 1,804 | 1.7 s | 0.7 ms |
+| Churn, a 400 MB live heap, a forced blocking compacting full GC every 2 s | 0 | 0.26 / 1.2 / 1.8 ms | 5,380 / 1,110 | 1.8 s | 1.4 ms |
+| The same under `SustainedLowLatency` | 0 | 0.09 / 1.4 / 1.8 ms | 5,397 / 1,075 | 1.7 s | 1.1 ms |
+
+- **The hook stays a hundred times inside Windows' limit.** Even with
+  collections taking 17% of the time, each pause lasted about a millisecond,
+  so no key waited more than 3.2 ms (the limit is about 300 ms, E10).
+- **Why the pauses are short:** background GC does most of the marking while
+  threads run, and a heap of byte arrays (like the presenter's PNG slides)
+  holds no references to trace. A heap of many small linked objects would
+  pause longer; the presenter does not need one.
+- **No separate hook process is needed.** Keep the callback free of
+  allocations and locks (it only writes a timestamp here), give the hook its
+  own thread, and use the default workstation GC.
