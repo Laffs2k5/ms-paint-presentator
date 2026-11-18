@@ -530,3 +530,26 @@ documented opt-outs ([Clipboard Formats](https://learn.microsoft.com/windows/win
   `DeleteItemFromHistory` on its one control item, ended with the history
   **empty**. Most likely that call cleared everything, but this was not
   re-tested. The script no longer deletes; `poc/README.md` warns about both.
+
+## E5. Does anything call DAdvise? (2026-11-18): **no**
+
+Script: [`poc/experiments/e5_dadvise.py`](../poc/experiments/e5_dadvise.py).
+E1's data object logs every IDataObject call. Here it ran through the phases
+of a presentation, with `DAdvise` refused (`OLE_E_ADVISENOTSUPPORTED`, as in
+E1–E8) and accepted (subscriber kept, connection id returned). `CF_DIB` slide,
+1600×1000, Paint in front.
+
+| Phase | Calls (the same in every variant) |
+|---|---|
+| Slide offered (3 s) | `GetData CF_DIB` ×1; ×2 without the history opt-out (the second is the history service, E8) |
+| Pasted (Ctrl+V, `S`) | `GetData PNG`, `GetData image/png` (both refused: not offered), `GetDataHere` ×2, `GetData CF_DIB` ×1 |
+| Paint loses focus and gets it back | **none** |
+| Pasted again | as the first paste |
+
+- **No `DAdvise`, `DUnadvise` or `EnumDAdvise` call in any variant or phase**,
+  and none in the hundreds of pastes logged in E1, E7 and E8 either.
+- Paint does not look at the clipboard when it is activated, only on paste.
+- So there is no notification route into Paint: a slide change has to be a
+  paste command (Ctrl+V, or E2's posted `WM_COMMAND`). DoomPaint's design,
+  which re-arms its data object per frame and triggers each paste, is the right
+  model.
