@@ -23,10 +23,28 @@ public sealed class Toolbox(PaintSession paint, SyntheticPen pen)
     /// <summary>A tool by its key (P Pencil, B Fill, T Text, E Eraser, S Select),
     /// tagged so the presenter's hook lets it through (B is also the show's
     /// black-screen key).</summary>
-    public void Key(char tool)
+    public void Key(char tool) => Press(tool);
+
+    /// <summary>A key for Paint, tagged. Keys go to the window in front, and a
+    /// renderer (PowerPoint, Edge) can take the focus while the painting runs,
+    /// so Paint is brought back first; the pen needs no focus, keys do.</summary>
+    public void Press(int vk)
     {
-        Keyboard.Tap(tool);
+        EnsureInFront();
+        Keyboard.Tap(vk);
         Thread.Sleep(250);
+    }
+
+    /// <summary>Text into an open text box, Paint in front first.</summary>
+    public void Type(string text)
+    {
+        EnsureInFront();
+        Keyboard.Type(text);
+    }
+
+    private void EnsureInFront()
+    {
+        if (!paint.InFront()) paint.Focus(1000);
     }
 
     /// <summary>A brush from the Brushes menu: selecting the split button does

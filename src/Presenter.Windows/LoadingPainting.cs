@@ -485,13 +485,11 @@ public sealed class LoadingPainting
         _pen.Tap(bx0 + 6, by0 + 6);  // back into the box
         Thread.Sleep(300);
         Note("signature with a typo");
-        Keyboard.Type($"{dd}.{mm}.{yy[1]}{yy[0]}");
+        _tools.Type($"{dd}.{mm}.{yy[1]}{yy[0]}");
         Thread.Sleep(700);
-        Keyboard.Tap(0x08);  // Backspace twice (tagged: Backspace is a show key)
-        Thread.Sleep(250);
-        Keyboard.Tap(0x08);
-        Thread.Sleep(250);
-        Keyboard.Type(yy);
+        _tools.Press(0x08);  // Backspace twice (tagged: Backspace is a show key)
+        _tools.Press(0x08);
+        _tools.Type(yy);
         Thread.Sleep(600);
         var (cx, cy) = At(0.40 * W, 0.94 * H);
         _tools.CommitText(cx, cy);
