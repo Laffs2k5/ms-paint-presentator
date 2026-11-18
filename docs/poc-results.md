@@ -437,3 +437,60 @@ be preloaded: paste every slide at start, undo back to the first, and then
 every "next" is a 40 ms Ctrl+Y. That costs up to about 1 GiB in Paint and the
 preload is visible, so it would have to happen before the audience looks (or
 be part of the show).
+
+## E4. What UI Automation can drive (2026-11-18): **pass**
+
+Script: [`poc/experiments/e4_uia_survey.py`](../poc/experiments/e4_uia_survey.py).
+Menus and drop-downs opened through UIA ExpandCollapse; new controls found by
+diffing the UIA tree; items read, never clicked. Paint 11.2609.401.0, English
+UI. The full toolbar dump from 0b is [uia-paint-11.2609.401.0.json](uia-paint-11.2609.401.0.json).
+
+**Controls the presenter may need** (an AutomationId does not change with the
+UI language; a name does):
+
+| Where | Control | AutomationId | Name (English) | Patterns |
+|---|---|---|---|---|
+| Canvas | viewport | `scrollViewer` | – | Scroll |
+| Canvas | canvas | `image` | "Using … tool on Canvas" | – |
+| Status bar | canvas size | `CanvasSizeTextBlock` | "W × Hpx" | – |
+| Status bar | zoom slider | `ZoomSliderControl` | Zoom | RangeValue 20–1000, Value |
+| Status bar | zoom box | `ZoomValuesComboBox` | Zoom | ExpandCollapse, Selection, Value (25%–1000%) |
+| Status bar | Fit to window / Zoom in / Zoom out | – | (those names) | Invoke |
+| Menu bar | File / Edit / View | – | (those names) | ExpandCollapse, Invoke |
+| File | New, Open, Save, Save as, Recent | `FileNew`, `FileOpen`, `FileSave`, `FileSaveAs`, `RecentFiles` | – | Invoke / ExpandCollapse |
+| Edit | Cut, Copy, **Paste**, Copy visible layers | – | (those names) | Invoke |
+| View | Zoom ▸ **100%**, Zoom in, Zoom out, Fit to window | – | (those names) | Invoke |
+| View | Rulers, Gridlines, Status bar, Always show toolbar, Automatically hide toolbar | – | (those names) | Toggle |
+| View | Full screen, Thumbnail | – | (those names) | Invoke |
+| Selection | Select (split button) | – | Select | ExpandCollapse, Invoke, SelectionItem |
+| Selection ▸ | Rectangle, Free-form | `RectangularSelectionMenuFlyoutItem`, `FreeFormSelectionMenuFlyoutItem` | – | Toggle, Invoke |
+| Selection ▸ | Select all, Invert selection, Delete | – | (those names) | Invoke |
+| Selection ▸ | **Transparent selection** | – | Transparent selection | Toggle |
+| Tools | Pencil, Eraser | `PencilTool`, `EraserTool` | – | **Toggle only** (no Invoke) |
+| Tools | Brushes | `BrushesSplitButton` | Brushes | ExpandCollapse, SelectionItem |
+| Image | Crop, Rotate, Flip | `CropButton`, `RotateDropdown`, `Flip` | – | Invoke (+ ExpandCollapse) |
+| Layers | panel toggle | – | – (unnamed) | Toggle |
+| Layers ▸ | layer list, hide/show | `layersList`, `HideShowLayerButton`, `HideShowBackgroundButton`, `BackgroundButton` | – | Selection / Toggle / Invoke |
+| Toolbar | Toolbar options, Settings | `OptionsButton`, `SettingsButton` | – | Invoke |
+
+- **Many controls have no AutomationId:** Edit > Paste, everything under View,
+  Fit to window, Select all, Transparent selection, the Layers toggle. On a
+  localised Paint they can only be found by the translated name or by position.
+- **Undo and Redo are not in the Edit menu**, only on the title bar (by name).
+- Two panes have nearly the same id: the canvas viewport is `scrollViewer`, the
+  toolbar's is `ScrollViewer`.
+- **Any UIA action activates Paint** (E2). UIA is for set-up and checks, not
+  for the slide change itself.
+
+**Start-up checklist for the presenter** (states read here: all already right):
+
+| Setting | Here | Must be | Why |
+|---|---|---|---|
+| View > Always show toolbar | on | on | the chrome is the point (constraints) |
+| View > Automatically hide toolbar | off | off | same |
+| View > Status bar | on | on | part of the chrome; also how `canvas_px` is read |
+| View > Rulers, Gridlines | off | off | they would draw over the slide |
+| Selection > Transparent selection | off | **off** | when on, white in a pasted slide turns see-through |
+| Active tool | Brush at launch | **Select** | drawing tools show a brush panel over the slide's left edge (E14); key `S` |
+| Zoom | – | exactly 100% | View > Zoom > 100%, or the slider stepped via a neighbour (0b) |
+| Layers panel | closed | closed | it narrows the viewport |
