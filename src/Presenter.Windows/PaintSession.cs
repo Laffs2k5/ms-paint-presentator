@@ -24,6 +24,12 @@ public sealed class PaintSession : IDisposable
 
     public nint Window { get; }
     public string? ExecutablePath => ProcessImage(Window);
+
+    /// <summary>The window is still there (Paint was not closed and did not crash).</summary>
+    public bool Alive => IsWindow(Window) && IsWindowVisible(Window);
+
+    /// <summary>Still maximised, as the slide size assumes.</summary>
+    public bool Maximised => IsZoomed(Window);
     public PixelSize Canvas { get; }
     public Monitor Monitor { get; private set; }
 

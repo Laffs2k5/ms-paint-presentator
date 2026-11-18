@@ -65,6 +65,7 @@ public static unsafe class Keyboard
 public sealed class KeyHook : IDisposable
 {
     private const int RingSize = 256;
+    private const uint WM_APP_REHOOK = 0x8001;
     private readonly HookProc _proc;  // rooted for the hook's lifetime
     private readonly int[] _ringVk = new int[RingSize];
     private readonly long[] _ringTime = new long[RingSize];
@@ -73,6 +74,7 @@ public sealed class KeyHook : IDisposable
     private readonly Channel<KeyPress> _keys = Channel.CreateUnbounded<KeyPress>();
     private readonly Thread _hookThread, _pumpThread;
     private readonly ManualResetEventSlim _heartbeat = new(false);
+    private readonly ManualResetEventSlim _rehooked = new(false);
     private volatile nint[] _targets = [];
     private volatile bool _stopping;
     private uint _hookThreadId;
@@ -97,7 +99,14 @@ public sealed class KeyHook : IDisposable
             _hook = SetWindowsHookExW(WH_KEYBOARD_LL, _proc, GetModuleHandleW(0), 0);
             if (_hook == 0) error = System.Runtime.InteropServices.Marshal.GetLastWin32Error();
             ready.Set();
-            while (_hook != 0 && GetMessageW(out _, 0, 0, 0) > 0) { }
+            while (_hook != 0 && GetMessageW(out var msg, 0, 0, 0) > 0)
+            {
+                if (msg.message != WM_APP_REHOOK) continue;
+                // Windows removes a hook that timed out without telling us (E10)
+                UnhookWindowsHookEx(_hook);
+                _hook = SetWindowsHookExW(WH_KEYBOARD_LL, _proc, GetModuleHandleW(0), 0);
+                _rehooked.Set();
+            }
             if (_hook != 0) UnhookWindowsHookEx(_hook);
         }) { IsBackground = true, Priority = ThreadPriority.Highest, Name = "key hook" };
         _hookThread.Start();
@@ -172,6 +181,15 @@ public sealed class KeyHook : IDisposable
         _heartbeat.Reset();
         Keyboard.Tap(Keyboard.VkHeartbeat);
         return _heartbeat.Wait(timeoutMs);
+    }
+
+    /// <summary>Install the hook again (when the heartbeat goes unanswered).
+    /// Keys keep arriving in the same <see cref="Keys"/>.</summary>
+    public bool Reinstall()
+    {
+        _rehooked.Reset();
+        PostThreadMessageW(_hookThreadId, WM_APP_REHOOK, 0, 0);
+        return _rehooked.Wait(1000) && _hook != 0 && Alive();
     }
 
     public void Dispose()

@@ -92,6 +92,10 @@ internal static class PresentCommand
         using var clipboard = new ClipboardHost();
         using var stage = new PaintStage(clipboard, Log);
         using var renders = new CancellationTokenSource();
+        // Ctrl+C in the terminal ends the show like Esc: Paint closed, settings put back
+        using var ending = new CancellationTokenSource();
+        ConsoleCancelEventHandler onCtrlC = (_, e) => { e.Cancel = true; ending.Cancel(); };
+        Console.CancelKeyPress += onCtrlC;
         PaintSession? paint = null;
         KeyHook? hook = null;
         SyntheticPen? pen = null;
@@ -131,8 +135,8 @@ internal static class PresentCommand
             (pen, tools) = await stage.Run(p => { var pn = new SyntheticPen(); return (pn, new Toolbox(p!, pn)); });
 
             if (o.Painting)
-                summary["painting"] = await Paint(o, stage, tools, pen, hook, slides, origin, size);
-            await slides.WaitReadyAsync(1, CancellationToken.None);
+                summary["painting"] = await Paint(o, stage, tools, pen, hook, slides, origin, size, ending.Token);
+            await slides.WaitReadyAsync(1, ending.Token);
 
             // the canvas as it is now becomes slide 0
             byte[] painting = await stage.Run(p => GrabCanvas(p!, (dx, dy), size));
@@ -149,66 +153,118 @@ internal static class PresentCommand
             Task autoKeys = o.Auto ? Task.Run(() => AutoKeys(stopAuto.Token)) : Task.CompletedTask;
             Log("Ready: Right, Space or Enter for the first slide; Esc ends.");
 
-            // the show, until Esc; a display change brings the picker back (research 05 §5)
+            // the show, until Esc (research 05 §4, §5, §7.4). A display change brings
+            // the picker back; Paint closed or crashed is reopened; Paint moved or
+            // un-maximised is put back. Each resumes at the current slide.
             var resumes = new List<object>();
-            while (true)
+            var current = paint;
+            bool paused = false;
+            using var stopWatch = new CancellationTokenSource();
+            CancellationTokenSource? interrupted = null;
+            string? reason = null;
+            void Interrupt(string why)
             {
-                using var displayChanged = new CancellationTokenSource();
-                void OnChange(object? s, EventArgs e) => displayChanged.Cancel();
-                Microsoft.Win32.SystemEvents.DisplaySettingsChanged += OnChange;
-                if (o.SimulateDisplayChange > 0 && resumes.Count == 0)
-                    displayChanged.CancelAfter(TimeSpan.FromSeconds(o.SimulateDisplayChange));
-                try
+                if (paused || interrupted is null || interrupted.IsCancellationRequested) return;
+                reason = why;
+                interrupted.Cancel();
+            }
+            var watchdog = Task.Run(async () =>
+            {
+                for (int tick = 1; !stopWatch.IsCancellationRequested; tick++)
                 {
-                    await controller.RunAsync(displayChanged.Token);
-                    break;  // Esc
+                    try { await Task.Delay(500, stopWatch.Token); } catch (OperationCanceledException) { return; }
+                    if (paused) continue;
+                    if (!current.Alive) Interrupt("paint-gone");
+                    else if (!current.Maximised) Interrupt("paint-moved");
+                    // the hook: a heartbeat every 5 s; two misses in a row and it is reinstalled
+                    if (tick % 10 == 0 && !hook.Alive(1000) && !hook.Alive(1000))
+                        Log(hook.Reinstall() ? "the keyboard hook stopped answering: reinstalled" : "the keyboard hook stopped answering, and reinstalling failed");
                 }
-                catch (OperationCanceledException) when (displayChanged.IsCancellationRequested)
+            });
+            void OnDisplayChange(object? s, EventArgs e) => Interrupt("display-change");
+            Microsoft.Win32.SystemEvents.DisplaySettingsChanged += OnDisplayChange;
+            using var onEnd = ending.Token.Register(() => { paused = false; Interrupt("end"); });
+            try
+            {
+                while (true)
                 {
-                    Log("the displays changed: the screen picker waits for the speaker");
-                }
-                finally
-                {
-                    Microsoft.Win32.SystemEvents.DisplaySettingsChanged -= OnChange;
-                }
-                var picked = await ScreenOptions.Pick(deck.Aspect, "The displays changed. Where now?");
-                if (picked is null)
-                {
-                    Log("no screen chosen: the show ends");
-                    break;
-                }
-                var sw = Stopwatch.StartNew();
-                var work = ScreenChoice.WorkAfterChange(option, picked.Value.Option, size, deck.Aspect);
-                (option, monitor) = picked.Value;
-                Log($"resuming on {option}: {work}");
-                if (work == ResumeWork.NewSlideSize)
-                {
-                    // Paint at the new size, the slides again, the painting fitted (research 05 §5)
-                    size = option.SlideFor(deck.Aspect);
-                    paint = await stage.OpenPaint(monitor, size);
-                    hook.SetTargets(paint.Window);
-                    (ox, oy, dx, dy) = await stage.Run(p => { p!.Focus(); Keyboard.Tap('S'); Thread.Sleep(300); return p.MeasureOrigin(); });
-                    origin = (ox, oy);
-                    await stage.Run(_ => { pen.Dispose(); pen = new SyntheticPen(); tools = new Toolbox(paint, pen); });
-                    var resized = deck.Prepare(size, Log, renders.Token);
-                    resized.Set(0, ImageFolderDeck.Fit(painting, size));
-                    slides = resized;
-                    stage.SetSlides(slides.Get);
-                    var current = controller.Current;
-                    controller = new ShowController(Staged(slides, size), slides, hook.Keys, startAtPainting: false, Log, controller.Navigator);
-                    if (current is Frame.Slide { Index: var i }) await slides.WaitReadyAsync(i, CancellationToken.None);
+                    using var cts = new CancellationTokenSource();
+                    interrupted = cts;
+                    paused = false;
+                    if (o.SimulateDisplayChange > 0 && resumes.Count == 0)
+                        _ = Task.Delay(TimeSpan.FromSeconds(o.SimulateDisplayChange)).ContinueWith(_ => Interrupt("display-change"));
+                    try
+                    {
+                        await controller.RunAsync(cts.Token);
+                        break;  // Esc
+                    }
+                    catch (OperationCanceledException) when (cts.IsCancellationRequested)
+                    {
+                        paused = true;
+                    }
+                    if (reason == "end" || ending.IsCancellationRequested)
+                    {
+                        Log("Ctrl+C: the show ends");
+                        break;
+                    }
+                    var sw = Stopwatch.StartNew();
+                    string work;
+                    if (reason == "display-change")
+                    {
+                        Log("the displays changed: the screen picker waits for the speaker");
+                        var picked = await ScreenOptions.Pick(deck.Aspect, "The displays changed. Where now?");
+                        if (picked is null)
+                        {
+                            Log("no screen chosen: the show ends");
+                            break;
+                        }
+                        var resume = ScreenChoice.WorkAfterChange(option, picked.Value.Option, size, deck.Aspect);
+                        (option, monitor) = picked.Value;
+                        work = resume.ToString();
+                        Log($"resuming on {option}: {work}");
+                        if (resume == ResumeWork.NewSlideSize)
+                        {
+                            // Paint at the new size, the slides again, the painting fitted (research 05 §5)
+                            size = option.SlideFor(deck.Aspect);
+                            current = paint = await stage.OpenPaint(monitor, size);
+                            (dx, dy, origin, pen, tools) = await Reopened(stage, hook, paint, pen);
+                            var resized = deck.Prepare(size, Log, renders.Token);
+                            resized.Set(0, ImageFolderDeck.Fit(painting, size));
+                            slides = resized;
+                            stage.SetSlides(slides.Get);
+                            controller = new ShowController(Staged(slides, size), slides, hook.Keys, startAtPainting: false, Log, controller.Navigator);
+                        }
+                        else
+                        {
+                            await stage.Run(p => { p!.PlaceOn(monitor); p.Focus(); });
+                        }
+                    }
+                    else if (reason == "paint-gone")
+                    {
+                        work = "Paint reopened";
+                        Log("Paint is gone (closed or crashed): reopening it");
+                        current = paint = await stage.OpenPaint(monitor, size);
+                        (dx, dy, origin, pen, tools) = await Reopened(stage, hook, paint, pen);
+                    }
+                    else
+                    {
+                        work = "Paint put back";
+                        Log("Paint is no longer maximised: putting it back");
+                        await stage.Run(p => { p!.PlaceOn(monitor); p.Focus(); });
+                    }
                     await controller.ShowCurrentAsync();
+                    resumes.Add(new { reason, work, screen = option.ToString(), seconds = Math.Round(sw.Elapsed.TotalSeconds, 1) });
                 }
-                else
-                {
-                    await stage.Run(p => { p!.PlaceOn(monitor); p.Focus(); });
-                    await controller.ShowCurrentAsync();
-                }
-                resumes.Add(new { work = work.ToString(), screen = option.ToString(), seconds = Math.Round(sw.Elapsed.TotalSeconds, 1) });
+            }
+            finally
+            {
+                Microsoft.Win32.SystemEvents.DisplaySettingsChanged -= OnDisplayChange;
+                stopWatch.Cancel();
+                await watchdog;
             }
             stopAuto.Cancel();
             await autoKeys;
-            if (resumes.Count > 0) summary["display changes"] = resumes;
+            if (resumes.Count > 0) summary["resumed"] = resumes;
 
             var timed = controller.Changes.Where(c => c.Milliseconds is not null).Select(c => c.Milliseconds!.Value).Order().ToList();
             summary["slide changes"] = controller.Changes;
@@ -222,8 +278,13 @@ internal static class PresentCommand
                 not_confirmed = controller.Changes.Count - timed.Count,
             };
         }
+        catch (OperationCanceledException) when (ending.IsCancellationRequested)
+        {
+            Log("Ctrl+C: the show ends");
+        }
         finally
         {
+            Console.CancelKeyPress -= onCtrlC;
             renders.Cancel();
             hook?.Dispose();
             if (paint is not null)
@@ -250,8 +311,9 @@ internal static class PresentCommand
     }
 
     private static async Task<object> Paint(PresentOptions o, PaintStage stage, Toolbox tools, SyntheticPen pen, KeyHook hook,
-                                            ReadySlides slides, (int X, int Y) origin, PixelSize size)
+                                            ReadySlides slides, (int X, int Y) origin, PixelSize size, CancellationToken ending)
     {
+        using var stop = CancellationTokenSource.CreateLinkedTokenSource(hook.FirstKey.Token, ending);
         var started = Stopwatch.StartNew();
         PaintingProgress Progress()
         {
@@ -264,11 +326,29 @@ internal static class PresentCommand
             _ = Task.Delay(TimeSpan.FromSeconds(o.InterruptAfter)).ContinueWith(_ => Keyboard.Tap(0x27, tagged: false));
         var (stopped, steps) = await stage.Run(p =>
         {
-            var lp = new LoadingPainting(p!, tools, pen, origin, size, o.Title, Progress, hook.FirstKey.Token, o.Seed, Log);
+            var lp = new LoadingPainting(p!, tools, pen, origin, size, o.Title, Progress, stop.Token, o.Seed, Log);
             bool interrupted = lp.Run();
             return (interrupted, lp.Steps);
         });
         return new { seconds = Math.Round(started.Elapsed.TotalSeconds, 1), interrupted = stopped, steps };
+    }
+
+    /// <summary>After Paint was opened again: the hook on the new window, the
+    /// blank canvas's origin measured, a pen and toolbox for it.</summary>
+    private static async Task<(int Dx, int Dy, (int X, int Y) Origin, SyntheticPen Pen, Toolbox Tools)> Reopened(
+        PaintStage stage, KeyHook hook, PaintSession paint, SyntheticPen oldPen)
+    {
+        hook.SetTargets(paint.Window);
+        return await stage.Run(p =>
+        {
+            p!.Focus();
+            Keyboard.Tap('S');
+            Thread.Sleep(300);
+            var (x, y, dx, dy) = p.MeasureOrigin();
+            oldPen.Dispose();
+            var pen = new SyntheticPen();
+            return (dx, dy, (x, y), pen, new Toolbox(p, pen));
+        });
     }
 
     private static PixelRect CanvasRect(PaintSession p, (int Dx, int Dy) offset, PixelSize size)
