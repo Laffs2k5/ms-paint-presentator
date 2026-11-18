@@ -1018,3 +1018,37 @@ laptop's viewport (2784×1499: 1910×1431, E11's rule).
   warn.
 - **Not covered yet:** embedded video or audio (the export would show a still
   frame), and real decks: transitions, SmartArt, charts, linked files.
+
+## E21. A finished paste without reading the screen (2026-11-18): **no event exists; poll the Crop button over UIA**
+
+Script: [`poc/experiments/e21_paste_event.py`](../poc/experiments/e21_paste_event.py),
+with [`poc/dotnet/E21Watch`](../poc/dotnet/E21Watch) (C#, FlaUI UIA3, MIT).
+Paint enables its Crop button while a selection exists, so a paste turns it
+on and the `S` commit turns it off. The watcher listened for three signals at
+once while the harness pasted 1854×875 slides (a new PNG clipboard object
+each) and timed them by a probe pixel (30 pastes; a second run of 20 for the
+raw WinEvents).
+
+| Signal | Paste seen | Against the slide's pixel | Commit (`S`) seen | Cost |
+|---|---|---|---|---|
+| UIA property-changed event, `IsEnabled`, anywhere in Paint's window | **never** (0 of 30) | – | never | – |
+| WinEvents from Paint's process (window shown or hidden, MSAA state changes) | never: no popup shown; 80 state changes in a run, none tied to the pastes | – | – | – |
+| **Polling the Crop button's `IsEnabled` over UIA** | **30 of 30**, 88 ms after Ctrl+V (median) | **2.5 ms before the pixel** (median; −12 to +9 ms) | **30 of 30, 47 ms after `S`** (35–71 ms) | 3.4 ms per read |
+| Probe pixel (the POC's way) | 30 of 30, 94 ms after Ctrl+V | – | – | one display refresh (~17 ms) per read |
+
+- **Paint offers no event for it.** Its WinUI controls do not raise UIA
+  property-changed events for `IsEnabled`, and no WinEvent marks a paste.
+- **Polling the Crop button is the better poll:**
+  - it tells the paste within a few ms of the pixel;
+  - each read is 5× cheaper than a screen read and does not wait for the
+    display;
+  - it needs no probe points chosen from the slide's content;
+  - it also tells when the commit is done, which nothing did before.
+- **Reading UIA does not take the focus:** Paint stayed in front, unlike UIA
+  actions (E2).
+- **For the presenter:** after Ctrl+V, read the Crop button every few ms until
+  it is enabled, send `S`, then until it is disabled. Keep the three-point
+  pixel poll (E13) as a fallback if a Paint update renames the button (E4's
+  start-up checklist checks it).
+- Not tried: Windows.Graphics.Capture frames. Polling the Crop button made it
+  unnecessary.

@@ -216,7 +216,10 @@ In rough order of value:
    - **Marp and Slidev:** render their HTML once, then screenshot slide by
      slide with Playwright for .NET, driving Edge headless with a throwaway
      profile. Experiment E22.
-2. **Detect a finished paste by an event,** not by reading the screen.
+2. **Detect a finished paste without reading the screen.** E21 answered it:
+   Paint raises no event, but polling the Crop button's `IsEnabled` over UIA
+   (3.4 ms a read) tells the paste as fast as the pixel does, and the commit
+   too. The options that were considered:
    - **UIA:** Paint's Crop button becomes enabled when a floating selection
      exists. DoomPaint watches it; a UIA property-changed event would do the
      same without polling.
