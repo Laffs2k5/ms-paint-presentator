@@ -1113,3 +1113,36 @@ of order (the last before the second).
   E24) already render one slide at a time.
 - The pass criterion's "first slide under a second" is not met for these two
   tools; their start-up (HTML export, dev server, Edge) dominates.
+
+## E26. What identifies a monitor (2026-11-18): **the EDID serial**; the replug test is part of E18
+
+Program: [`poc/dotnet/E26MonitorId`](../poc/dotnet/E26MonitorId) (C#). For
+every active display it reads the GDI name (`\.\DISPLAY1`, what the POC
+used), the monitor device path and output technology from
+`QueryDisplayConfig`, and the EDID that Windows keeps in the registry
+(`Enum\DISPLAY\<model>\<instance>\Device Parameters\EDID`): manufacturer,
+product code, serial number and serial text. It also lists every monitor
+Windows remembers. Serials and paths are printed only as short hashes (enough
+to compare runs), unless `--raw`. Only the laptop panel was connected; the
+replug itself is tested in E18.
+
+| | Result |
+|---|---|
+| The active display | the laptop panel: output technology **"internal"**, EDID serial number present (no serial text, no friendly name) |
+| Two runs in a row | identical: GDI name, path, EDID identity |
+| Monitors Windows remembers | 5: the panel, three monitors of one model (two with the very same product code) and one other monitor, all connected at some point through the dock |
+| EDID serials | **every one present** (serial number and serial text on all four external monitors), and **distinct** for the two monitors of the same model and product code |
+
+- **Use the EDID as the identity:** manufacturer, product code, serial number
+  and serial text. It belongs to the monitor, not to the port or to Windows'
+  numbering, and it tells apart even two identical monitors here. The GDI
+  name is only a handle for the current session.
+- **Fallback when a display has no serial** (common on cheap monitors and
+  projectors): the model plus the device path, which is tied to the port.
+  Good enough for "the same cable back in".
+- **The picker's default is easy:** the first display whose output
+  technology is not "internal" (the plan's "the non-laptop screen as
+  default").
+- **For E18 tomorrow:** run E26 before, during and after the replug. Does
+  the GDI name change? Does the path change on another port or dock? Does the
+  EDID identity stay the same, as it should?
