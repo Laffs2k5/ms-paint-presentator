@@ -494,3 +494,39 @@ UI language; a name does):
 | Active tool | Brush at launch | **Select** | drawing tools show a brush panel over the slide's left edge (E14); key `S` |
 | Zoom | – | exactly 100% | View > Zoom > 100%, or the slider stepped via a neighbour (0b) |
 | Layers panel | closed | closed | it narrows the viewport |
+
+## E8. Keep slides out of clipboard history (2026-11-18): **pass**
+
+Script: [`poc/experiments/e8_clipboard_history.py`](../poc/experiments/e8_clipboard_history.py),
+history read by [`clipboard_history.ps1`](../poc/experiments/clipboard_history.ps1)
+(WinRT `Clipboard.GetHistoryItemsAsync`, ids, times and format names only).
+Clipboard history on. Each case leaves a slide on the clipboard for 3 s, reads
+the history, then pastes the slide into Paint. The formats are Microsoft's
+documented opt-outs ([Clipboard Formats](https://learn.microsoft.com/windows/win32/dataxchg/clipboard-formats#cloud-clipboard-and-clipboard-history-formats)).
+
+| Slide offered as | Opt-out formats added | New Win+V history items | Paint pastes |
+|---|---|---|---|
+| `CF_DIB` | none (control) | **1** (Bitmap) | yes |
+| `CF_DIB` | `ExcludeClipboardContentFromMonitorProcessing` | **0** | yes |
+| `CF_DIB` | `CanIncludeInClipboardHistory`=0 + `CanUploadToCloudClipboard`=0 | **0** | yes |
+| `CF_DIB` | all three | **0** | yes |
+| PNG only | none (control) and each opt-out | **0** in every case | yes |
+
+- **The opt-outs work, and Paint pastes normally with them present.** Add
+  `ExcludeClipboardContentFromMonitorProcessing` to every slide: it covers both
+  history and cloud sync, and it also stops the history service from reading
+  the slide at all.
+- **That service was E1's unexplained late reader.** Without an opt-out, the
+  `CF_DIB` slide was read at about 7 ms and again at about 235 ms after it was
+  offered, before any paste. With `CanIncludeInClipboardHistory`=0 the second
+  read became a read of that flag (225 ms); with the exclude format it went
+  away. One early read (1–7 ms) stays in every case, from a process not
+  identified.
+- **PNG-only slides never entered the history,** even without an opt-out.
+  History seems to record only standard bitmap formats. Still add the opt-out.
+- **Experiments filled the history with test slides.** History keeps 25 items;
+  by E8 all 25 were bitmaps from the E7 runs onwards, so earlier unpinned items
+  had been pushed out. Then the `CF_DIB` run, which called the WinRT
+  `DeleteItemFromHistory` on its one control item, ended with the history
+  **empty**. Most likely that call cleared everything, but this was not
+  re-tested. The script no longer deletes; `poc/README.md` warns about both.
