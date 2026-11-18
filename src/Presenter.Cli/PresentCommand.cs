@@ -18,7 +18,7 @@ internal static class PresentCommand
         string? snapshot = null;
         bool painting = true, auto = false, verify = false;
         int? seed = null;
-        double simulatePrep = 0;
+        double simulatePrep = 0, interruptAfter = 0;
         for (int i = 0; i < args.Length; i++)
         {
             switch (args[i])
@@ -31,6 +31,7 @@ internal static class PresentCommand
                 case "--snapshot" when i + 1 < args.Length: snapshot = args[++i]; break;
                 case "--seed" when i + 1 < args.Length: seed = int.Parse(args[++i]); break;
                 case "--simulate-prep" when i + 1 < args.Length: simulatePrep = double.Parse(args[++i]); break;
+                case "--interrupt-after" when i + 1 < args.Length: interruptAfter = double.Parse(args[++i]); break;
                 case var a when a.StartsWith("--"): throw new UsageException($"unknown option {a}");
                 default: deckPath = deckPath is null ? args[i] : throw new UsageException("one deck at a time"); break;
             }
@@ -103,6 +104,8 @@ internal static class PresentCommand
                         done = Math.Min(done, (int)(slides.Count * started.Elapsed.TotalSeconds / simulatePrep));
                     return new PaintingProgress(done, slides.Count);
                 }
+                if (interruptAfter > 0)  // for tests: the speaker presses Right during the painting
+                    _ = Task.Delay(TimeSpan.FromSeconds(interruptAfter)).ContinueWith(_ => Keyboard.Tap(0x27, tagged: false));
                 var steps = await stage.Run(p =>
                 {
                     var lp = new LoadingPainting(p!, tools, pen, origin, size, title, Progress, hook.FirstKey.Token, seed, Log);
