@@ -47,7 +47,7 @@ internal static unsafe class Native
     public const uint GA_ROOTOWNER = 3;
     public const int SW_RESTORE = 9, SW_MAXIMIZE = 3;
     public const uint SWP_NOZORDER = 0x0004, SWP_NOACTIVATE = 0x0010;
-    public const uint WM_CLOSE = 0x0010;
+    public const uint WM_CLOSE = 0x0010, WM_COMMAND = 0x0111, WM_KEYUP = 0x0101;
     public const byte VK_MENU = 0x12;
 
     [StructLayout(LayoutKind.Sequential)]
@@ -72,6 +72,9 @@ internal static unsafe class Native
     [DllImport("user32.dll")] public static extern bool PostMessageW(nint hwnd, uint msg, nuint w, nint l);
     [DllImport("user32.dll")] public static extern void keybd_event(byte vk, byte scan, uint flags, nuint extra);
     [DllImport("user32.dll")] public static extern uint GetDpiForWindow(nint hwnd);
+    [DllImport("user32.dll")] public static extern bool EnumChildWindows(nint parent, EnumWindowsProc proc, nint lParam);
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)] public static extern int GetClassNameW(nint hwnd, StringBuilder name, int max);
+    [DllImport("user32.dll")] public static extern uint MapVirtualKeyW(uint code, uint mapType);
 
     // --- monitors ---------------------------------------------------------------------------
     public const uint MONITORINFOF_PRIMARY = 1;

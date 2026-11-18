@@ -21,6 +21,7 @@ internal sealed record PresentOptions
     public double SimulatePrep { get; set; }
     public double InterruptAfter { get; set; }
     public double SimulateDisplayChange { get; set; }
+    public bool BackgroundPaste { get; set; }
 
     public static PresentOptions Parse(string[] args)
     {
@@ -41,6 +42,7 @@ internal sealed record PresentOptions
                 case "--simulate-prep": o.SimulatePrep = double.Parse(Next()); break;
                 case "--interrupt-after": o.InterruptAfter = double.Parse(Next()); break;
                 case "--simulate-display-change": o.SimulateDisplayChange = double.Parse(Next()); break;
+                case "--background-paste": o.BackgroundPaste = true; break;
                 case var a when a.StartsWith("--"): throw new UsageException($"unknown option {a}");
                 default: o.Deck = o.Deck is null ? args[i] : throw new UsageException("one deck at a time"); break;
             }
@@ -90,7 +92,7 @@ internal static class PresentCommand
         Power.KeepAwake(true);
 
         using var clipboard = new ClipboardHost();
-        using var stage = new PaintStage(clipboard, Log);
+        using var stage = new PaintStage(clipboard, Log) { ForceBackgroundRoute = o.BackgroundPaste };
         using var renders = new CancellationTokenSource();
         // Ctrl+C in the terminal ends the show like Esc: Paint closed, settings put back
         using var ending = new CancellationTokenSource();

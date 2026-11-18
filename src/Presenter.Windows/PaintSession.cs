@@ -176,6 +176,35 @@ public sealed class PaintSession : IDisposable
         }
     }
 
+    // --- the background route (E2) -------------------------------------------------------------------
+    private nint _inputSite;
+
+    /// <summary>Paste without the focus: MFC's Edit > Paste command (ID_EDIT_PASTE)
+    /// posted to Paint's main window. Paint reads the clipboard within ~8 ms (E2).</summary>
+    public void PostPaste() => PostMessageW(Window, WM_COMMAND, 0xE125, 0);
+
+    /// <summary>A key posted to Paint's WinUI input window, the only window that
+    /// takes keys posted from outside (E2): `S` commits a paste without the focus.</summary>
+    public void PostKey(int vk)
+    {
+        if (_inputSite == 0 || !IsWindow(_inputSite))
+        {
+            _inputSite = 0;
+            EnumChildWindows(Window, (h, _) =>
+            {
+                var cls = new System.Text.StringBuilder(64);
+                GetClassNameW(h, cls, cls.Capacity);
+                if (cls.ToString() != "InputSiteWindowClass") return true;
+                _inputSite = h;
+                return false;
+            }, 0);
+            if (_inputSite == 0) throw new PaintException("Paint's input window was not found");
+        }
+        nint scan = (nint)MapVirtualKeyW((uint)vk, 0) << 16;
+        PostMessageW(_inputSite, WM_KEYDOWN, (nuint)vk, 1 | scan);
+        PostMessageW(_inputSite, WM_KEYUP, (nuint)vk, 1 | scan | (1 << 30) | unchecked((nint)(1u << 31)));
+    }
+
     // --- focus, closing, dialogs ------------------------------------------------------------------
     public bool InFront() => GetAncestor(GetForegroundWindow(), GA_ROOTOWNER) == Window;
 

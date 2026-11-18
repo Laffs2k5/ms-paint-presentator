@@ -23,6 +23,9 @@ public sealed class PaintStage : IStage, IDisposable
 
     public PaintSession? Paint { get; private set; }
 
+    /// <summary>For tests: always paste the background way (E2), never with keys.</summary>
+    public bool ForceBackgroundRoute { get; set; }
+
     public PaintStage(ClipboardHost clipboard, Action<string>? log = null)
     {
         _clipboard = clipboard;
@@ -85,31 +88,39 @@ public sealed class PaintStage : IStage, IDisposable
     /// </summary>
     private long? PasteAndCommit(PaintSession paint, byte[] png)
     {
-        long? seen = null;
-        for (int attempt = 0; attempt < 2 && seen is null; attempt++)
+        bool background = ForceBackgroundRoute;
+        if (!background && !paint.InFront() && !paint.Focus(1000))
         {
-            if (attempt > 0)
-            {
-                // Ctrl+V went nowhere: another window had the focus, or Paint's
-                // clipboard-error dialog was up. Clear the way and try once more.
-                bool dialog = paint.DismissClipboardError();
-                _log?.Invoke($"the paste was not seen within 2.5 s{(dialog ? " (Paint's error dialog closed)" : "")}{(paint.InFront() ? "" : " (Paint was not in front)")}: once more");
-            }
-            if (!paint.InFront() && !paint.Focus(1000))
-                _log?.Invoke("Paint is not in front: the paste may go elsewhere");
+            _log?.Invoke("Paint is not in front: pasting in the background (E2)");
+            background = true;
+        }
+        if (!background)
+        {
             _clipboard.Offer(png);
             Keyboard.Ctrl('V');
-            seen = WaitFor(paint, floats: true, timeoutMs: 2500);
+            long? seen = WaitFor(paint, floats: true, timeoutMs: 2500);
+            Keyboard.Tap('S');
+            if (seen is not null)
+            {
+                if (WaitFor(paint, floats: false, timeoutMs: 1000) is null) _log?.Invoke("the commit was not seen within 1 s");
+                return seen;
+            }
+            // The paste went nowhere: another window had the focus, or Paint's
+            // clipboard-error dialog was up. Clear the way and paste once more,
+            // the background way, which needs no focus (E2).
+            bool dialog = paint.DismissClipboardError();
+            _log?.Invoke($"the paste was not seen within 2.5 s{(dialog ? " (Paint's error dialog closed)" : "")}{(paint.InFront() ? "" : " (Paint was not in front)")}: once more, in the background");
         }
-        Keyboard.Tap('S');
-        if (seen is null)
-        {
-            _log?.Invoke("the paste was not seen");
-            return null;
-        }
-        if (WaitFor(paint, floats: false, timeoutMs: 1000) is null)
-            _log?.Invoke("the commit was not seen within 1 s");
-        return seen;
+        // The background route (E2): Paint reads the clipboard within ~8 ms of the
+        // posted command, but does not enable its Crop button for it, so the paste
+        // cannot be seen; give it time to draw, commit with a posted S (0.3-0.4 s),
+        // and report the change as unconfirmed.
+        _clipboard.Offer(png);
+        paint.PostPaste();
+        Thread.Sleep(400);
+        paint.PostKey('S');
+        Thread.Sleep(450);
+        return null;
     }
 
     private long? PasteAndCommitGuarded(PaintSession paint, byte[] png)
