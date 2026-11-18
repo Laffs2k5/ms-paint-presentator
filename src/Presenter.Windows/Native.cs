@@ -41,6 +41,7 @@ internal static unsafe class Native
     [DllImport("user32.dll")] public static extern bool PostThreadMessageW(uint tid, uint msg, nuint w, nint l);
     [DllImport("user32.dll", SetLastError = true)] public static extern uint SendInput(uint n, INPUT* inputs, int size);
     [DllImport("kernel32.dll")] public static extern uint GetCurrentThreadId();
+    [DllImport("user32.dll")] public static extern short GetAsyncKeyState(int vk);
     [DllImport("kernel32.dll")] public static extern nint GetModuleHandleW(nint name);
 
     // --- windows ----------------------------------------------------------------------------

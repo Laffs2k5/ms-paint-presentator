@@ -119,6 +119,23 @@ public sealed class KeyHook : IDisposable
     /// <summary>The windows whose being in front makes show keys ours.</summary>
     public void SetTargets(params nint[] targets) => _targets = targets;
 
+    /// <summary>
+    /// During the show, also swallow the keys that would change Paint under
+    /// the speaker's slides while it is in front: Ctrl combinations (Ctrl+Z
+    /// would undo the slide, Ctrl+S or Ctrl+P open dialogs), Delete, Insert
+    /// and the F keys (F11 changes Paint's view). Alt and Windows-key
+    /// combinations still pass, so Alt+Tab works.
+    /// </summary>
+    public bool GuardPaint { get; set; }
+
+    private static bool ChangesPaint(uint vk)
+    {
+        if (vk is 0x2E or 0x2D) return true;                 // Delete, Insert
+        if (vk is >= 0x70 and <= 0x87) return true;          // F1-F24
+        bool modifier = vk is 0x10 or 0x11 or 0x12 or >= 0xA0 and <= 0xA5 or 0x5B or 0x5C;
+        return !modifier && (GetAsyncKeyState(0x11) & 0x8000) != 0;  // anything with Ctrl held
+    }
+
     private unsafe nint Callback(int code, nuint wParam, nint lParam)
     {
         if (code >= 0)
@@ -145,6 +162,8 @@ public sealed class KeyHook : IDisposable
                 }
                 return 1;  // swallowed: Paint never sees it
             }
+            if (GuardPaint && ChangesPaint(kb->vkCode) && IsTargetInFront())
+                return 1;  // a key that would change Paint under the slides: dropped
         }
         return CallNextHookEx(0, code, wParam, lParam);
     }

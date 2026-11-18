@@ -139,7 +139,7 @@ internal static class PresentCommand
             summary["origin offset from UIA"] = new[] { dx, dy };
             origin = (ox, oy);
             // the hook is on during the painting: the speaker's first key stops it
-            hook = new KeyHook(paint.Window);
+            hook = new KeyHook(paint.Window) { GuardPaint = true };
             if (!hook.Alive()) Log("the keyboard hook did not answer its heartbeat");
             (pen, tools) = await stage.Run(p => { var pn = new SyntheticPen(); return (pn, new Toolbox(p!, pn)); });
 
@@ -201,6 +201,14 @@ internal static class PresentCommand
                     if (paused) continue;
                     if (!current.Alive) Interrupt("paint-gone");
                     else if (!current.Maximised) Interrupt("paint-moved");
+                    else if (tick % 4 == 0 && !paused)
+                    {
+                        // zoom changed (Ctrl+wheel) or the canvas scrolled: it no longer
+                        // shows the slide at its size, one pixel per pixel
+                        var shown = await stage.Run(p => p?.CanvasOnScreen());
+                        if (!paused && shown is { } c && (Math.Abs(c.Width - size.Width) > 2 || Math.Abs(c.Height - size.Height) > 2))
+                            Interrupt("paint-moved");
+                    }
                     // the hook: a heartbeat every 5 s; two misses in a row and it is reinstalled
                     if (tick % 10 == 0 && !hook.Alive(1000) && !hook.Alive(1000))
                         Log(hook.Reinstall() ? "the keyboard hook stopped answering: reinstalled" : "the keyboard hook stopped answering, and reinstalling failed");
@@ -289,7 +297,7 @@ internal static class PresentCommand
                     else
                     {
                         work = "Paint put back";
-                        Log("Paint is no longer maximised: putting it back");
+                        Log("Paint is no longer maximised at 100%: putting it back");
                         await stage.Run(p => { p!.PlaceOn(monitor); p.Focus(); });
                     }
                     try
