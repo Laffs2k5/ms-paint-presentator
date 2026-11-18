@@ -129,6 +129,8 @@ a WPF thread of its own; the controller on the thread pool.
 | A Marp deck (7 slides), rendered during the painting | 4.0 s; then 190 ms median, every frame pixel-exact |
 | A PowerPoint deck (4 slides + 1 hidden), rendered during the painting | 3.8 s, PowerPoint gone after; 200 ms median, pixel-exact |
 | A PDF (4 pages) / a cached deck | 0.7 s / at once |
+| A Slidev project (4 slides), rendered during the painting | 7.2 s; then 189 ms median, pixel-exact |
+| A deck that cannot render (Marp with no marp-cli) | the painting stops, the reason and the install command are shown, Paint closes; exit 1 |
 | The user's 23 real PowerPoint decks (E25's), `render` into a throwaway cache | all 23 rendered, 370 slides; 5.0 s median a deck with PowerPoint's start and quit |
 | A key during the painting | the painting stops within a stroke; slide 1 0.6 s after the key |
 | A display change (simulated), same screen chosen | resumed at the same slide in 2.6 s |

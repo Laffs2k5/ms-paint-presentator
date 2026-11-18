@@ -47,11 +47,17 @@ internal sealed class ReadySlides : ISlideSet
 
     public void SetCount(int count) => _count = count;
 
+    private readonly CancellationTokenSource _failed = new();
+
+    /// <summary>Fires when rendering fails (the loading painting stops on it).</summary>
+    public CancellationToken FailedToken => _failed.Token;
+
     /// <summary>Rendering failed: waiters get the error.</summary>
     public void Fail(Exception e)
     {
         _failure = e;
         foreach (var w in _waiting.Values) w.TrySetException(e);
+        _failed.Cancel();
     }
 
     public Exception? Failure => _failure;

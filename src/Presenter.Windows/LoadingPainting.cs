@@ -97,7 +97,7 @@ public sealed class LoadingPainting
         catch (OperationCanceledException)
         {
             _tools.Key('S');
-            Note("stopped by a key");
+            Note("stopped (a key, Ctrl+C, or the deck failed to render)");
             return true;
         }
     }

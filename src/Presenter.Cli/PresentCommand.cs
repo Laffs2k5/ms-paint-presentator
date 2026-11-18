@@ -96,6 +96,7 @@ internal static class PresentCommand
         using var clipboard = new ClipboardHost();
         using var stage = new PaintStage(clipboard, Log) { ForceBackgroundRoute = o.BackgroundPaste };
         using var renders = new CancellationTokenSource();
+        bool failed = false;
         // Ctrl+C in the terminal ends the show like Esc: Paint closed, settings put back
         using var ending = new CancellationTokenSource();
         ConsoleCancelEventHandler onCtrlC = (_, e) => { e.Cancel = true; ending.Cancel(); };
@@ -140,7 +141,19 @@ internal static class PresentCommand
 
             if (o.Painting)
                 summary["painting"] = await Paint(o, stage, tools, pen, hook, slides, origin, size, ending.Token);
-            await slides.WaitReadyAsync(1, ending.Token);
+            if (slides.Failure is null)
+            {
+                try { await slides.WaitReadyAsync(1, ending.Token); }
+                catch (Exception e) when (slides.Failure is not null && e is not OperationCanceledException) { }
+            }
+            if (slides.Failure is { } failure)
+            {
+                // nothing to show: say why, close Paint and put the settings back (finally)
+                Log($"the deck could not be rendered: {failure.Message}");
+                summary["error"] = failure.Message;
+                failed = true;
+                return 1;
+            }
 
             // the canvas as it is now becomes slide 0
             byte[] painting = await stage.Run(p => GrabCanvas(p!, (dx, dy), size));
@@ -208,6 +221,13 @@ internal static class PresentCommand
                     catch (OperationCanceledException) when (cts.IsCancellationRequested)
                     {
                         paused = true;
+                    }
+                    catch (Exception e) when (slides.Failure is not null && e is not OperationCanceledException)
+                    {
+                        // a slide the speaker asked for could not be rendered
+                        Log($"the deck could not be rendered further: {slides.Failure.Message}");
+                        failed = true;
+                        break;
                     }
                     if (reason == "end" || ending.IsCancellationRequested)
                     {
@@ -317,7 +337,7 @@ internal static class PresentCommand
         string json = JsonSerializer.Serialize(summary, new JsonSerializerOptions { WriteIndented = true });
         Console.WriteLine(json);
         SaveLog(json);
-        return 0;
+        return failed ? 1 : 0;
     }
 
     /// <summary>Every show's timings to a log file (research 05 §7.8), so "it felt
@@ -339,7 +359,8 @@ internal static class PresentCommand
     private static async Task<object> Paint(PresentOptions o, PaintStage stage, Toolbox tools, SyntheticPen pen, KeyHook hook,
                                             ReadySlides slides, (int X, int Y) origin, PixelSize size, CancellationToken ending)
     {
-        using var stop = CancellationTokenSource.CreateLinkedTokenSource(hook.FirstKey.Token, ending);
+        // the painting stops on the first key, Ctrl+C, or when rendering fails
+        using var stop = CancellationTokenSource.CreateLinkedTokenSource(hook.FirstKey.Token, ending, slides.FailedToken);
         var started = Stopwatch.StartNew();
         PaintingProgress Progress()
         {
