@@ -56,6 +56,7 @@ import win32con
 import win32gui
 from paintctl import core
 from PIL import ImageGrab
+from pywinauto.findwindows import ElementAmbiguousError
 
 CELL = 250
 CANVAS = (2000, 1000)  # 8 x 4 cells
@@ -413,8 +414,18 @@ def mouse_brush_width(board, mouse) -> dict:
 
 
 def active_tool(paint: int) -> str:
-    """The canvas is named "Using <tool> tool on Canvas"."""
-    return core._uia_window(paint).child_window(auto_id="image").wrapper_object()         .element_info.name
+    """The canvas is named "Using <tool> tool on Canvas". Right after a tool
+    change two such elements can exist for a moment, so retry, then take the
+    first."""
+    spec = core._uia_window(paint).child_window(auto_id="image", title_re="Using .* on Canvas")
+    for _ in range(10):
+        try:
+            return spec.wrapper_object().element_info.name
+        except ElementAmbiguousError:
+            time.sleep(0.1)
+    first = core._uia_window(paint).child_window(
+        auto_id="image", title_re="Using .* on Canvas", found_index=0)
+    return first.wrapper_object().element_info.name
 
 
 def select_brush(paint: int, brush: str = "Brush") -> str:
