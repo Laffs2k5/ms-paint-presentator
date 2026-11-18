@@ -14,9 +14,9 @@ internal sealed class RenderedSource(DeckInfo info, RenderOptions options) : IDe
     public double Aspect => info.Aspect;
     public DeckInfo Info => info;
 
-    public ReadySlides Prepare(PixelSize size, Action<string> log, CancellationToken ct)
+    public SlideStore Prepare(PixelSize size, Action<string> log, CancellationToken ct)
     {
-        var slides = new ReadySlides();
+        var slides = new SlideStore();
         if (info.SlideCount is int n) slides.SetCount(n);
         var sw = Stopwatch.StartNew();
         var render = SlideRender.Start(info, size, options, ct);

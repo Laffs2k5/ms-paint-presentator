@@ -162,7 +162,7 @@ internal static class PresentCommand
             if (o.Snapshot is not null) File.WriteAllBytes(o.Snapshot, painting);
 
             VerifyingStage? verifier = null;
-            IStage Staged(ReadySlides s, PixelSize sz) => o.Verify
+            IStage Staged(SlideStore s, PixelSize sz) => o.Verify
                 ? verifier = new VerifyingStage(stage, s.Get, p => CanvasRect(p, (dx, dy), sz), sz)
                 : stage;
             var controller = new ShowController(Staged(slides, size), slides, hook.Keys, startAtPainting: true, Log);
@@ -357,7 +357,7 @@ internal static class PresentCommand
     }
 
     private static async Task<object> Paint(PresentOptions o, PaintStage stage, Toolbox tools, SyntheticPen pen, KeyHook hook,
-                                            ReadySlides slides, (int X, int Y) origin, PixelSize size, CancellationToken ending)
+                                            SlideStore slides, (int X, int Y) origin, PixelSize size, CancellationToken ending)
     {
         // the painting stops on the first key, Ctrl+C, or when rendering fails
         using var stop = CancellationTokenSource.CreateLinkedTokenSource(hook.FirstKey.Token, ending, slides.FailedToken);
