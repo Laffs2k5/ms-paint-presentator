@@ -61,7 +61,9 @@ Keys during the show: Right, Down, Space, Page Down, Enter or N for the next
 slide; Left, Up, Backspace, Page Up or P back; Home for the loading painting
 (slide 0); End for the last slide; digits then Enter to jump; B or `.` for
 a black screen, W or `,` for white (any key comes back); Esc ends the show
-and closes Paint without saving.
+and closes Paint without saving. Other keys that would change Paint under the slides
+(Ctrl combinations such as Ctrl+Z, Delete, the F keys) are swallowed while
+Paint is in front; Alt+Tab still works.
 
 For testing and demos: `--auto` plays a scripted set of keys, `--verify`
 reads every frame back from the screen and compares it with the slide,
@@ -136,6 +138,7 @@ a WPF thread of its own; the controller on the thread pool.
 | A display change (simulated), same screen chosen | resumed at the same slide in 2.6 s |
 | A soak: 400 random keys (331 changes, bursts combined), every frame verified | all confirmed, worst 695 ms; pixel-exact but for Paint's bottom edge; 96 MB, flat |
 | Paint un-maximised / closed during a show | put back in 2.2 s / reopened, slide back in 4.6 s |
+| Paint zoomed to 50% during a show; Ctrl+Z and Delete pressed | back at 100% with the slide in about 2 s; the keys changed nothing |
 | The x64 build, run under emulation on the ARM64 laptop | `doctor` passes; 189 ms median, every frame pixel-exact |
 
 ## Found while building
