@@ -64,6 +64,34 @@ Each show's timings (every slide change, key to slide on screen, resumes
 after a display change) are printed as JSON at the end and kept in
 `%LOCALAPPDATA%\PaintPresentator\logs` (the newest 50, no deck names).
 
+## Testing display changes (E18)
+
+Needs a second display. The presenter's side is built and tested with a
+simulated change only (`--simulate-display-change`); these steps test the
+real thing and answer research 05 §5's open questions. Run them from a
+terminal on the laptop's screen.
+
+1. `presenter screens`, then `presenter pick`: both displays listed, the
+   external one highlighted, Identify puts a number on each.
+2. `presenter present <deck> --verify`: pick the external display, page to
+   slide 3.
+3. **Pull the cable.** The picker should pop up on the laptop and wait.
+   Note where Paint went (`paintctl list`, `paintctl info`).
+4. **Plug it back in** while the picker waits: the display should reappear
+   in the list. Pick it. Expected: "resuming … Repaste", slide 3 back,
+   pixel-exact (the log's `verify` line).
+5. Pull it again and this time pick the laptop: "NewSlideSize" if the
+   laptop's slide size differs: Paint reopens at the new size and the
+   current slide shows, re-fitted.
+6. Change the external display's resolution or scaling in Settings during
+   a show; then switch duplicate/extend with Win+P.
+7. Run E26's `poc/dotnet/E26MonitorId` before and after a replug: the
+   EDID identity should stay the same.
+
+What to look for: does the picker always come up, does the show resume at
+the right slide, how long does it take (the summary's `resumed` entries),
+and does FancyZones move Paint (exclude `mspaint.exe` if it does).
+
 ## Layout
 
 | Project | What it holds |
