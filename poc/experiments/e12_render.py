@@ -227,7 +227,8 @@ def render_slidev(work: Path, env: dict, w: int, h: int) -> dict:
             "notes": slidev_notes(src)}
 
 
-def render_pptx(work: Path, w: int, h: int) -> dict:
+def render_pptx(work: Path, w: int, h: int, pdf: Path | None = None) -> dict:
+    """With `pdf`, the deck is also saved there as PDF (for E24)."""
     import pythoncom
     import win32com.client
 
@@ -275,6 +276,8 @@ def render_pptx(work: Path, w: int, h: int) -> dict:
         took = time.perf_counter() - t0
         notes = [pres.Slides(i).NotesPage.Shapes.Placeholders(2).TextFrame.TextRange.Text
                  for i in range(1, pres.Slides.Count + 1)]
+        if pdf:
+            pres.SaveAs(str(pdf), 32)  # ppSaveAsPDF
     finally:
         pres.Close()
         if not running:
