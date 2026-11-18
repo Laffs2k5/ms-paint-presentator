@@ -41,12 +41,20 @@ internal static class ScreenOptions
     /// <summary>The picker, then the chosen display as a <see cref="Presenter.Windows.Monitor"/>.</summary>
     public static async Task<(ScreenOption Option, Presenter.Windows.Monitor Monitor)?> Pick(double aspect, string heading, CancellationToken ct = default)
     {
-        var choice = await ScreenPicker.ChooseAsync(Now, Remembered(), aspect, heading, ct);
+        var choice = await ScreenPicker.ChooseAsync(Now, Remembered(), aspect, heading, PreflightNotes(), ct);
         if (choice is null) return null;
         Remember(choice);
         var monitor = Monitors.All().FirstOrDefault(m => m.Device == choice.Device)
                       ?? throw new InvalidOperationException($"{choice.Device} is gone");
         return (choice, monitor);
+    }
+
+    /// <summary>What the speaker should check before the show (E19, E6).</summary>
+    public static List<string> PreflightNotes()
+    {
+        var notes = new List<string> { "Switch Do not disturb on, or notifications will show over the slides." };
+        if (!Power.OnMains()) notes.Add("On battery: plug in the charger, Paint is slower and less steady without it.");
+        return notes;
     }
 
     /// <summary>The option for a monitor chosen without the picker.</summary>

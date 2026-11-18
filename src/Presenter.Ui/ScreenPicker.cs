@@ -20,15 +20,17 @@ public static class ScreenPicker
     /// <summary>Show the picker on a thread of its own and wait for the choice
     /// (null when cancelled).</summary>
     /// <param name="options">The displays now; called again on every display change.</param>
+    /// <param name="notes">Pre-flight reminders shown under the list (Do not disturb, battery).</param>
     public static Task<ScreenOption?> ChooseAsync(Func<IReadOnlyList<ScreenOption>> options, string? remembered,
-                                                  double aspect, string heading, CancellationToken ct = default)
+                                                  double aspect, string heading, IReadOnlyList<string>? notes = null,
+                                                  CancellationToken ct = default)
     {
         var done = new TaskCompletionSource<ScreenOption?>(TaskCreationOptions.RunContinuationsAsynchronously);
         var thread = new Thread(() =>
         {
             try
             {
-                var window = new PickerWindow(options, remembered, aspect, heading);
+                var window = new PickerWindow(options, remembered, aspect, heading, notes ?? []);
                 window.Closed += (_, _) =>
                 {
                     done.TrySetResult(window.Choice);
@@ -61,7 +63,8 @@ public static class ScreenPicker
 
         public ScreenOption? Choice { get; private set; }
 
-        public PickerWindow(Func<IReadOnlyList<ScreenOption>> options, string? remembered, double aspect, string heading)
+        public PickerWindow(Func<IReadOnlyList<ScreenOption>> options, string? remembered, double aspect, string heading,
+                            IReadOnlyList<string> notes)
         {
             (_options, _remembered, _aspect) = (options, remembered, aspect);
             Title = "Paint Presentator";
@@ -89,6 +92,7 @@ public static class ScreenPicker
                         Margin = new Thickness(0, 6, 0, 0), Foreground = Brushes.DimGray, TextWrapping = TextWrapping.Wrap, MaxWidth = 560,
                     },
                     _list,
+                    Notes(notes),
                     new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Children = { identify, cancel } },
                 },
             };
@@ -109,6 +113,18 @@ public static class ScreenPicker
         }
 
         private void OnDisplaysChanged(object? sender, EventArgs e) => Dispatcher.BeginInvoke(Rebuild);
+
+        private static UIElement Notes(IReadOnlyList<string> notes)
+        {
+            var panel = new StackPanel { Margin = new Thickness(0, 0, 0, 14) };
+            foreach (var note in notes)
+                panel.Children.Add(new TextBlock
+                {
+                    Text = "•  " + note, TextWrapping = TextWrapping.Wrap, MaxWidth = 560,
+                    Foreground = Brushes.DarkGoldenrod, Margin = new Thickness(0, 2, 0, 2),
+                });
+            return panel;
+        }
 
         private void Rebuild()
         {
