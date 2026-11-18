@@ -14,7 +14,11 @@ internal static class PresentCommand
     public static async Task<int> Run(string[] args)
     {
         string? deckPath = null, monitorArg = null;
+        string title = "Paint Presentator";
+        string? snapshot = null;
         bool painting = true, auto = false, verify = false;
+        int? seed = null;
+        double simulatePrep = 0;
         for (int i = 0; i < args.Length; i++)
         {
             switch (args[i])
@@ -23,6 +27,10 @@ internal static class PresentCommand
                 case "--no-painting": painting = false; break;
                 case "--auto": auto = true; break;
                 case "--verify": verify = true; break;
+                case "--title" when i + 1 < args.Length: title = args[++i]; break;
+                case "--snapshot" when i + 1 < args.Length: snapshot = args[++i]; break;
+                case "--seed" when i + 1 < args.Length: seed = int.Parse(args[++i]); break;
+                case "--simulate-prep" when i + 1 < args.Length: simulatePrep = double.Parse(args[++i]); break;
                 case var a when a.StartsWith("--"): throw new UsageException($"unknown option {a}");
                 default: deckPath = deckPath is null ? args[i] : throw new UsageException("one deck at a time"); break;
             }
@@ -42,6 +50,9 @@ internal static class PresentCommand
         using var stage = new PaintStage(clipboard, Log);
         PaintSession? paint = null;
         KeyHook? hook = null;
+        SyntheticPen? pen = null;
+        Toolbox? tools = null;
+        (int X, int Y) origin = default;
         try
         {
             // Paint once, at the predicted size; again only if the prediction was off (E13)
@@ -76,12 +87,29 @@ internal static class PresentCommand
                 return p.MeasureOrigin();
             });
             summary["origin offset from UIA"] = new[] { dx, dy };
+            origin = (ox, oy);
+            // the hook is on during the painting: the speaker's first key stops it
             hook = new KeyHook(paint.Window);
             if (!hook.Alive()) Log("the keyboard hook did not answer its heartbeat");
+            (pen, tools) = await stage.Run(p => { var pn = new SyntheticPen(); return (pn, new Toolbox(p!, pn)); });
 
             if (painting)
             {
-                Log("loading painting: not ported yet; waiting for the slides");
+                var started = Stopwatch.StartNew();
+                PaintingProgress Progress()
+                {
+                    int done = slides.ReadyCount;
+                    if (simulatePrep > 0)  // for tests: slides "become ready" over that many seconds
+                        done = Math.Min(done, (int)(slides.Count * started.Elapsed.TotalSeconds / simulatePrep));
+                    return new PaintingProgress(done, slides.Count);
+                }
+                var steps = await stage.Run(p =>
+                {
+                    var lp = new LoadingPainting(p!, tools, pen, origin, size, title, Progress, hook.FirstKey.Token, seed, Log);
+                    bool stopped = lp.Run();
+                    return (stopped, lp.Steps);
+                });
+                summary["painting"] = new { seconds = Math.Round(started.Elapsed.TotalSeconds, 1), interrupted = steps.stopped, steps = steps.Steps };
             }
             await slides.WaitReadyAsync(1, CancellationToken.None);
 
@@ -93,6 +121,7 @@ internal static class PresentCommand
                 return ScreenCapture.Png(bmp);
             }));
             stage.SetSlides(i => slides.Get(i));
+            if (snapshot is not null) File.WriteAllBytes(snapshot, slides.Get(0));
 
             VerifyingStage? verifier = verify
                 ? new VerifyingStage(stage, slides.Get, p =>
@@ -124,7 +153,22 @@ internal static class PresentCommand
         finally
         {
             hook?.Dispose();
-            if (paint is not null) await stage.Run(p => { p?.Close(discard: true); });
+            if (paint is not null)
+                await stage.Run(p =>
+                {
+                    // Paint keeps the Text font and size: put the user's back (E16, E27)
+                    try
+                    {
+                        if (tools?.RestoreTextSettings(origin.X + 200, origin.Y + 200) == true)
+                            Log("the Text tool's font, size and background fill put back");
+                    }
+                    catch (Exception e) when (e is PaintException or InvalidOperationException or System.Runtime.InteropServices.COMException)
+                    {
+                        Log($"could not put the Text settings back ({e.Message}); the next show will");
+                    }
+                    p?.Close(discard: true);
+                    pen?.Dispose();
+                });
             clipboard.Clear();
             Power.KeepAwake(false);
         }
@@ -165,6 +209,18 @@ internal sealed class ReadySlides(int count) : ISlideSet
         .Select(_ => new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously)).ToArray();
 
     public int Count => count;
+
+    /// <summary>How many slides from 1 on are ready without a gap.</summary>
+    public int ReadyCount
+    {
+        get
+        {
+            int n = 0;
+            while (n < count && Volatile.Read(ref _png[n + 1]) is not null) n++;
+            return n;
+        }
+    }
+
     public bool IsReady(int index) => index >= 0 && index <= count && Volatile.Read(ref _png[index]) is not null;
     public Task WaitReadyAsync(int index, CancellationToken ct) => _ready[index].Task.WaitAsync(ct);
     public byte[] Get(int index) => _png[index] ?? throw new InvalidOperationException($"slide {index} is not ready");
