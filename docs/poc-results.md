@@ -886,3 +886,35 @@ keys: Next ×3, Back, End, Home, 3 + Enter, B twice, then four quick Nexts.
   clearing out the cache.
 - **The verdict on the feel is the user's:** run it without `--auto` and
   drive it from the keyboard.
+
+## E20. A C# live clipboard object (2026-11-18): **pass**
+
+Script: [`poc/experiments/e20_csharp_clipboard.py`](../poc/experiments/e20_csharp_clipboard.py)
+drives [`poc/dotnet/E20Clipboard`](../poc/dotnet/E20Clipboard) (C#, .NET 9,
+native ARM64) over stdin. Each slide is a new data object offering PNG plus
+the clipboard-history opt-out (E7, E8), pasted with Ctrl+V and committed with
+`S`. Slide 1854×875, Paint maximised and in front, laptop panel. The C# side
+logs every call on its object with `Stopwatch` time, the same clock as
+Python's `perf_counter`.
+
+| Data object | Pastes | Offer | Ctrl+V to Paint's `GetData` of the PNG | Ctrl+V to on screen (median / p95 / max) | Missed |
+|---|---|---|---|---|---|
+| **C#: our own `IDataObject`** (built-in COM interop, `OleSetClipboard`) | 200 | 4.2 ms | **4.4 ms** (p95 6.3) | **82.5 / 99.9 / 116.9 ms** | 0 |
+| C#: WinForms `DataObject` with `Clipboard.SetDataObject(obj, false)` | 200 | 4.2 ms | not visible (see below) | 84.5 / 115.1 / 147.9 ms | 0 |
+| Python: E1's object (the POC baseline) | 50 | 5.2 ms | 4.3 ms | 96.9 / 113.0 / 136.2 ms | 0 |
+
+- **Both C# objects serve Paint as well as the Python one:** every slide
+  pasted, no error dialog, nothing added to Win+V history.
+- **Paint calls our own object exactly as it calls the Python one:**
+  `EnumFormatEtc`, `GetData` PNG, `GetDataHere` PNG (refused with `E_NOTIMPL`,
+  as in E1). Nothing else.
+- **WinForms' `DataObject` is a black box:** the overridden `GetData` and
+  `GetDataPresent` were never called, because WinForms answers OLE from its own
+  internals. It works, but the presenter could not see when Paint has read a
+  slide.
+- **Use our own `IDataObject`.** It gives full control over the formats, the
+  same behaviour as the proven POC object, and `GetData` doubles as a "Paint
+  has the slide" timestamp. WinForms' object is the fallback.
+- **Gotcha:** this laptop's culture writes 0,5 for 0.5. Anything the
+  presenter writes for machines (logs, protocols, cache keys) must use the
+  invariant culture.
