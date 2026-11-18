@@ -82,6 +82,17 @@ point depends on them.
   It uses Paint's 20 palette colours (E16). Paint remembers only the Text
   tool's font across sessions, so the presenter puts that back if it changes it.
 
+- **Display changes: the picker comes back and waits** (decided by the user).
+  A display change mid-show is most likely a loose cable, which the speaker
+  will plug back in, so the presenter does nothing on its own. It shows the
+  screen picker (the same one as at start) and keeps it up until the speaker
+  chooses. While it is up, its options follow the displays as they come and
+  go. Only after the choice does the presenter work out what is needed. The
+  common case is the same display back at the same resolution and scaling:
+  resume at the current slide, ideally with one paste and no rendering. A
+  different slide size means measuring again and rendering again behind a
+  fresh loading painting (E18).
+
 Planned features:
 
 - **Presenter view** on the other screen: current and next slide, notes, a
@@ -96,8 +107,7 @@ Planned features:
   same way for them. Black and white screens are pre-rendered slides too.
 - **Recovery:**
   - close Paint's "Can't complete operation" dialog automatically (`paintctl dismiss`);
-  - measure and render again behind a fresh loading painting when the display
-    changes (E18);
+  - on a display change, the screen picker (see above);
   - relaunch Paint and resume at the current slide if it closes.
 - **The mouse stays Paint's.** The presenter parks the cursor off the canvas,
   and the speaker can pick up Paint's pen and draw on a slide; the next slide
@@ -162,7 +172,7 @@ Paint build. Note which paster the self-test picks (Ctrl+V or UIA menu) and the
 | **E15** | Draw in Paint with synthetic input (the loading painting) | Strokes with the Pencil and a brush by three routes: `SendInput` mouse drags (move the real cursor), synthetic pen input (`InjectSyntheticPointerInput`: pressure, and the cursor stays put), mouse messages posted to `InputSiteWindowClass` (as `S` in E2). Find how fast points can be fed before Paint drops or smooths them | A scripted stroke lands where intended and shows live, at hand-drawing speed. **Pass (E15): pen and mouse both exact and live; the pen leaves the cursor alone and has pressure on the Watercolor and Oil brushes; posted messages draw nothing** |
 | **E16** | Pick tools, colours and sizes by script | Brush types, brush size, palette and custom colours, Shapes, Fill and Text, through keys or UIA (E4 covered only Pencil, Eraser and Brushes). Check whether Paint carries our choices into the user's next session | Every tool the loading painting uses can be selected by script, and the user's settings can be restored. **Pass (E16): keys, menus, pen taps and the size slider choose everything; only the Text font survives a relaunch, and it is restored. Edit colors is off-limits** |
 | **E17** | Place a small paste | Where a paste smaller than the canvas lands, whether it can be moved before `S` (arrow keys, a drag), and what it costs against a full-size paste | Pieces stamped at a chosen spot: the loading painting's fallback if E15 fails. **Pass (E17): a paste lands at (0, 0); a pen drag plus arrow-key nudges (1 px each) place it exactly; about 60–75 ms per paste whatever its size** |
-| **E18** | Display changes mid-show | Unplug and replug the projector, change resolution and scaling, switch between duplicate and extend (`DisplaySwitch.exe`), with FancyZones on. Record what Paint does and which events arrive. Includes the projector run E11 has not had yet | The show survives, or recovers by measuring and rendering again behind a fresh loading painting |
+| **E18** | Display changes mid-show | Unplug and replug a display, change resolution and scaling, switch between duplicate and extend (`DisplaySwitch.exe`), with FancyZones on. Record what Paint does (where its window goes, maximised, zoom, viewport), which events arrive, and whether, with the same display back, re-pasting the current slide is all it takes. Includes the projector run E11 has not had yet. Needs a second display | The screen picker pops up and follows the displays while it waits; with the same display back the show resumes at the current slide without rendering again |
 | **E19** | Interruptions | Do notifications show over maximised Paint? Can Do not disturb be detected or turned on? Does Paint show tips or a what's-new panel at launch? | A pre-flight check fixes each one or warns the presenter. **Answered (E19): toasts show over Paint and only Do not disturb stops them (presentation mode does not); no documented API can read it, so the check asks the speaker. Paint shows no popups over the canvas; keep-awake is accepted** |
 | **E13** | End-to-end mini presenter | Screen picker → loading painting while the slides render → slides by key (paste and `S`) → presenter view on the other screen. Measure the feel | "Snappy" by your own judgement, and the loading painting looks hand-made |
 
