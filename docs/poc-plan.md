@@ -38,7 +38,7 @@ uv run paintctl zoom 100; uv run paintctl info
 uv run paintctl fit-viewport 1920 1080    # if the screen allows
 uv run paintctl screenshot vp.png --region viewport
 uv run paintctl uia-dump --depth 10 > docs\uia-paint-<build>.json   # commit this, it feeds E4
-claude mcp add paintctl -- uv run --directory $PWD paintctl-mcp      # optional
+claude mcp add paintctl -- uv run --extra mcp --directory $PWD paintctl-mcp   # optional
 ```
 
 Pass: `info` returns no `errors`, and `zoom_check` expected ≈ actual.

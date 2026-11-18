@@ -14,9 +14,28 @@ Paint and read exact pixel geometry.
 ```powershell
 winget install --id=astral-sh.uv -e        # Python + venv manager
 cd poc\paintctl
-uv sync                                    # creates .venv with pywin32, pywinauto, pillow, mcp
+uv sync                                    # creates .venv with pywin32, pywinauto, pillow
 uv run paintctl --help
+uv sync --extra mcp                        # only if you want the MCP server (see below)
 ```
+
+### Windows on ARM64
+
+Use a native ARM64 Python, so timings don't include x64 emulation. All core
+dependencies have `win_arm64` wheels.
+
+```powershell
+uv sync --python cpython-3.13-windows-aarch64-none
+uv run python -c "import sysconfig; print(sysconfig.get_platform())"   # expect win-arm64
+```
+
+- **`UV_PYTHON` wins over everything.** If it is set (for example to an x64
+  system Python), every plain `uv run`/`uv sync` silently rebuilds `.venv` with
+  that interpreter, and a `.python-version` pin is ignored. Pass `--python …`
+  on each call, or override `UV_PYTHON` for the session.
+- **The MCP extra does not install on ARM64 Python.** `mcp` needs
+  `cryptography`, which has no `win_arm64` wheel and would build from source.
+  Run the MCP server from an x64 Python instead.
 
 ## Use
 
@@ -57,7 +76,7 @@ uv run paintctl list                                   # all Paint windows (hwnd
 
 ```powershell
 # Claude Code (on the laptop)
-claude mcp add paintctl -- uv run --directory C:\src\ms-paint-presentator\poc\paintctl paintctl-mcp
+claude mcp add paintctl -- uv run --extra mcp --directory C:\src\ms-paint-presentator\poc\paintctl paintctl-mcp
 ```
 
 Claude Desktop (`%APPDATA%\Claude\claude_desktop_config.json`):
@@ -67,7 +86,7 @@ Claude Desktop (`%APPDATA%\Claude\claude_desktop_config.json`):
   "mcpServers": {
     "paintctl": {
       "command": "uv",
-      "args": ["run", "--directory", "C:\\src\\ms-paint-presentator\\poc\\paintctl", "paintctl-mcp"]
+      "args": ["run", "--extra", "mcp", "--directory", "C:\\src\\ms-paint-presentator\\poc\\paintctl", "paintctl-mcp"]
     }
   }
 }
