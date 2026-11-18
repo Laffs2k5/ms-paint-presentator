@@ -35,7 +35,7 @@ presenter doctor                 # check this machine first: about half a minute
 presenter setup                  # once, for Marp decks: installs marp-cli (needs Node and npm)
 presenter screens                # the displays and the slide size each would get
 presenter pick                   # the screen picker on its own
-presenter render <deck>          # render the slides without Paint (warms the cache)
+presenter render <deck>          # render without Paint (warms the cache); --out folder, --size WxH, --cache folder
 presenter present <deck>         # the show
 ```
 
@@ -129,6 +129,7 @@ a WPF thread of its own; the controller on the thread pool.
 | A Marp deck (7 slides), rendered during the painting | 4.0 s; then 190 ms median, every frame pixel-exact |
 | A PowerPoint deck (4 slides + 1 hidden), rendered during the painting | 3.8 s, PowerPoint gone after; 200 ms median, pixel-exact |
 | A PDF (4 pages) / a cached deck | 0.7 s / at once |
+| The user's 23 real PowerPoint decks (E25's), `render` into a throwaway cache | all 23 rendered, 370 slides; 5.0 s median a deck with PowerPoint's start and quit |
 | A key during the painting | the painting stops within a stroke; slide 1 0.6 s after the key |
 | A display change (simulated), same screen chosen | resumed at the same slide in 2.6 s |
 | Paint un-maximised / closed during a show | put back in 2.2 s / reopened, slide back in 4.6 s |

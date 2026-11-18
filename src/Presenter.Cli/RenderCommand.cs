@@ -12,7 +12,7 @@ internal static class RenderCommand
 {
     public static async Task<int> Run(string[] args)
     {
-        string? deckPath = null, outDir = null, nodeTools = null, monitorArg = null;
+        string? deckPath = null, outDir = null, nodeTools = null, monitorArg = null, cacheDir = null;
         PixelSize? size = null;
         for (int i = 0; i < args.Length; i++)
         {
@@ -23,6 +23,7 @@ internal static class RenderCommand
                 case "--monitor": monitorArg = Next(); break;
                 case "--out": outDir = Next(); break;
                 case "--node-tools": nodeTools = Next(); break;
+                case "--cache": cacheDir = Next(); break;
                 case var a when a.StartsWith("--"): throw new UsageException($"unknown option {a}");
                 default: deckPath = deckPath is null ? args[i] : throw new UsageException("one deck at a time"); break;
             }
@@ -37,7 +38,7 @@ internal static class RenderCommand
                                 + $"shape {info.Aspect:F3}: rendering {size}");
         var sw = Stopwatch.StartNew();
         nodeTools ??= Environment.GetEnvironmentVariable("PRESENTER_NODE_TOOLS");
-        await using var render = SlideRender.Start(info, size.Value, new RenderOptions(DeckSources.CacheDir, nodeTools));
+        await using var render = SlideRender.Start(info, size.Value, new RenderOptions(cacheDir ?? DeckSources.CacheDir, nodeTools));
         double? first = render.Done >= 1 ? 0 : null;
         render.SlideReady += i => { if (i == 1) first ??= sw.Elapsed.TotalSeconds; };
         try
