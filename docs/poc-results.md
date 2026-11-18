@@ -726,3 +726,58 @@ Paint in front). Positions are in canvas pixels, found by the stamp's colour.
 - The canvas always fits the viewport (E11), so (0, 0) is always on screen.
   With a scrolled canvas a paste would likely land at the top-left of the
   visible part; not tested.
+
+## E10. The presenter's keys through a low-level hook (2026-11-18): **pass** for the keyboard; the remote is still to be recorded
+
+Script: [`poc/experiments/e10_keys.py`](../poc/experiments/e10_keys.py).
+A `WH_KEYBOARD_LL` hook on its own thread, as the plan's design says: it takes
+the show keys only while Paint (or the presenter view) is in front, and lets
+the presenter's own keys through. The presenter tags its `SendInput` events in
+`dwExtraInfo`; every untagged key counts as the user. The tests stand in for
+the user with keys under a second tag. Paint maximised and in front, laptop
+panel, final run (earlier runs agree).
+
+| Test | Result |
+|---|---|
+| Swallowing, Paint in front, a floating paste on the canvas | The user's Right ×3, B and Esc **never reached Paint**: the paste stayed put, the tool stayed Select, Esc did not discard the paste. The presenter got next ×3, black, end |
+| Control: the hook only watching | The same keys moved the paste 3 px and switched to the Fill tool, so they would have reached Paint |
+| Another app in front | It got Right, Space and B; the presenter got nothing |
+| Key press to the next slide on screen (2000×1000, already on the clipboard; 8 each) | **113 ms** through the hook against 112 ms for a direct Ctrl+V (an earlier run: 98 against 104). The hook costs nothing measurable |
+| Hook callback called after the key is sent | 0.1 ms; **16 ms** (max 20) while another Python thread is busy (the GIL) |
+| Fallback: `RegisterHotKey` on Right, no modifiers | The presenter got `WM_HOTKEY`, Paint got nothing; after unregistering, Right reached Paint again |
+
+**A callback that stalls once** (another app in front; `LowLevelHooksTimeout`
+is not set here, so this is Windows' default):
+
+| Callback stalls | The sender's `SendInput` returns after | The stalled key | The next key reaches the app after | Hook afterwards |
+|---|---|---|---|---|
+| 200 ms | 200 ms | swallowed as normal | 1 ms | alive |
+| 400 ms | 401 ms | **passed on anyway** | 2 ms | alive |
+| 700 ms | 617 ms | passed on anyway | 86 ms | alive |
+| 1,100 ms | 612 ms | passed on anyway | 300 ms | alive |
+| 2,100 ms | 609 ms | passed on anyway | 316 ms | alive |
+
+- **Windows waits about 300 ms for the hook, then passes the key on,** so a key
+  the hook should have swallowed reaches Paint after all.
+- **A stuck callback holds up the whole keyboard:** every key waits up to about
+  300 ms, and whoever sent a key with `SendInput` (the presenter itself, for
+  its pastes) blocks for up to about 610 ms.
+- **Windows did not remove the hook** after any single stall, although its
+  documentation says Windows 7 and later remove a hook that times out. It may
+  take repeated time-outs; not tested.
+- **A heartbeat detects a lost hook:** a tagged key with an unassigned code
+  (0x97) that only the hook sees and swallows. With the hook removed it went
+  unanswered; after reinstalling it came back.
+
+**For the presenter:**
+
+- The callback does only the tag check, the foreground check and a queue put
+  (0.1 ms), on a thread that does nothing else. The pastes run elsewhere.
+- In Python, other busy threads delay the callback by about 16 ms (the GIL).
+  That leaves plenty of room under 300 ms, but a long C call that holds the
+  GIL could reach it. That counts for C# at gate 4, or for keeping the hook in
+  a small process of its own.
+- Check the hook with the heartbeat now and then, and reinstall it if it goes
+  quiet.
+- **Still to do:** run `e10_keys.py --listen 30` and press each button on the
+  presenter remote, to record what it sends.
