@@ -5,9 +5,11 @@ zoom, screenshot and UIA-dump**. Every command prints JSON. The same functions a
 exposed as an **MCP server**, so Claude (Code or Desktop) on the laptop can drive
 Paint and read exact pixel geometry.
 
-> ⚠️ Written from research and DoomPaint's proven UIA anchors, **not yet run on
-> Windows**. The first POC task is to run it and fix what breaks. See
-> [docs/research/04-instrumenting-paint.md](../../docs/research/04-instrumenting-paint.md).
+> Tested on Windows 11 ARM64 (build 26300) with Paint 11.2609.401.0, English UI,
+> at 100% and 200% display scaling. Every CLI command works. The MCP server has
+> not been run yet. Background:
+> [docs/research/04-instrumenting-paint.md](../../docs/research/04-instrumenting-paint.md),
+> results: [docs/poc-results.md](../../docs/poc-results.md).
 
 ## Install (Windows 11)
 
@@ -108,7 +110,24 @@ JSON. The MCP server is for Claude Desktop/Cowork, or if you prefer typed tools.
   English text only, so check a dump from a localised Paint by hand.
 - **Localised UI:** AutomationIds are stable across languages, but *names* aren't.
   `zoom fit` looks up the button named "Fit to window", which fails on a Norwegian
-  UI. Run `uia-dump`, find its AutomationId, and switch the lookup.
+  UI, and that button has **no AutomationId** (nor does Layers). A localised
+  lookup needs the translated name, or the button's position next to
+  `ZoomValuesComboBox`.
+- **Re-centre the canvas** with `zoom fit` then `zoom 100`. After a move between
+  monitors the canvas can end up scrolled, which `info` reports as
+  `canvas_clipped: true`.
+- **Moving across a DPI boundary resizes the window.** Paint is per-monitor DPI
+  aware, so `resize` onto a 200% monitor is followed by Paint scaling itself for
+  the new DPI (2400×1600 became 4778×1929). Run `fit-viewport` after the move:
+  it iterates until the viewport is exact.
+- **100% zoom is one document pixel per physical pixel**, also at 200% display
+  scaling. Fit to window gives a fractional zoom (resampled, so soft), and the
+  zoom it picks varied between runs in the same maximised window.
+- **`launch` does not bring Paint to the foreground.** Run `focus` before
+  anything that sends keystrokes.
+- **Window managers can move Paint.** PowerToys FancyZones moves windows into
+  zones on launch (if Paint was snapped before) and when displays change.
+  Exclude `mspaint.exe` in FancyZones for clean measurements.
 - **Exact canvas size** is done by opening a blank PNG of that size
   (`%TEMP%\paintctl\canvas-WxH.png`). That is simpler and more robust than Paint's
   Resize dialog (which scales) or dragging the resize handle (DoomPaint's trick).
