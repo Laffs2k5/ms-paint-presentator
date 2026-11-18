@@ -117,6 +117,8 @@ a WPF thread of its own; the controller on the thread pool.
 | The loading painting | about 26 s, the same picture as the POC's |
 | A key during the painting | the painting stops within a stroke; slide 1 0.6 s after the key |
 | A display change (simulated), same screen chosen | resumed at the same slide in 2.6 s |
+| Paint un-maximised / closed during a show | put back in 2.2 s / reopened, slide back in 4.6 s |
+| The x64 build, run under emulation on the ARM64 laptop | `doctor` passes; 189 ms median, every frame pixel-exact |
 
 ## Found while building
 
