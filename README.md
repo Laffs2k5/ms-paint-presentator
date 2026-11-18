@@ -3,7 +3,7 @@
 Run presentations in Microsoft Paint instead of PowerPoint. Windows 11 only.
 
 Status: **POC in progress.** Environment captured and `paintctl` working on
-Windows 11 ARM64. Next: the DoomPaint baseline. See [POC results](docs/poc-results.md).
+Windows 11 ARM64, and the DoomPaint baseline runs. Next: E11, the display area. See [POC results](docs/poc-results.md).
 
 ## Research
 

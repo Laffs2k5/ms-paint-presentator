@@ -85,3 +85,30 @@ elements to depth 10, maximised at 100%. Input for E4.
   Those can only be found by (localised) name or position.
 - **There is no Paste button in the toolbar.** Paste is only in the Edit menu
   (closed in this dump) and on Ctrl+V. That matters for E2/E4.
+
+## 1. Baseline: DoomPaint (2026-11-18): **pass**
+
+[DoomPaint](https://github.com/markrussinovich/DoomPaint) at commit `ba95982`,
+cloned outside this repo, run with `--no-sound` and default `--res 640x400`.
+PowerToys Mouse Without Borders off. Windows clipboard history and FancyZones on.
+
+- **The live `IDataObject` + synthetic Ctrl+V path works on this Paint build.**
+  The start-up self-test chose **Ctrl+V** on both runs. The UIA menu fallback was
+  not needed.
+- **About 35 pastes/s at 640×400** (34–36 in steady state, single dips to 24 and
+  32). That is Doom's engine rate of 35 tics/s, so Paint keeps up and the real
+  ceiling at this size is higher. Slide-sized pastes (about 2.4 MP for 1960×1225
+  versus 0.26 MP here) are E6's job.
+- **ViZDoom is x64-only on Windows** (`win_amd64` wheels, no ARM64), so DoomPaint
+  ran on the x64 system Python under emulation while Paint ran natively. The
+  presenter has no ViZDoom, so it can be native ARM64.
+- **`test_quiet.py` does not run as shipped.** It reads and writes the author's
+  own folder (`C:\Source\MsPaintDoom\…`), and `smoke_test.py` writes the frame it
+  needs there. With the paths changed, the engine smoke test passes, but the
+  quiet test reports "canvas changed: False".
+- **Cause: a race in the menu fallback.** `MenuPaster` invokes Edit > Paste right
+  after expanding the menu. On this build the item isn't there yet, so all three
+  retries fail silently. With a 300 ms wait after expanding, the same path works:
+  Paste is enabled, `invoke` takes 80 ms, Paint calls `GetData`, and the canvas
+  changes. The menu path still opens the Edit menu on screen for every paste,
+  which a presenter would show the audience; E2/E3 look for a quieter way.
