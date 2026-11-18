@@ -8,12 +8,21 @@ CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
 const string Usage = """
     presenter: present a slide deck live in Microsoft Paint.
 
-      presenter present <deck> [--monitor N] [--no-painting]
-          Show a deck in Paint on the chosen display (default: the primary).
-          <deck> is a folder of slide images, for now.
+      presenter present <deck> [--monitor N] [--pick] [--no-painting] [--title "…"]
+          Show a deck in Paint. <deck>: a PowerPoint file (.pptx, .ppt), a
+          PDF, a Marp Markdown file, a Slidev project, or a folder of slide
+          images; rendered by the deck's own tool at the size the screen
+          needs, through a cache. With two displays or more (or --pick) the
+          screen picker asks where.
           Keys: Right/Space/PageDown next, Left/PageUp back, Home the loading
           painting, End the last slide, digits + Enter jump, B/W black/white
           screen, Esc ends.
+
+      presenter render <deck> [--size WxH | --monitor N] [--out folder]
+          Render a deck's slides without Paint (warms the cache for a show).
+
+      presenter setup
+          Install Marp's command line for Marp decks (needs Node and npm).
 
       presenter screens
           List the displays and the slide size each would get.
@@ -41,6 +50,8 @@ try
         "screens" => ScreensCommand.Run(),
         "doctor" => await DoctorCommand.Run(args[1..]),
         "pick" => await PickCommand.Run(args[1..]),
+        "render" => await RenderCommand.Run(args[1..]),
+        "setup" => SetupCommand.Run(args[1..]),
         _ => throw new UsageException($"unknown command: {args[0]}"),
     };
 }

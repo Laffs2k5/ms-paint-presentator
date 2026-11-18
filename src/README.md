@@ -6,9 +6,9 @@ proposes, after the Python POC (`poc/`) answered how each part works. The
 POC stays as the reference and test harness.
 
 > Status: a whole show runs in Paint on Windows 11 ARM64 (Paint
-> 11.2609.441). Screen picker, the loading painting, slides by key, display
-> changes, `doctor`. Decks: a folder of slide images for now; the renderers
-> for PowerPoint, PDF, Marp and Slidev are being added (`Presenter.Slides`).
+> 11.2609.441), from PowerPoint, PDF, Marp and Slidev decks or a folder of
+> slide images: screen picker, the loading painting while the deck renders,
+> slides by key, display changes, watchdogs, `doctor`.
 
 ## Build
 
@@ -32,10 +32,21 @@ dotnet publish src/Presenter.Cli -c Release -r win-arm64 --self-contained `
 
 ```powershell
 presenter doctor                 # check this machine first: about half a minute, opens Paint
+presenter setup                  # once, for Marp decks: installs marp-cli (needs Node and npm)
 presenter screens                # the displays and the slide size each would get
 presenter pick                   # the screen picker on its own
+presenter render <deck>          # render the slides without Paint (warms the cache)
 presenter present <deck>         # the show
 ```
+
+A deck is whatever its own tool leaves (research 05 §6): a PowerPoint file
+(`.pptx`, `.ppt`; PowerPoint renders it), a PDF (Windows renders it, from
+any tool), a Marp Markdown file (`marp: true`), a Slidev project (its own
+Slidev), or a folder of slide images. Each slide keeps the deck's shape,
+fitted to the screen; animations are not supported (each slide in its final
+state); hidden slides are skipped. Rendered slides are cached per deck,
+renderer and size in `%LOCALAPPDATA%\PaintPresentator\cache`, so the second
+show of a deck starts at once. Details: [Presenter.Slides](Presenter.Slides/README.md).
 
 `present` options:
 
@@ -115,6 +126,9 @@ a WPF thread of its own; the controller on the thread pool.
 | Frames read back with `--verify` | pixel-exact, every change |
 | `doctor`'s calibration paste | pixel-exact, except the canvas's last row (below) |
 | The loading painting | about 26 s, the same picture as the POC's |
+| A Marp deck (7 slides), rendered during the painting | 4.0 s; then 190 ms median, every frame pixel-exact |
+| A PowerPoint deck (4 slides + 1 hidden), rendered during the painting | 3.8 s, PowerPoint gone after; 200 ms median, pixel-exact |
+| A PDF (4 pages) / a cached deck | 0.7 s / at once |
 | A key during the painting | the painting stops within a stroke; slide 1 0.6 s after the key |
 | A display change (simulated), same screen chosen | resumed at the same slide in 2.6 s |
 | Paint un-maximised / closed during a show | put back in 2.2 s / reopened, slide back in 4.6 s |

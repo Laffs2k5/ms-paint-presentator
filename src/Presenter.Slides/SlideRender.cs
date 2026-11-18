@@ -20,6 +20,10 @@ public sealed record RenderOptions(string CacheDir, string? NodeToolsDir = null,
     public TimeSpan ToolTimeout { get; init; } = TimeSpan.FromMinutes(5);
 
     internal string ToolsDir => NodeToolsDir ?? NodeTools.DefaultToolsDir;
+
+    /// <summary>Where the presenter's own Node tools go when none is given
+    /// (what `presenter setup` installs into).</summary>
+    public static string DefaultNodeToolsDir => NodeTools.DefaultToolsDir;
 }
 
 /// <summary>A render failed; the message says why and, for a missing tool, how to install it.</summary>

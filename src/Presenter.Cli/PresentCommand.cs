@@ -22,6 +22,7 @@ internal sealed record PresentOptions
     public double InterruptAfter { get; set; }
     public double SimulateDisplayChange { get; set; }
     public bool BackgroundPaste { get; set; }
+    public string? NodeTools { get; set; }
 
     public static PresentOptions Parse(string[] args)
     {
@@ -43,6 +44,7 @@ internal sealed record PresentOptions
                 case "--interrupt-after": o.InterruptAfter = double.Parse(Next()); break;
                 case "--simulate-display-change": o.SimulateDisplayChange = double.Parse(Next()); break;
                 case "--background-paste": o.BackgroundPaste = true; break;
+                case "--node-tools": o.NodeTools = Next(); break;
                 case var a when a.StartsWith("--"): throw new UsageException($"unknown option {a}");
                 default: o.Deck = o.Deck is null ? args[i] : throw new UsageException("one deck at a time"); break;
             }
@@ -67,7 +69,7 @@ internal static class PresentCommand
     {
         var o = PresentOptions.Parse(args);
         if (o.Deck is null) throw new UsageException("which deck?");
-        IDeckSource deck = DeckSources.Open(o.Deck);
+        IDeckSource deck = DeckSources.Open(o.Deck, o.NodeTools);
         var summary = new Dictionary<string, object?> { ["started"] = DateTime.Now.ToString("s") };
 
         // the screen: named, picked, or the only one there is
@@ -414,9 +416,23 @@ internal static class PresentCommand
 
 internal static class DeckSources
 {
-    public static IDeckSource Open(string path)
+    public static string CacheDir => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                                                  "PaintPresentator", "cache");
+
+    /// <summary>A folder of slide images, or a deck made in another tool
+    /// (PowerPoint, PDF, Marp, Slidev) rendered by its own toolchain.</summary>
+    public static IDeckSource Open(string path, string? nodeTools)
     {
-        if (ImageFolderDeck.Is(path)) return new ImageFolderSource(path);
-        throw new UsageException($"not a deck this presenter can show yet: {path}");
+        if (ImageFolderDeck.Is(path) && !File.Exists(Path.Combine(path, "slides.md"))) return new ImageFolderSource(path);
+        try
+        {
+            var info = Presenter.Slides.Decks.Inspect(path);
+            nodeTools ??= Environment.GetEnvironmentVariable("PRESENTER_NODE_TOOLS");
+            return new RenderedSource(info, new Presenter.Slides.RenderOptions(CacheDir, nodeTools));
+        }
+        catch (Exception e) when (e is FileNotFoundException or NotSupportedException)
+        {
+            throw new UsageException(e.Message);
+        }
     }
 }
