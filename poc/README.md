@@ -40,6 +40,7 @@ uv run python ..\experiments\e11_display_area.py --out $env:TEMP\e11
 | E25 past PowerPoint decks | [`e25_legacy_ppt.py`](experiments/e25_legacy_ppt.py) | A made-up 4:3 deck with animations, a hidden slide and a missing font, as `.pptx` and `.ppt`: export size and time, what animations do in the export, what the adapter can read up front |
 | E25 real decks | [`e25_real_decks.py`](experiments/e25_real_decks.py) | Every PowerPoint deck in the given folders (default: work OneDrive, Documents), opened read-only: shape, what an export loses, export time and errors. Anonymous output; exports go to a temporary folder |
 | E26 monitor identity | [`dotnet/E26MonitorId`](dotnet/E26MonitorId) (`dotnet run -c Release`) | For each active display: GDI name, device path, output technology, EDID identity; and every monitor Windows remembers. Hashes instead of serials unless `--raw` |
+| E27 painting checks | [`e27_painting_checks.py`](experiments/e27_painting_checks.py) | What the loading painting needs from Paint: Brush width per size, the bucket through a gap in a Brush outline and against closed shapes, the Text tool's controls, a white box before the flood. Reads the Text font but leaves it alone |
 
 [`experiments/doompaint_clipserve.py`](experiments/doompaint_clipserve.py) is
 DoomPaint's live OLE clipboard (MIT, © Mark Russinovich), vendored unchanged

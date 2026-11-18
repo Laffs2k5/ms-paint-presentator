@@ -1164,3 +1164,25 @@ replug itself is tested in E18.
 - **For E18 tomorrow:** run E26 before, during and after the replug. Does
   the GDI name change? Does the path change on another port or dock? Does the
   EDID identity stay the same, as it should?
+
+## E27. What the loading painting needs from Paint (2026-11-18): **answered**
+
+Script: [`poc/experiments/e27_painting_checks.py`](../poc/experiments/e27_painting_checks.py).
+The designer's concept ([The sky leaks](loading-painting.md)) was simulated in
+a browser; this checks its open points in Paint, maximised at 100% on a
+2000×1000 canvas, drawing with the synthetic pen (E15).
+
+| Question | Result |
+|---|---|
+| Brush width | **size + 1 px**, from size 0 (1 px) to size 20 (21 px), as E16 found for the Pencil |
+| The bucket through a gap | Light turquoise, clicked inside a Brush cloud left open by a 40 px gap: **the far corner of the canvas turns turquoise too**. The gag works |
+| Closed shapes | A rectangle drawn as one stroke **stays white** inside. A ring drawn as one stroke **leaked**: Paint drops the last segment of a stroke, so the ring never closed |
+| Edges after the flood | 488 pixels of a 400 × 230 area around the cloud are neither white, turquoise nor stroke black: a thin anti-aliased rim along the strokes |
+| The Text tool's toolbar | Font family, Font size, Bold, Italic, Underline, Strikethrough, the alignment buttons and a **Background fill** check box: the opaque box the signature needs. UIA lists each control twice |
+| A white box before the flood | A Rectangle with a solid white fill and a light grey outline stays white. A white box without an outline is the same white as the canvas, so the flood would take it |
+
+- **The signature goes after the bucket**, not before it as in the concept,
+  so its white box needs no outline.
+- **Send the end point of every stroke twice**, so that shapes meant to close
+  do close, and the cloud's gap is the only way out.
+- **Brush size for a width of w px: w − 1.**

@@ -101,23 +101,27 @@ In reserve:
 - Ideas: a moon after 18:00, airbrush snow in December, and once in 20 runs a
   reserve gag instead of the birds.
 
-## Open questions for real Paint
+## In real Paint
 
-The concept was simulated in a browser. To check in Paint (the screen is the
-user's until they say otherwise):
+The concept was simulated in a browser. E27 checked its open points in Paint:
 
 - **The signature's white box:** Paint's bucket floods every connected pixel
-  of the same colour, so a white text box that touches the white canvas would
-  flood too. Either type the signature after the bucket, or give its box an
-  outline (a white rectangle with a thin border) so the flood stops at it.
-- **Brush width:** E16 measured the size slider for the Pencil only (width =
-  size + 1 up to 20). The concept wants about 5 design px (`2 × 2.5u`).
-- **The Text tool:** whether it has an opaque-background switch, and setting
-  the font size. The Text font is the one setting Paint keeps across
-  sessions (E16), so the presenter must put it back, best when the show
-  ends, out of the audience's sight.
-- **The bucket on Brush strokes:** that the cloud's gap leaks and the closed
-  shapes hold, and how the anti-aliased edges look after the flood.
+  of the same colour, so a white text box on the white canvas would flood
+  too. **The signature is typed after the bucket**, a deviation from the
+  sequence above; its box then needs no outline.
+- **Brush width:** size + 1 px, as for the Pencil (E16). The concept's 5
+  design px is size `round(5u × scale) − 1`.
+- **The Text tool:** a **Background fill** check box gives the opaque box (in
+  the secondary colour), next to the font and size boxes. The Text font is
+  the one setting Paint keeps across sessions (E16), so the presenter must
+  put it back, best when the show ends, out of the audience's sight.
+- **The bucket on Brush strokes:** the cloud's gap leaks into the whole sky
+  and closed shapes hold, **once the end point of each stroke is sent
+  twice**: Paint drops the last segment of a stroke, and a ring drawn in one
+  stroke leaked through it. A thin anti-aliased rim stays along the strokes.
+
+Still open:
+
 - **Keys while painting:** the keyboard hook must be on during the painting
   so the first key can stop it, which means the painter's own keys (Fill `B`,
   Backspace) must carry the presenter's tag or the hook swallows them (E10).
