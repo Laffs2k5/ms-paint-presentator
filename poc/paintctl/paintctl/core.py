@@ -425,6 +425,10 @@ def info(hwnd: int) -> dict:
         out["zoom_check"] = {"expected_on_screen": [exp_w, exp_h],
                              "actual_on_screen": [img.width, img.height]}
         out["canvas_clipped"] = clipped
+        # The real zoom, from the canvas's size on screen. The zoom box can
+        # say 100 while this says 99.8 (after Fit to window).
+        out["zoom_measured"] = (None if clipped else
+                                round(100 * img.width / size[0], 2))
     if vp and img:
         vis = vp.intersect(img)
         out["canvas_visible_on_screen"] = vis.to_dict() if vis else None
@@ -452,9 +456,15 @@ def set_zoom(hwnd: int, zoom: str | int) -> int | None:
                              "find its AutomationId with `paintctl uia-dump`)"
                              ) from exc
     else:
+        # After Fit to window the slider can read exactly 100.0 while the real
+        # zoom is 99.8%, and setting the value it already has is a no-op. Step
+        # to a neighbour first so the target value always takes.
         slider = win.child_window(auto_id="ZoomSliderControl",
                                   control_type="Slider").wrapper_object()
-        slider.set_value(int(zoom))
+        target = int(zoom)
+        slider.set_value(target + 1 if target < slider.max_value() else target - 1)
+        time.sleep(0.15)
+        slider.set_value(target)
     time.sleep(0.3)
     return zoom_percent(win)
 

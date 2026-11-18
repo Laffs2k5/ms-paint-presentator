@@ -69,7 +69,8 @@ uv run paintctl close --discard                        # close; "Don't save" if 
 | **`viewport`** | UIA `scrollViewer`: the **render area** where the canvas can appear |
 | **`canvas_on_screen`** | UIA `image`: the canvas at the current zoom, **clipped to the viewport** by UIA |
 | **`canvas_px`** | Document size from the status bar (`CanvasSizeTextBlock`). Missing in a narrow window, see below |
-| `zoom_percent` | From `ZoomValuesComboBox`. A truncated integer: Fit to window can be 121.6% and read "121%" |
+| `zoom_percent` | From `ZoomValuesComboBox`. **Not exact**: it read "121" at a measured 121.6% and "100" at a measured 99.8% |
+| `zoom_measured` | The real zoom: canvas width on screen ÷ `canvas_px` width. `null` when the canvas is clipped |
 | `canvas_clipped` | `canvas_on_screen` is smaller than `canvas_px` × zoom: the canvas is scrolled or bigger than the viewport |
 | `scrollable` | `horizontal`/`vertical` from the viewport's UIA ScrollPattern: whether Paint shows scrollbars. Both `false` = the whole canvas fits |
 | `canvas_visible_on_screen` | viewport ∩ canvas |
@@ -118,6 +119,10 @@ JSON. The MCP server is for Claude Desktop/Cowork, or if you prefer typed tools.
 - **Re-centre the canvas** with `zoom fit` then `zoom 100`. After a move between
   monitors the canvas can end up scrolled, which `info` reports as
   `canvas_clipped: true`.
+- **Fit to window can leave the slider at exactly 100.0 while the real zoom is
+  99.8%** (a canvas just smaller than the viewport). Setting 100 again is then
+  a no-op, so `zoom N` steps to N±1 first. Check `zoom_measured` when exact
+  1:1 matters.
 - **Moving across a DPI boundary resizes the window.** Paint is per-monitor DPI
   aware, so `resize` onto a 200% monitor is followed by Paint scaling itself for
   the new DPI (2400×1600 became 4778×1929). Run `fit-viewport` after the move:
