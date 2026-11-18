@@ -50,6 +50,7 @@ switches change only the colour (about 1.0 s) rather than the tool (about
 | 6a | Birds | Brush · Black | 2.5 s | Two or three "m"s in different sizes |
 | 7 | Waiting | Brush · Lime | | Nothing left to decorate: the pen waits at the frame and adds one bite per slide that becomes ready |
 | 8 | Finale | Fill (bucket) · Light turquoise | about 2.5 s | Starts only at 100%. The pen hesitates in the cloud ("…hmm", 0.8 s), then clicks. The colour leaks through the gap and floods everything connected, but not the inside of closed letters |
+| 8a | Letters | Fill (bucket) · 1 to 4 random colours | about 1.5–3.5 s | The bucket fills 1 to 4 of the title's letters, chosen at random, each in its own colour from the palette (not White, Black, the greys, the sky's Light turquoise or the title's colour). The user's addition. The painter reads the title's area from the screen once, to find letter bodies (not holes) that are still white |
 | 9 | Signature | Text · Black, Comic Sans, Background fill white | 4.0 s (measured: about 9 s) | Today's date with the last two digits swapped, corrected with Backspace, in an opaque white box. The concept had it among the decorations, before the finale; it moved after it (E27, below) |
 
 ## Honest progress
@@ -80,6 +81,7 @@ In the storyboard:
 - A typo in the date, corrected with Backspace.
 - The opaque text box: after the bucket, the signature stands in a white
   rectangle in the middle of the sky.
+- After the sky, the bucket colours in a few of the title's letters.
 
 In reserve:
 
@@ -96,6 +98,8 @@ In reserve:
 - The title colour: Indigo, Red, Purple, Dark red or Black, all readable on
   both white and light blue.
 - Sun and cloud swap sides.
+- How many of the title's letters the bucket fills (1 to 4), which ones, and
+  in which colours.
 - A seed decides the shake, the ray angles and the number of cloud bumps.
 - How much decoration fits depends on the preparation time; quick runs come
   out simpler.

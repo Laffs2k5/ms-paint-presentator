@@ -25,8 +25,13 @@ import e10_keys as e10
 import e13_presenter as e13  # glyph_contours
 import e15_draw as e15
 import e16_tools as e16
+from PIL import Image, ImageChops, ImageDraw, ImageFilter, ImageGrab
 
 TITLE_COLOURS = ["Indigo", "Red", "Purple", "Dark red", "Black"]
+# for the bucket in the title's letters: the palette without White, Black,
+# the greys and the sky's Light turquoise
+LETTER_COLOURS = ["Dark red", "Red", "Rose", "Orange", "Gold", "Yellow", "Green", "Lime",
+                  "Turquoise", "Indigo", "Blue-gray", "Purple", "Lavender", "Brown"]
 
 
 def key(vk: int) -> None:
@@ -135,7 +140,7 @@ class LoadingPainting:
 
     # --- the elements ------------------------------------------------------------------------
     def title(self):
-        colour = self.rng.choice(TITLE_COLOURS)
+        colour = self.title_colour = self.rng.choice(TITLE_COLOURS)
         self.use(colour)
         W, H, u = self.W, self.H, self.u
         box = (0.08 * W, 0.22 * H, 0.92 * W, 0.58 * H)
@@ -146,6 +151,9 @@ class LoadingPainting:
         k = min((box[2] - box[0]) / bw, (box[3] - box[1]) / bh)
         ox = box[0] + ((box[2] - box[0]) - bw * k) / 2 - min(xs) * k
         oy = box[1] + ((box[3] - box[1]) - bh * k) / 2 - min(ys) * k
+        # the letters' true outlines, before the shake, for the bucket later
+        self.title_shapes = [[(ox + x * k, oy + y * k) for x, y in c] for c in chains]
+        self.title_em = 200 * k * self.s  # the font's 200 px, in canvas px
         paths, pen_at = [], None
         for c in chains:
             dx, dy = (self.rng.random() - 0.5) * 2 * u, (self.rng.random() - 0.5) * 2 * u
@@ -283,6 +291,65 @@ class LoadingPainting:
         self.note("leaks!" if cloud else "fills the sky")
         time.sleep(0.5)
 
+    def letters(self):
+        """With the bucket still in hand: fill 1 to 4 of the title's letters,
+        chosen at random, each in its own random colour."""
+        self.check()
+        if not getattr(self, "title_shapes", None):
+            return
+        n = self.rng.randint(1, 4)
+        colours = self.rng.sample([c for c in LETTER_COLOURS if c != self.title_colour], n)
+        self.note(f"letters in {', '.join(colours)}")
+        picked: list[tuple[int, int]] = []
+        for spot in self._letter_spots():
+            if len(picked) == n:
+                break
+            if any(math.dist(spot, p) < 0.45 * self.title_em for p in picked):
+                continue  # likely the same letter
+            if not self._white(spot):
+                continue  # filled already: a letter that touches one just filled
+            self.check()
+            e16.pick_colour(self.paint, colours[len(picked)])
+            e15.stroke(self.pen, [spot, spot], 2)
+            picked.append(spot)
+            time.sleep(0.3)
+
+    def _letter_spots(self) -> list[tuple[int, int]]:
+        """Screen points well inside a letter's body (not in its holes) that
+        are still white after the flood, in random order. One screen read of
+        the title's area, compared at half resolution with the letters' true
+        outlines (even-odd, so holes are out), shrunk by the shake and half the
+        stroke."""
+        pts = [self.at(x, y) for c in self.title_shapes for x, y in c]
+        x0, y0 = min(x for x, _ in pts) - 4, min(y for _, y in pts) - 4
+        x1, y1 = max(x for x, _ in pts) + 4, max(y for _, y in pts) + 4
+        shot = ImageGrab.grab(bbox=(x0, y0, x1, y1), all_screens=True).convert("L")
+        half = (shot.width // 2, shot.height // 2)
+        white = shot.resize(half, Image.NEAREST).point(lambda v: 255 if v >= 245 else 0)
+        body = Image.new("L", half, 0)
+        for c in self.title_shapes:
+            m = Image.new("L", half, 0)
+            ImageDraw.Draw(m).polygon([((x - x0) / 2, (y - y0) / 2)
+                                       for x, y in (self.at(*p) for p in c)], fill=255)
+            body = ImageChops.difference(body, m)  # xor: a hole cancels its letter
+        for _ in range(math.ceil(5 * self.u * self.s / 2)):  # the shake + half the stroke
+            body = body.filter(ImageFilter.MinFilter(3))
+        for _ in range(2):  # and 4 px of white around the spot
+            white = white.filter(ImageFilter.MinFilter(3))
+        ok = ImageChops.multiply(body, white)
+        px = ok.load()
+        spots = [(x0 + 2 * x, y0 + 2 * y) for y in range(0, ok.height, 3)
+                 for x in range(0, ok.width, 3) if px[x, y]]
+        self.rng.shuffle(spots)
+        return spots
+
+    @staticmethod
+    def _white(spot: tuple[int, int]) -> bool:
+        x, y = spot
+        lo, _ = ImageGrab.grab(bbox=(x - 2, y - 2, x + 3, y + 3), all_screens=True) \
+            .convert("L").getextrema()
+        return lo >= 245
+
     def signature(self):
         """Today's date in Comic Sans, in an opaque white box, with a typo
         (the last two digits swapped) put right with Backspace."""
@@ -357,6 +424,7 @@ class LoadingPainting:
                 self.check()
                 time.sleep(0.05)
             self.finale(cloud)
+            self.letters()
             self.signature()
             key(ord("S"))  # the Select tool: no brush panel over the canvas
         except Interrupted:

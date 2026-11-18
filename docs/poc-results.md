@@ -931,6 +931,14 @@ keys: Next ×3, Back, End, Home, 3 + Enter, B twice, then four quick Nexts.
   stops it and goes to slide 1. The painter's own keys (`B`, `T`, Backspace)
   carry the presenter's tag, and the date goes in as Unicode characters
   (`VK_PACKET`), which are not show keys.
+- **Letters in colour (the user's addition):** after the sky, the bucket
+  fills 1 to 4 random letters of the title, each in its own random colour.
+  One screen read of the title's area, compared at half resolution with the
+  letters' true outlines (even-odd, so holes stay out), finds white spots
+  well inside letter bodies; a 5 × 5 px read before each tap skips a letter
+  that is no longer white. 1.5 s for two letters, 3.5 s for four; holes
+  stay white. A letter that the shaky outline splits in two gets one part
+  filled, which looks hand-made.
 - **The signature is slow:** about 9 s against the concept's 4 s, mostly
   choosing the font, size, Background fill and colours through UIA. The first
   key cuts it short, but it is the next thing to speed up.
