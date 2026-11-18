@@ -19,6 +19,7 @@ uv run python ..\experiments\e11_display_area.py --out $env:TEMP\e11
 | E11 display area | [`e11_display_area.py`](experiments/e11_display_area.py) | Per monitor: display area, slide size (`slide_rule` = viewport − 66), pixel test |
 | E14 commit a paste | [`e14_commit_paste.py`](experiments/e14_commit_paste.py) | Per commit method: clean or not, how fast, mouse moved |
 | E6 paste speed | [`e6_paste_speed.py`](experiments/e6_paste_speed.py) | Per slide size: Ctrl+V → GetData and Ctrl+V → on screen (p50/p95/max). `--trigger wm-command` and `--background` for E2's route |
+| E1 clipboard formats | [`e1_formats.py`](experiments/e1_formats.py) | Which format Paint reads (call log), alpha per format, paste speed per format. Closes the error dialog itself |
 | E2/E3 background paste | [`e2_background_paste.py`](experiments/e2_background_paste.py) | Per candidate: does Paint paste (and commit) while another window keeps focus |
 
 [`experiments/doompaint_clipserve.py`](experiments/doompaint_clipserve.py) is
