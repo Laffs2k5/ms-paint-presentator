@@ -112,3 +112,69 @@ PowerToys Mouse Without Borders off. Windows clipboard history and FancyZones on
   Paste is enabled, `invoke` takes 80 ms, Paint calls `GetData`, and the canvas
   changes. The menu path still opens the Edit menu on screen for every paste,
   which a presenter would show the audience; E2/E3 look for a quieter way.
+
+## E11. Display area and slide size (2026-11-18): **pass**
+
+Script: [`poc/experiments/e11_display_area.py`](../poc/experiments/e11_display_area.py).
+Paint maximised at a measured 100% zoom. "Fits" means no scrollbars (UIA
+ScrollPattern), the whole canvas visible, and the canvas exactly 1:1 on screen.
+This machine's taskbar is on the left, so it takes width, not height.
+
+| Monitor | Scaling | Work area | Viewport (maximised) | Largest canvas that fits | **Slide** (viewport − 66) | Pixel test |
+|---|---|---|---|---|---|---|
+| 2560×1440 | 100% | 2512×1440 | 2512×1229 | 2448×1165 (3 of 4 runs) | **2446×1163** (4 of 4) | identical |
+| 2880×1920 (laptop) | 200% | 2784×1920 | 2784×1499 | 2720×1435 | **2718×1433** (4 of 4) | identical |
+
+"Identical" means the screen grab of the pasted test pattern matches the source
+exactly: 0 of 2.8–3.9 million pixels differ. Each pattern pixel encodes its own
+coordinates, so any shift or scaling would show.
+
+**The rule:**
+
+> viewport = (work-area width, work-area height − 210.5 × scale), rounded half up
+> (211 px at 100%, 421 px at 200%; a maximised window has no side borders)
+>
+> slide = viewport − 66 px on each axis
+
+- **Paint keeps 64 px around the canvas** (32 per side), in *physical* pixels at
+  both 100% and 200%. At exactly 64 px the scrollbar decision varies between
+  runs, so the rule keeps 1 px of slack per side.
+- **viewport − slide must be even on both axes.** With an odd difference Paint
+  centres the canvas on a half pixel: the image snaps cleanly to whole pixels,
+  but the canvas border line is drawn across the slide's last row or column
+  (seen: exactly one column wrong at 2425 wide, a margin of 87).
+
+**Predicted for 16:10 reference screens** (taskbar at the bottom, 48 px × scale;
+100% and 200% measured, other scalings extrapolated, so verify on the screen):
+
+| Screen | Scaling | Viewport | Slide | Slide aspect |
+|---|---|---|---|---|
+| 1280×800 | 100% | 1280×541 | **1214×475** | 2.56:1 |
+| 1920×1200 | 100% | 1920×941 | **1854×875** | 2.12:1 |
+| 1920×1200 | 125% | 1920×877 | **1854×811** | 2.29:1 |
+| 1920×1200 | 150% | 1920×812 | **1854×746** | 2.49:1 |
+| 2560×1600 | 100% | 2560×1341 | **2494×1275** | 1.96:1 |
+| 2560×1600 | 150% | 2560×1212 | **2494×1146** | 2.18:1 |
+| 2880×1800 | 200% | 2880×1283 | **2814×1217** | 2.31:1 |
+
+Scaling changes the slide shape a lot, because the chrome grows with scaling
+while the screen does not. An adaptive presenter has to measure at start.
+
+**Found along the way:**
+
+- **A pasted slide is a floating selection** with a dashed border and a floating
+  selection toolbar over it. **Esc discards the paste; Enter does nothing.** A
+  click outside the canvas commits it, but moves the mouse. Near a corner at 200%
+  scaling the click lands on a selection resize handle and Paint silently
+  stretches the slide by the distance to the corner. The presenter needs a clean,
+  mouse-free way to commit (E14).
+- **Paint's zoom box is not exact.** After Fit to window it read "100" (and the
+  slider 100.0) at a measured 99.8%, and setting 100 was then a no-op. Fixed in
+  `paintctl`; `info` now reports `zoom_measured`.
+- **UIA's canvas rectangle can be a pixel off** the real canvas. Locate the
+  canvas by image instead when it matters.
+- **A slide-sized paste took 0.6–0.8 s to appear** (plain `SetClipboardData` +
+  Ctrl+V, 2.8–3.9 MP, timed coarsely by polling screen grabs). That is well over
+  E6's 150 ms target, so E6 is the next priority.
+- **Notifications cover the slide.** A Teams toast appeared over the canvas in
+  one run. Turn on Do Not Disturb before presenting.

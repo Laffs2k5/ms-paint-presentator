@@ -85,6 +85,7 @@ Paint build. Note which paster the self-test picks (Ctrl+V or UIA menu) and the
 | **E5** | Does anything call `DAdvise`? | Implement it with `CreateDataAdviseHolder` and log | Documented yes or no |
 | **E10** | Clicker | Your presenter remote's keycodes via an LL hook, swallowed before Paint | Next/prev/black work, Paint unaffected |
 | **E12** | Build pipeline smoke test | `npx @slidev/cli export --format png --with-clicks` and `npx @marp-team/marp-cli --images png` on a sample deck, plus a PowerPoint COM `Slide.Export` of a sample `.pptx` | PNGs at the right size, notes extracted |
+| **E14** | Commit a pasted slide cleanly | A paste is a floating selection with a dashed border and a toolbar over it. Esc discards it, Enter does nothing, and a click outside commits but moves the mouse and can hit a resize handle (E11). Try: the next paste committing the previous one, switching tool through UIA, keyboard tool shortcuts, a click while the cursor is hidden | Slide shows with no selection marks and no visible mouse movement, pixel-identical |
 | **E13** | End-to-end mini presenter | Folder of PNGs → arrow keys → paste. Measure the feel | "Snappy" by your own judgement |
 
 ## 3. Suggested POC tooling
@@ -101,7 +102,9 @@ Paint build. Note which paster the self-test picks (Ctrl+V or UIA menu) and the
 ## 4. Decision gates after the POC
 
 1. **Slide resolution:** the display area (E11) of the presenting display, with
-   E6 confirming that pasting at that size is fast enough. Open questions: render
+   E6 confirming that pasting at that size is fast enough. E11's rule: slide =
+   (work-area width, work-area height − 210.5 × scale) − 66 px on each axis,
+   for example 1854×875 on a 1920×1200 screen at 100%. Open questions: render
    at start for the measured display area (adaptive) or pre-render for known
    screens; and when the presenting screen's display area has a different shape
    from the reference screen's, whether slides reflow or are centred inside it.
