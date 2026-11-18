@@ -68,7 +68,7 @@ internal static class PresentCommand
         var o = PresentOptions.Parse(args);
         if (o.Deck is null) throw new UsageException("which deck?");
         IDeckSource deck = DeckSources.Open(o.Deck);
-        var summary = new Dictionary<string, object?> { ["deck"] = deck.Name };
+        var summary = new Dictionary<string, object?> { ["started"] = DateTime.Now.ToString("s") };
 
         // the screen: named, picked, or the only one there is
         Presenter.Windows.Monitor monitor;
@@ -312,8 +312,26 @@ internal static class PresentCommand
             clipboard.Clear();
             Power.KeepAwake(false);
         }
-        Console.WriteLine(JsonSerializer.Serialize(summary, new JsonSerializerOptions { WriteIndented = true }));
+        string json = JsonSerializer.Serialize(summary, new JsonSerializerOptions { WriteIndented = true });
+        Console.WriteLine(json);
+        SaveLog(json);
         return 0;
+    }
+
+    /// <summary>Every show's timings to a log file (research 05 §7.8), so "it felt
+    /// slow" has numbers behind it. Never the deck's name or its content.
+    /// The newest 50 are kept.</summary>
+    private static void SaveLog(string json)
+    {
+        try
+        {
+            string dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "PaintPresentator", "logs");
+            Directory.CreateDirectory(dir);
+            File.WriteAllText(Path.Combine(dir, $"show-{DateTime.Now:yyyyMMdd-HHmmss}.json"), json);
+            foreach (var old in new DirectoryInfo(dir).GetFiles("show-*.json").OrderByDescending(f => f.Name).Skip(50)) old.Delete();
+        }
+        catch (IOException) { }
+        catch (UnauthorizedAccessException) { }
     }
 
     private static async Task<object> Paint(PresentOptions o, PaintStage stage, Toolbox tools, SyntheticPen pen, KeyHook hook,

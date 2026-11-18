@@ -60,6 +60,10 @@ seconds, `--interrupt-after S` presses a key S seconds into the painting,
 and `--simulate-display-change S` brings the picker up S seconds into the
 show. A test run leaves the user's Paint settings as they were.
 
+Each show's timings (every slide change, key to slide on screen, resumes
+after a display change) are printed as JSON at the end and kept in
+`%LOCALAPPDATA%\PaintPresentator\logs` (the newest 50, no deck names).
+
 ## Layout
 
 | Project | What it holds |
