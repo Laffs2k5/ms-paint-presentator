@@ -170,15 +170,29 @@ class MultiFormatClipboard:
         self.log: list[dict] = []
         self._tid = None
         self._thread = None
+        self._obj = None
+
+    def update(self, formats: list[tuple[int, bytes]]) -> None:
+        """Swap the data inside the live object, without touching the
+        clipboard (DoomPaint's way: no churn, so no read can be cut off).
+        Falls back to offer() when nothing is on the clipboard yet."""
+        if self._thread is None or self._obj is None:
+            self.offer(formats)
+            return
+        self.log = []
+        self._obj._log = self.log
+        self._obj._formats = formats  # one reference swap: atomic under the GIL
 
     def offer(self, formats: list[tuple[int, bytes]]) -> None:
+        """Put a new data object on the clipboard (replaces the previous)."""
         self.stop()
         self.log = []
         ready = threading.Event()
 
         def run():
             pythoncom.OleInitialize()
-            do = wrap(_MultiDataObject(formats, self.log), pythoncom.IID_IDataObject)
+            self._obj = _MultiDataObject(formats, self.log)
+            do = wrap(self._obj, pythoncom.IID_IDataObject)
             for _ in range(20):
                 try:
                     pythoncom.OleSetClipboard(do)
@@ -204,6 +218,7 @@ class MultiFormatClipboard:
             win32api.PostThreadMessage(self._tid, win32con.WM_QUIT, 0, 0)
             self._thread.join(3)
             self._thread = None
+            self._obj = None
 
 
 # --- helpers ----------------------------------------------------------------------------
