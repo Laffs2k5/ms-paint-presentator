@@ -85,16 +85,26 @@ public sealed class PaintStage : IStage, IDisposable
     /// </summary>
     private long? PasteAndCommit(PaintSession paint, byte[] png)
     {
-        if (!paint.InFront() && !paint.Focus(1000))
-            _log?.Invoke("Paint is not in front: the paste may go elsewhere");
-        _clipboard.Offer(png);
-        Keyboard.Ctrl('V');
-        long? seen = WaitFor(paint, floats: true, timeoutMs: 2500);
+        long? seen = null;
+        for (int attempt = 0; attempt < 2 && seen is null; attempt++)
+        {
+            if (attempt > 0)
+            {
+                // Ctrl+V went nowhere: another window had the focus, or Paint's
+                // clipboard-error dialog was up. Clear the way and try once more.
+                bool dialog = paint.DismissClipboardError();
+                _log?.Invoke($"the paste was not seen within 2.5 s{(dialog ? " (Paint's error dialog closed)" : "")}{(paint.InFront() ? "" : " (Paint was not in front)")}: once more");
+            }
+            if (!paint.InFront() && !paint.Focus(1000))
+                _log?.Invoke("Paint is not in front: the paste may go elsewhere");
+            _clipboard.Offer(png);
+            Keyboard.Ctrl('V');
+            seen = WaitFor(paint, floats: true, timeoutMs: 2500);
+        }
         Keyboard.Tap('S');
         if (seen is null)
         {
-            if (paint.DismissClipboardError()) _log?.Invoke("a paste failed; Paint's error dialog closed");
-            else _log?.Invoke("the paste was not seen within 2.5 s");
+            _log?.Invoke("the paste was not seen");
             return null;
         }
         if (WaitFor(paint, floats: false, timeoutMs: 1000) is null)

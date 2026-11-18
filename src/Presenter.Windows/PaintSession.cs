@@ -23,6 +23,7 @@ public sealed class PaintSession : IDisposable
     private AutomationElement? _window, _crop;
 
     public nint Window { get; }
+    public string? ExecutablePath => ProcessImage(Window);
     public PixelSize Canvas { get; }
     public Monitor Monitor { get; private set; }
 
