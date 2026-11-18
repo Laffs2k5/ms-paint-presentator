@@ -191,16 +191,16 @@ wanted, and it must show past PowerPoint decks too. So:
   presentation constraints applies only to decks made for Paint.
 - **No presenter view and no speaker notes** (the user).
 
-| Source | Recognised by | Rendered by | Build steps | One slide at a time (early start) |
+| Source | Recognised by | Rendered by | Animations and builds | One slide at a time (early start) |
 |---|---|---|---|---|
-| **PowerPoint** `.pptx`, `.ppt` (past decks) | the extension | PowerPoint through COM, `Slide.Export` at the size (E12) | not at first: each slide in its final state; PPspliT-style splitting later (research 03 §4) | yes |
-| **Slidev** project | Slidev headmatter in `slides.md`, or `@slidev/cli` in `package.json` | the project's own Slidev: `slidev export --format png --with-clicks --scale` (E12) | yes, one image per click | through Playwright (E22) |
-| **Marp** Markdown | `marp: true` in the front matter | marp-cli (the deck's own, if it has one): `--images png --image-scale` (E12) | no: Marp's fragments only animate in its HTML | through Playwright (E22) |
-| **PDF**, from anything else (Keynote, Google Slides, reveal.js through decktape, a tool not chosen yet) | the extension | Windows' own PDF renderer, `Windows.Data.Pdf`, at the size: nothing to install (E24) | only if the tool exports one page per step | yes |
+| **PowerPoint** `.pptx`, `.ppt` (past decks) | the extension | PowerPoint through COM, `Slide.Export` at the size (E12) | not supported: each slide in its final state (E25) | yes |
+| **Slidev** project | Slidev headmatter in `slides.md`, or `@slidev/cli` in `package.json` | the project's own Slidev: `slidev export --format png --scale` (E12) | not supported: each slide in its final state (no `--with-clicks`) | through Playwright (E22) |
+| **Marp** Markdown | `marp: true` in the front matter | marp-cli (the deck's own, if it has one): `--images png --image-scale` (E12) | not supported: Marp's fragments only animate in its HTML anyway | through Playwright (E22) |
+| **PDF**, from anything else (Keynote, Google Slides, reveal.js through decktape, a tool not chosen yet) | the extension | Windows' own PDF renderer, `Windows.Data.Pdf`, at the size: nothing to install (E24) | not supported: one page per slide | yes |
 
 **The "something else":** Slidev fits the user's description best. It
-presents itself full screen in a browser, has clicks for build steps, and
-exports one PNG per click at any size (E12). Marp is the simpler choice. PDF
+presents itself full screen in a browser and exports PNGs at any size
+(E12). Marp is the simpler choice. PDF
 keeps every other tool open.
 
 ## 7. Smarter than the POC
@@ -263,8 +263,8 @@ In rough order of value:
 8. **Timing trace:** an `EventSource` that logs every slide change, key to
    on-screen time, and each render. "It felt slow" then has numbers behind it.
    Never log content or names.
-9. **Builds:** Slidev's `--with-clicks` already gives one image per step
-   (E12); PowerPoint needs PPspliT-style splitting (research 03 §4); see §6.
+9. **No animations or builds** (decided by the user): every slide is shown
+   in its final state, from every source (§6).
 
 ## 8. Language: C# (gate 4)
 

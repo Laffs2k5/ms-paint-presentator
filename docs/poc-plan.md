@@ -113,8 +113,9 @@ Planned features:
     speaker);
   - the screen is kept awake for the whole show (`SetThreadExecutionState`);
   - the paste routes pass a self-test (E2).
-- **Build steps are whole slides** (Slidev `--with-clicks`), so Back works the
-  same way for them. Black and white screens are pre-rendered slides too.
+- **No animations or builds** (decided by the user): every slide is shown in
+  its final state, PowerPoint, Slidev and Marp alike (E25). Black and white
+  screens are pre-rendered slides.
 - **Recovery:**
   - close Paint's "Can't complete operation" dialog automatically (`paintctl dismiss`);
   - on a display change, the screen picker (see above);
