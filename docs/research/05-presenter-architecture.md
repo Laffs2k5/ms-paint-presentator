@@ -151,10 +151,12 @@ key down ─▶ hook callback: tag check, foreground check, enqueue    ~0.1 ms (
 ## 5. Display changes, as decided
 
 - **Detection:** the display watcher's messages, then a fresh monitor list.
-  Give monitors a stable identity from `QueryDisplayConfig` and
-  `DisplayConfigGetDeviceInfo` (the monitor's device path), not the GDI name
-  (`\\.\DISPLAY2`), which can change when a cable is replugged **[verify in
-  E18]**.
+  Identify a monitor by its EDID (manufacturer, product, serial number and
+  serial text), which Windows keeps in the registry for every monitor it has
+  seen. On this laptop it was present and distinct for every monitor,
+  including two of the same model (E26). Fall back to the model plus the
+  `QueryDisplayConfig` device path when there is no serial. Never use the GDI
+  name (`\\.\DISPLAY2`) as identity. The replug itself is tested in E18.
 - **The picker:** a non-modal WPF window that stays up and refreshes its list
   on every change. Each display shows its resolution, scaling and predicted
   slide size, and has Identify. The speaker's last choice is remembered by

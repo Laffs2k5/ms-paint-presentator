@@ -39,6 +39,7 @@ uv run python ..\experiments\e11_display_area.py --out $env:TEMP\e11
 | E24 PDF adapter | [`e24_pdf.py`](experiments/e24_pdf.py) + [`dotnet/E24Pdf`](dotnet/E24Pdf) | The E12 deck exported to PDF by Marp, Slidev and PowerPoint, rendered by Windows' own PDF renderer at an exact width, compared with each tool's PNG. Needs E12's Node tools; build the C# side first |
 | E25 past PowerPoint decks | [`e25_legacy_ppt.py`](experiments/e25_legacy_ppt.py) | A made-up 4:3 deck with animations, a hidden slide and a missing font, as `.pptx` and `.ppt`: export size and time, what animations do in the export, what the adapter can read up front |
 | E25 real decks | [`e25_real_decks.py`](experiments/e25_real_decks.py) | Every PowerPoint deck in the given folders (default: work OneDrive, Documents), opened read-only: shape, what an export loses, export time and errors. Anonymous output; exports go to a temporary folder |
+| E26 monitor identity | [`dotnet/E26MonitorId`](dotnet/E26MonitorId) (`dotnet run -c Release`) | For each active display: GDI name, device path, output technology, EDID identity; and every monitor Windows remembers. Hashes instead of serials unless `--raw` |
 
 [`experiments/doompaint_clipserve.py`](experiments/doompaint_clipserve.py) is
 DoomPaint's live OLE clipboard (MIT, © Mark Russinovich), vendored unchanged
