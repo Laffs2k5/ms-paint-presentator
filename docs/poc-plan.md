@@ -109,7 +109,10 @@ Paint build. Note which paster the self-test picks (Ctrl+V or UIA menu) and the
    (work-area width, work-area height − 210.5 × scale) − 66 px on each axis,
    for example 1854×875 on a 1920×1200 screen at 100%, then calibrated at start
    by a test paste so no edge row is overdrawn (E14). Decided: render at start
-   for the measured display area, keeping the reference shape, centred.
+   for the measured display area, keeping the reference shape, centred. E6:
+   fast enough (p95 133 ms at 1854×875; 200–270 ms on 1440p and the 200%
+   laptop panel), **with the live OLE clipboard only**: a clipboard rewrite per
+   slide drops pastes and pops a modal error dialog from about 2.8 MP.
 2. **Focus model:** E2 decides between a background paste (free presenter view) and
    Paint in the foreground (no-activate presenter view or phone view).
 3. **Back navigation:** undo stack (E7) or re-paste.

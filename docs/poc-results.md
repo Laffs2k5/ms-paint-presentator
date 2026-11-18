@@ -183,9 +183,9 @@ while the screen does not. An adaptive presenter has to measure at start.
   `paintctl`; `info` now reports `zoom_measured`.
 - **UIA's canvas rectangle can be a pixel off** the real canvas. Locate the
   canvas by image instead when it matters.
-- **A slide-sized paste took 0.6–0.8 s to appear** (plain `SetClipboardData` +
-  Ctrl+V, 2.8–3.9 MP, timed coarsely by polling screen grabs). That is well over
-  E6's 150 ms target, so E6 is the next priority.
+- **A slide-sized paste seemed to take 0.6–0.8 s to appear.** That was the
+  measurement: each poll grabbed the whole virtual screen. E6 measured it
+  properly: about 200 ms at 2.8 MP.
 - **Notifications cover the slide.** A Teams toast appeared over the canvas in
   one run. Turn on Do Not Disturb before presenting.
 
@@ -222,3 +222,50 @@ matched the source exactly. 2560×1440 at 100%, slide 2446×1163:
   become enabled) keeps it short.
 - **The size decides the edge rows**, not the method. The 200% sweep in E11's
   table was done with key `S`.
+
+## E6. Paste speed at slide size (2026-11-18): **pass**
+
+Script: [`poc/experiments/e6_paste_speed.py`](../poc/experiments/e6_paste_speed.py).
+Per slide, as a presenter would: offer the slide on the clipboard, send Ctrl+V
+(one atomic `SendInput` batch), wait until it is on screen, commit with `S`
+(E14), pause 0.3 s. 20 timed pastes per size after 2 warm-ups, Paint maximised
+at 100% zoom, native ARM64 Python, Mouse Without Borders off, Windows clipboard
+history on. "Visible" is read off the screen from probe squares in each slide.
+A screen read waits for the display refresh, so times are resolved to one frame
+(16.7 ms at 60 Hz), as the audience sees them.
+
+**Live OLE `IDataObject`** (DoomPaint's, vendored as
+[`doompaint_clipserve.py`](../poc/experiments/doompaint_clipserve.py)):
+
+| Slide | For screen | MP | CF_DIB | Paint reads it (p50 / p95) | **On screen (p50 / p95 / max)** | Missed |
+|---|---|---|---|---|---|---|
+| 1214×475 | 1280×800 @100% | 0.58 | 1.7 MB | 7 / 9 ms | 66 / 67 / 67 ms | 0 of 20 |
+| **1854×875** | **1920×1200 @100%** | 1.62 | 4.9 MB | 7 / 9 ms | **116 / 133 / 133 ms** | 0 of 20 |
+| 2446×1163 | 2560×1440 @100% (this monitor) | 2.84 | 8.5 MB | 7 / 9 ms | 200 / 216 / 216 ms | 0 of 20 |
+| 2716×1434 | 2880×1920 @200% (laptop) | 3.89 | 11.7 MB | 7 / 8 ms | 252 / 269 / 269 ms | 0 of 20 |
+
+- **Pass:** p95 is 133 ms at the slide size of a 1920×1200 projector, under the
+  150 ms target.
+- **Paint asks for the image within about 7 ms** of Ctrl+V at every size. The
+  rest is Paint processing and drawing it, roughly 50–70 ms per megapixel. Large
+  displays take 200–270 ms per slide; E13 judges whether that feels snappy.
+- **The timing is steady:** p95 is within one or two frames of p50 everywhere.
+
+**Plain clipboard** (`EmptyClipboard` + `SetClipboardData(CF_DIB)` per slide),
+for comparison:
+
+| Slide | On screen (p50 / p95) | Missed |
+|---|---|---|
+| 1214×475 | 66 / 83 ms | 0 of 20 |
+| 1854×875 | 132 / 164 ms | 0 of 20 |
+| 2446×1163 | 209 / 210 ms | **8 of 20** |
+| 2716×1434 (stopped) | 258–395 ms | paste 8 failed with Paint's modal **"Can't complete operation"** dialog |
+
+- **The presenter must use the live OLE object**, set once and updated in place,
+  never a clipboard rewrite per slide. From about 2.8 MP the plain clipboard
+  drops pastes and can stop the show with a modal dialog that needs a click.
+  That is the race DoomPaint documents (rewriting the clipboard while Paint is
+  still reading it). It happened here even with half a second between slides,
+  so something keeps reading after the paste shows: Paint itself or Windows
+  clipboard history. Not verified which.
+- Single pastes into a fresh window (E11, E14) are not affected.
