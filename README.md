@@ -2,8 +2,15 @@
 
 Run presentations in Microsoft Paint instead of PowerPoint. Windows 11 only.
 
-Status: **POC in progress.** Environment captured and `paintctl` working on
-Windows 11 ARM64, the DoomPaint baseline runs, and E11, E14, E6, E2/E3, E1, E7, E4 and E8 pass, E5 answered (nothing calls DAdvise), E15, E16 and E17 pass (a script can draw in Paint, live, choose its tools and colours, and place a small paste exactly), E10 passes for the keyboard (a hook takes the show keys before Paint sees them), and E12 passes (Marp, Slidev and PowerPoint render at a measured size, with notes). The presenter design is decided (see the [POC plan](docs/poc-plan.md)). E19 is answered (toasts show over Paint; only Do not disturb stops them). E13, the end-to-end mini presenter, is built and waiting for a verdict on how it feels; E18 (display changes) needs a second display. The proposed architecture is [research 05](docs/research/05-presenter-architecture.md), and its experiments are done: E20 (a C# clipboard object), E21 (polling the Crop button tells a paste and its commit), E22 (slides on request), E23 (the C# hook under load), E24 (PDF from any tool) and E25 (past PowerPoint decks: a synthetic one and 23 real ones, all exported). Still open: E18 with a second display, and the verdict on E13. See [POC results](docs/poc-results.md).
+Status: **the POC is done; the presenter is being built.** The proof of
+concept (`poc/`, [plan](docs/poc-plan.md), [results](docs/poc-results.md))
+answered how each part works, and the architecture is
+[research 05](docs/research/05-presenter-architecture.md). The presenter,
+`presenter.exe` in C#, already runs a whole show in Paint: the screen
+picker, the loading painting ([The sky leaks](docs/loading-painting.md)),
+slides by key at about 180 ms, display changes and a `doctor` check. See
+[src/README.md](src/README.md). Still open: the deck renderers in C#, and
+E18 (display changes) with a second display.
 
 ## Research
 
@@ -20,6 +27,11 @@ Windows 11 ARM64, the DoomPaint baseline runs, and E11, E14, E6, E2/E3, E1, E7, 
 4. [Instrumenting Paint](docs/research/04-instrumenting-paint.md): Windows
    automation MCPs vs a purpose-built tool, and how we measure the render area in
    physical pixels.
+
+## The presenter
+
+- [`src/`](src/README.md): `presenter.exe`, its build, use and what was
+  measured.
 
 ## Tools
 

@@ -320,6 +320,12 @@ experiments in `poc/dotnet/` next to the Python ones.
 - `src/Presenter.App`: WPF (picker, pre-flight, notices), the single exe.
 - `src/Presenter.Cli`: `doctor`, `render`, and maybe `present`.
 
+As built (see [src/README.md](../../src/README.md)): the exe is
+`Presenter.Cli` (`presenter.exe`), which presents too; the picker lives in
+`src/Presenter.Ui`, a WPF library, since nothing else needs a window. The
+loading painting is ported as code (`Presenter.Windows/LoadingPainting.cs`),
+not yet as the data script of §7.6.
+
 ## 10. Experiments before the port
 
 | # | Question | Pass |
