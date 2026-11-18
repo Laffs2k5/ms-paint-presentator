@@ -64,12 +64,14 @@ uv run paintctl list                                   # all Paint windows (hwnd
 | `client_rect` | Client area in screen coordinates |
 | `mspaintview_rect` | The Win32 `MSPaintView` child window |
 | **`viewport`** | UIA `scrollViewer`: the **render area** where the canvas can appear |
-| **`canvas_on_screen`** | UIA `image`: the canvas at the current zoom (may extend off-screen) |
-| **`canvas_px`** | Document size from the status bar (`CanvasSizeTextBlock`) |
-| `zoom_percent` | From `ZoomValuesComboBox` |
-| `canvas_visible_on_screen`, `canvas_fully_visible` | viewport ∩ canvas |
+| **`canvas_on_screen`** | UIA `image`: the canvas at the current zoom, **clipped to the viewport** by UIA |
+| **`canvas_px`** | Document size from the status bar (`CanvasSizeTextBlock`). Missing in a narrow window, see below |
+| `zoom_percent` | From `ZoomValuesComboBox`. A truncated integer: Fit to window can be 121.6% and read "121%" |
+| `canvas_clipped` | `canvas_on_screen` is smaller than `canvas_px` × zoom: the canvas is scrolled or bigger than the viewport |
+| `canvas_visible_on_screen` | viewport ∩ canvas |
+| `canvas_fully_visible` | Whole canvas on screen. `null` when it can't be checked (no `canvas_px`) |
 | `viewport_in_canvas_px` | How many document pixels fit the viewport at the current zoom |
-| `zoom_check` | Expected vs actual on-screen canvas size (sanity check) |
+| `zoom_check` | Expected vs actual on-screen canvas size (sanity check, ≈1% slack from the rounded zoom) |
 | `errors` | UIA lookups that failed (e.g. a Paint update renamed something) |
 
 ## MCP server

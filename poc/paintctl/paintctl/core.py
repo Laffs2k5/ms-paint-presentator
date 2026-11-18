@@ -358,27 +358,43 @@ def info(hwnd: int) -> dict:
     img = _uia_rect(win, auto_id="image", control_type="Group")
     size = canvas_pixel_size(win)
     zoom = zoom_percent(win)
+    hints = {
+        # Paint's status bar is responsive: in a narrow window (seen at 960
+        # logical px) it drops the canvas size text block altogether.
+        "canvas_px": " (narrow window? the status bar then hides the canvas "
+                     "size: widen Paint)",
+    }
     for name, val in (("viewport", vp), ("canvas_on_screen", img),
                       ("canvas_px", size), ("zoom_percent", zoom)):
         if val is None:
-            errors.append(f"{name}: UIA lookup failed")
+            errors.append(f"{name}: UIA lookup failed{hints.get(name, '')}")
     out["viewport"] = vp.to_dict() if vp else None          # where the canvas can show
     out["canvas_on_screen"] = img.to_dict() if img else None  # canvas incl. off-screen parts
     out["canvas_px"] = ({"width": size[0], "height": size[1]}
                         if size else None)                   # document pixels
     out["zoom_percent"] = zoom
+    # UIA clips the canvas rect to the viewport, so a canvas that is scrolled
+    # or larger than the viewport reports a *smaller* rect, not one that sticks
+    # out. Detect that by comparing with the size the zoom implies. The zoom box
+    # shows a truncated integer (Fit to window: 121.6% reads "121%"), hence 1%.
+    clipped = None
+    if size and zoom and img:
+        exp_w, exp_h = size[0] * zoom / 100, size[1] * zoom / 100
+        clipped = (img.width < exp_w * 0.99 - 1
+                   or img.height < exp_h * 0.99 - 1)
+        out["zoom_check"] = {"expected_on_screen": [exp_w, exp_h],
+                             "actual_on_screen": [img.width, img.height]}
+        out["canvas_clipped"] = clipped
     if vp and img:
         vis = vp.intersect(img)
         out["canvas_visible_on_screen"] = vis.to_dict() if vis else None
-        out["canvas_fully_visible"] = vp.contains(img)
+        # None = unknown (no canvas size or zoom to check clipping against)
+        out["canvas_fully_visible"] = (None if clipped is None
+                                       else vp.contains(img) and not clipped)
     if vp and zoom:
         # how many document pixels fit the viewport at the current zoom
         out["viewport_in_canvas_px"] = {
             "width": vp.width * 100 // zoom, "height": vp.height * 100 // zoom}
-    if size and zoom and img:
-        exp_w, exp_h = size[0] * zoom / 100, size[1] * zoom / 100
-        out["zoom_check"] = {"expected_on_screen": [exp_w, exp_h],
-                             "actual_on_screen": [img.width, img.height]}
     out["errors"] = errors
     return out
 
