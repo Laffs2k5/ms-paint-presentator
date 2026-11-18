@@ -20,6 +20,14 @@ dotnet test Presenter.sln
 src\Presenter.Cli\bin\Debug\net9.0-windows10.0.19041.0\presenter.exe --help
 ```
 
+One self-contained file to copy to another laptop (no .NET to install;
+about 210 MB; use `-r win-x64` for an Intel or AMD laptop):
+
+```powershell
+dotnet publish src/Presenter.Cli -c Release -r win-arm64 --self-contained `
+  -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o publish
+```
+
 ## Use
 
 ```powershell

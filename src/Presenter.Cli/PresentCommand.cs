@@ -152,6 +152,9 @@ internal static class PresentCommand
             using var stopAuto = new CancellationTokenSource();
             Task autoKeys = o.Auto ? Task.Run(() => AutoKeys(stopAuto.Token)) : Task.CompletedTask;
             Log("Ready: Right, Space or Enter for the first slide; Esc ends.");
+            // no blocking collections while the show runs (research 05 §7.5, E23)
+            var gcMode = System.Runtime.GCSettings.LatencyMode;
+            System.Runtime.GCSettings.LatencyMode = System.Runtime.GCLatencyMode.SustainedLowLatency;
 
             // the show, until Esc (research 05 §4, §5, §7.4). A display change brings
             // the picker back; Paint closed or crashed is reopened; Paint moved or
@@ -262,6 +265,7 @@ internal static class PresentCommand
                 stopWatch.Cancel();
                 await watchdog;
             }
+            System.Runtime.GCSettings.LatencyMode = gcMode;
             stopAuto.Cancel();
             await autoKeys;
             if (resumes.Count > 0) summary["resumed"] = resumes;
