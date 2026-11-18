@@ -135,6 +135,45 @@ internal static class DoctorCommand
             });
             Add("text settings", restored ? Level.Warn : Level.Pass,
                 restored ? "an interrupted show had left Paint's Text font changed: put back" : "nothing left over");
+
+            // what the loading painting drives: a brush, colours, the size, and the
+            // Text tool's controls (only there while a text box is open); the
+            // user's font is recorded first and put back after
+            var (problems, userFont, putBack) = await stage.Run(p =>
+            {
+                using var pen = new SyntheticPen();
+                var t = new Toolbox(p!, pen);
+                var found = new List<string>();
+                void Try(Action a)
+                {
+                    try { a(); }
+                    catch (Exception e) when (e is PaintException or InvalidOperationException or System.Runtime.InteropServices.COMException)
+                    {
+                        found.Add(e.Message);
+                    }
+                }
+                Try(() => t.Brush("Brush"));
+                Try(() => { t.Colour("Orange"); t.Colour("Black"); });
+                Try(() => t.Size(4));
+                Keyboard.Tap('S');
+                t.TextBox(ox + 300, oy + 300, ox + 700, oy + 420);
+                t.RememberTextSettings();
+                string? font = t.CurrentFont();
+                Try(() => { if (!t.Font("Comic Sans MS")) found.Add("Comic Sans MS could not be chosen in the Text tool"); });
+                Try(() => { if (t.FontSize(48) is var size && size != "48") found.Add($"the font size took {size ?? "nothing"}, not 48"); });
+                Try(() => { t.BackgroundFill(true); t.BackgroundFill(false); });
+                t.CloseText();
+                bool back = t.RestoreTextSettings(ox + 300, oy + 300);
+                return (found, font, back);
+            });
+            Add("painting tools", problems.Count == 0 ? Level.Pass : Level.Fail,
+                problems.Count == 0 ? "the Brush, colours, size, and the Text tool's font, size and background fill all respond"
+                                    : string.Join("; ", problems));
+            Add("your Text font", putBack ? Level.Pass : Level.Warn,
+                putBack ? $"{userFont ?? "?"}, put back after the check" : "the check could not put it back: run doctor again");
+            bool comic = new System.Drawing.Text.InstalledFontCollection().Families.Any(f => f.Name == "Comic Sans MS");
+            Add("Comic Sans MS", comic ? Level.Pass : Level.Fail,
+                comic ? "installed: the painting's title and signature use it" : "not installed: the painting's title needs it");
         }
         catch (Exception e) when (e is PaintException or InvalidOperationException or System.Runtime.InteropServices.COMException)
         {
