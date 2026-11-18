@@ -1,0 +1,31 @@
+# POC code
+
+Code for the experiments in the [POC plan](../docs/poc-plan.md). Results go in
+[docs/poc-results.md](../docs/poc-results.md).
+
+- [`paintctl/`](paintctl): instrumentation for Paint (launch, size, measure,
+  screenshot, close). Its README covers installing, including Windows on ARM64.
+- [`experiments/`](experiments): one script per experiment. They import
+  `paintctl`, so run them with its venv.
+
+```powershell
+cd poc\paintctl
+uv sync                     # on ARM64: see paintctl's README first
+uv run python ..\experiments\e11_display_area.py --out $env:TEMP\e11
+```
+
+| Experiment | Script | What it prints |
+|---|---|---|
+| E11 display area | [`e11_display_area.py`](experiments/e11_display_area.py) | Per monitor: display area, slide size (`slide_rule` = viewport − 66), pixel test |
+
+## Before running an experiment
+
+- **Keep your hands off the keyboard and mouse.** The scripts open, move and
+  close real Paint windows, and send Ctrl+V and mouse clicks to them.
+- **Don't run them with the screen locked.** Windows blocks synthetic input,
+  focus changes and screen grabs on a locked session, so results are wrong or
+  the script fails.
+- **For timing runs, turn off clipboard sharing** in PowerToys Mouse Without
+  Borders. It reads every image put on the clipboard.
+- **Don't commit screen grabs.** Notification toasts that pop up during a run
+  (Teams, Outlook) end up in them, with names and addresses.
