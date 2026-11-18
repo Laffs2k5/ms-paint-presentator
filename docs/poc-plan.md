@@ -17,14 +17,18 @@ These are fixed, not open questions. Experiments measure within them.
   stay visible: no View > Full screen, no hidden toolbar. Seeing that it really is
   Paint is the point of the project. Without the chrome it is just another window.
 - **Paint runs maximised at 100% zoom** on the presenting display.
-- **Slides are 16:10.**
+- **Slides fill the display area.** The display area is the largest canvas that
+  maximised Paint shows completely at 100% zoom: the screen minus the taskbar,
+  Paint's title bar, toolbar and status bar, and the margin Paint keeps around
+  the canvas. It depends on the display's resolution, scaling and taskbar.
+- **The reference screen is 16:10** (for example 1920×1200 or 2560×1600). Once
+  the chrome is subtracted its display area is much wider than 16:10, and that
+  is the shape slides are designed for.
 - **Slides are never scaled or distorted by Paint.** No Fit to window and no
-  fractional zoom. The **display area** is the largest canvas that is fully
-  visible in maximised Paint at 100%, which depends on the display's resolution,
-  scaling and taskbar. A slide is the **largest 16:10 size that fits the display
-  area**, rendered at exactly that size, so one slide pixel is one screen pixel.
-  Paint's background shows around it where the display area is wider (for
-  example about 2512×1229 maximised on 2560×1440 gives roughly 1960×1225 slides).
+  fractional zoom. A slide is rendered at exactly the display area's size, so
+  one slide pixel is one screen pixel.
+- **The presenter adapts to the screen** (proposed): it measures the display
+  area when the presentation starts and renders the slides to that size.
 
 ## 0. Environment facts to capture first
 
@@ -71,7 +75,7 @@ Paint build. Note which paster the self-test picks (Ctrl+V or UIA menu) and the
 
 | # | Question | How | Pass |
 |---|---|---|---|
-| **E11** | What is the display area? | Paint maximised at 100% zoom. Find the largest canvas that is fully visible with no scrollbars, for each display resolution and scaling at hand (and on a projector). Note the taskbar's effect. Derive the 16:10 slide size, paste a test pattern of that size and compare a screenshot with the source | Display area and 16:10 slide size recorded per display. Screenshot of the canvas is pixel-identical to the slide |
+| **E11** | What is the display area? | Paint maximised at 100% zoom. Find the largest canvas that is fully visible with no scrollbars, for each display resolution and scaling at hand (and on a projector). Note the taskbar's effect. Paste a test pattern of that size and compare a screenshot with the source. Derive a formula to predict the display area of other screens (16:10 reference screens, projectors) | Display area recorded per display, plus the formula. Screenshot of the canvas is pixel-identical to the slide |
 | **E6** | How fast is a slide-sized paste? | Live `IDataObject`, paste N distinct frames at the display areas from E11 (for example maximised on 1920×1080 and 2560×1440), measure keypress→`GetData`→canvas-changed (`PrintWindow` polling) | p95 ≤ 150 ms at the display area of a typical projector |
 | **E2/E3** | Can we paste **without focus/keystrokes**? | `PostMessage(hwndPaint, WM_COMMAND, 0xE125, 0)` with Paint in the background. If no luck, log `WM_COMMAND` while clicking Edit > Paste to find the real ID | `GetData` called and canvas updated with Paint not foreground |
 | **E1** | Which formats does Paint consume? Does alpha work? | Offer `PNG` + `CF_DIBV5` + `CF_DIB`. Log `QueryGetData`/`GetData` order | Format preference recorded. Transparent overlay works or doesn't |
@@ -96,11 +100,11 @@ Paint build. Note which paster the self-test picks (Ctrl+V or UIA menu) and the
 
 ## 4. Decision gates after the POC
 
-1. **Slide resolution:** the largest 16:10 size inside the display area (E11) of
-   the presenting display, with E6 confirming that pasting at that size is fast
-   enough. Open question: render
-   slides when the display is known (at the venue), or pre-render the common
-   display areas.
+1. **Slide resolution:** the display area (E11) of the presenting display, with
+   E6 confirming that pasting at that size is fast enough. Open questions: render
+   at start for the measured display area (adaptive) or pre-render for known
+   screens; and when the presenting screen's display area has a different shape
+   from the reference screen's, whether slides reflow or are centred inside it.
 2. **Focus model:** E2 decides between a background paste (free presenter view) and
    Paint in the foreground (no-activate presenter view or phone view).
 3. **Back navigation:** undo stack (E7) or re-paste.
