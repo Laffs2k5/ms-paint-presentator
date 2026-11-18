@@ -141,13 +141,29 @@ def blank_canvas_file(width: int, height: int,
                       color: str = "white") -> Path:
     """A blank PNG of exactly width x height. Opening it in Paint gives a canvas
     of exactly that size, with no resize dialog and no drag tricks."""
-    from PIL import Image
+    from PIL import Image, ImageColor
     folder = Path(tempfile.gettempdir()) / "paintctl"
     folder.mkdir(exist_ok=True)
     path = folder / f"canvas-{width}x{height}.png"
+    if path.exists() and not _is_blank(path, (width, height), ImageColor.getrgb(color)):
+        # Someone saved over it in Paint (File > Save writes back to this file):
+        # keep their picture under another name and start from a blank one.
+        path.replace(path.with_name(f"{path.stem}-saved-{time.strftime('%Y%m%d-%H%M%S')}.png"))
     if not path.exists():
         Image.new("RGB", (width, height), color).save(path)
     return path
+
+
+def _is_blank(path: Path, size: tuple[int, int], rgb: tuple[int, int, int]) -> bool:
+    from PIL import Image
+    try:
+        with Image.open(path) as im:
+            if im.size != size:
+                return False
+            colours = im.convert("RGB").getcolors(2)
+            return colours is not None and len(colours) == 1 and colours[0][1] == rgb
+    except OSError:
+        return False
 
 
 def launch(image: str | None = None, canvas: tuple[int, int] | None = None,

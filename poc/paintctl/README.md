@@ -133,6 +133,12 @@ JSON. The MCP server is for Claude Desktop/Cowork, or if you prefer typed tools.
   zoom it picks varied between runs in the same maximised window.
 - **`launch` does not bring Paint to the foreground.** Run `focus` before
   anything that sends keystrokes.
+- **`launch --canvas WxH` opens a reusable blank file,**
+  `%TEMP%\paintctl\canvas-WxH.png`, so a File > Save in that Paint window
+  writes over it, and the next launch used to open the saved picture instead
+  of a blank canvas. `launch` now checks the file is still blank; if not, it
+  renames it `canvas-WxH-saved-<time>.png` (the picture is kept) and writes a
+  new blank one.
 - **"Can't complete operation"**: when Paint cannot read the clipboard (a
   format it cannot parse, or the clipboard rewritten mid-read) it shows this
   modal dialog, and every paste fails until it is closed. `dismiss` clicks its
