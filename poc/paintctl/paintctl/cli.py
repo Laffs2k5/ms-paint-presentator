@@ -5,6 +5,7 @@
     paintctl info
     paintctl maximize | restore | focus
     paintctl close [--discard]                      # --discard: "Don't save"
+    paintctl dismiss                                # close the clipboard-error dialog
     paintctl resize WIDTH HEIGHT [--x X --y Y]      # outer window size
     paintctl fit-viewport WIDTH HEIGHT              # canvas viewport size
     paintctl zoom PERCENT|fit
@@ -43,6 +44,7 @@ def main(argv: list[str] | None = None) -> int:
     sub.add_parser("maximize")
     sub.add_parser("restore")
     sub.add_parser("focus")
+    sub.add_parser("dismiss")
     s = sub.add_parser("close")
     s.add_argument("--discard", action="store_true",
                    help="answer \"Don't save\" if Paint asks to save")
@@ -89,6 +91,8 @@ def main(argv: list[str] | None = None) -> int:
                 result = core.info(hwnd)
             elif a.cmd == "focus":
                 result = {"foreground": core.focus(hwnd)}
+            elif a.cmd == "dismiss":
+                result = {"dismissed": core.dismiss_clipboard_error(hwnd)}
             elif a.cmd == "close":
                 result = {"closed": core.close(hwnd, a.discard)}
             elif a.cmd == "resize":

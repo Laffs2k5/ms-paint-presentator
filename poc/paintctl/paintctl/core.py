@@ -229,6 +229,24 @@ def close(hwnd: int, discard: bool = False, timeout: float = 6.0) -> bool:
     return gone()
 
 
+def dismiss_clipboard_error(hwnd: int, timeout: float = 1.0) -> bool:
+    """Close Paint's modal "Can't complete operation" dialog ("The information
+    on the Clipboard can't be inserted into Paint"), if it appears within
+    timeout seconds. While it is open every paste fails. Clicks its
+    ``CloseButton`` (OK) through UIA, so no keys are sent (DoomPaint's
+    approach). The title match is English. Returns True if one was closed."""
+    try:
+        dlg = _uia_window(hwnd).child_window(title_re=".*complete operation.*",
+                                            control_type="Window")
+        if not dlg.exists(timeout=timeout):
+            return False
+        dlg.child_window(auto_id="CloseButton", control_type="Button") \
+            .wrapper_object().invoke()
+        return True
+    except Exception:
+        return False
+
+
 def maximize(hwnd: int) -> None:
     win32gui.ShowWindow(hwnd, win32con.SW_MAXIMIZE)
     time.sleep(0.3)

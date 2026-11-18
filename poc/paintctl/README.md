@@ -52,6 +52,7 @@ uv run paintctl screenshot out.png --region viewport   # window|client|viewport|
 uv run paintctl uia-dump --depth 8 > uia.json          # discover AutomationIds
 uv run paintctl list                                   # all Paint windows (hwnd, title)
 uv run paintctl close --discard                        # close; "Don't save" if prompted
+uv run paintctl dismiss                                # close the clipboard-error dialog
 ```
 
 `--hwnd N` (before the subcommand) targets a specific window when several are open.
@@ -132,6 +133,10 @@ JSON. The MCP server is for Claude Desktop/Cowork, or if you prefer typed tools.
   zoom it picks varied between runs in the same maximised window.
 - **`launch` does not bring Paint to the foreground.** Run `focus` before
   anything that sends keystrokes.
+- **"Can't complete operation"**: when Paint cannot read the clipboard (a
+  format it cannot parse, or the clipboard rewritten mid-read) it shows this
+  modal dialog, and every paste fails until it is closed. `dismiss` clicks its
+  OK (`CloseButton`) through UIA, sending no keys. The title match is English.
 - **Closing:** Paint hides its window within ~50 ms of `WM_CLOSE` but can take
   0.3–6 s more to destroy it, so `close` waits for the window to be hidden. The
   save prompt is a WinUI dialog whose buttons have locale-independent
