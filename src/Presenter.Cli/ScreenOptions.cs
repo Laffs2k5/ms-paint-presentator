@@ -59,6 +59,15 @@ internal static class ScreenOptions
 
     /// <summary>The option for a monitor chosen without the picker.</summary>
     public static ScreenOption For(Presenter.Windows.Monitor m) => Now().First(o => o.Device == m.Device);
+
+    /// <summary>The display a --monitor argument names (its number in
+    /// `presenter screens`, or a GDI name); no such display is a usage error,
+    /// which lists the ones there are.</summary>
+    public static Presenter.Windows.Monitor Find(string? which)
+    {
+        try { return Monitors.Find(which); }
+        catch (ArgumentException e) { throw new UsageException(e.Message); }
+    }
 }
 
 internal static class PickCommand
