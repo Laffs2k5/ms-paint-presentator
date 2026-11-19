@@ -10,8 +10,14 @@ Scenarios (--scenario):
             is answered with that display once it is listed again
   internal  only the laptop's own panel for --seconds; the presenting
             display is picked again once it is back
-  other     the presenting display off for --seconds; another display of
-            the same size (--other) is picked while it is away
+  other     the presenting display off for --seconds; another display
+            (--other) is picked while it is away, and again when it is back
+  mode      the presenting display at --mode (e.g. 1920x1080) for --seconds;
+            it is picked at once, and again when its resolution is back
+  scale     the presenting display's scaling one step up for --seconds; it is
+            picked at once, and again when the scaling is back
+  clone     duplicate (Win+P) for --seconds; the presenting display is picked
+            whenever it is listed, again when the layout is back
 
 Needs the presenter and E18Displays built. Drives the real screen: run only
 when the screen is free. Prints JSON.
@@ -53,7 +59,9 @@ def answer_picker(device: str, timeout: float, log: list, times: int = 1) -> Non
     for n in range(times):
         if n:
             time.sleep(2)  # the previous picker closing
-        _answer_once(device, timeout, log)
+        # a later picker comes when the change is undone, or not at all (the
+        # display was picked only once it was back): no long wait for it
+        _answer_once(device, timeout if n == 0 else min(timeout, 35), log)
 
 
 def _answer_once(device: str, timeout: float, log: list) -> None:
@@ -81,8 +89,9 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--deck", required=True)
     ap.add_argument("--display", required=True, help=r"the presenting display, e.g. \\.\DISPLAY2")
-    ap.add_argument("--scenario", choices=["back", "internal", "other"], default="back")
+    ap.add_argument("--scenario", choices=["back", "internal", "other", "mode", "scale", "clone"], default="back")
     ap.add_argument("--other", help="the display to pick in the 'other' scenario")
+    ap.add_argument("--mode", default="1920x1080", help="the resolution in the 'mode' scenario")
     ap.add_argument("--seconds", type=float, default=12)
     ap.add_argument("--soak", type=int, default=40, help="random speaker keys during the show")
     ap.add_argument("--cycles", type=int, default=1, help="how many times to make the change, one after the other")
@@ -90,8 +99,11 @@ def main() -> int:
     a = ap.parse_args()
 
     target = a.other if a.scenario == "other" else a.display
-    change = (["detach", str(display_index(a.display))] if a.scenario in ("back", "other") else ["internal"]) \
-        + ["--for", str(a.seconds)]
+    n = str(display_index(a.display))
+    change = {
+        "back": ["detach", n], "other": ["detach", n], "internal": ["internal"], "clone": ["clone"],
+        "mode": ["mode", n, a.mode], "scale": ["scale", n, "+1"],
+    }[a.scenario] + ["--for", str(a.seconds)]
     presenter = subprocess.Popen([str(PRESENTER), "present", a.deck, "--monitor", a.display, "--no-painting",
                                   "--verify", "--soak", str(a.soak)],
                                  stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, encoding="utf-8")
@@ -108,7 +120,9 @@ def main() -> int:
             raise SystemExit("the presenter ended before the show started:\n" + "\n".join(lines))
         time.sleep(0.2)
     time.sleep(4)  # a few slides first
-    times = 2 if a.scenario == "other" else 1  # 'other': once while it is away, once when it is back
+    # once during the change and once when it is undone, unless the display is
+    # away the whole time ('back', 'internal'): then only once it is back
+    times = 1 if a.scenario in ("back", "internal") else 2
     t_change = time.time()
     for cycle in range(a.cycles):
         if cycle:
