@@ -33,6 +33,7 @@ a second display.
 
 - [`src/`](src/README.md): `presenter.exe`, its build, use and what was
   measured.
+- [Installing](docs/install.md) a release, without admin rights.
 
 ## Tools
 

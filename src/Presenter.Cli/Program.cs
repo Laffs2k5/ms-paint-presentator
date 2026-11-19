@@ -36,6 +36,14 @@ const string Usage = """
           the renderers' prerequisites. Opens Paint for about half a minute.
     """;
 
+if (args.Length > 0 && args[0] is "--version" or "version")
+{
+    Console.WriteLine(typeof(UsageException).Assembly
+        .GetCustomAttributes(typeof(System.Reflection.AssemblyInformationalVersionAttribute), false)
+        .OfType<System.Reflection.AssemblyInformationalVersionAttribute>().FirstOrDefault()?.InformationalVersion ?? "?");
+    return 0;
+}
+
 if (args.Length == 0 || args[0] is "-h" or "--help" or "help")
 {
     Console.WriteLine(Usage);
