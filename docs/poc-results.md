@@ -1254,12 +1254,15 @@ a browser; this checks its open points in Paint, maximised at 100% on a
   do close, and the cloud's gap is the only way out.
 - **Brush size for a width of w px: w − 1.**
 
-## E18. Display changes mid-show (2026-11-19): **pass** for a display leaving and coming back; the rest still open
+## E18. Display changes mid-show (2026-11-19): **pass**; a real cable, FancyZones and a projector still open
 
 Tool: [`poc/dotnet/E18Displays`](../poc/dotnet/E18Displays) (C#) switches
 displays off and on through `SetDisplayConfig`, the API Windows itself uses
 when a display goes away: the desktop shrinks, windows move off it, and
-`WM_DISPLAYCHANGE` goes out. Harness:
+`WM_DISPLAYCHANGE` goes out. It also switches to Duplicate (Win+P), changes a
+display's resolution (`ChangeDisplaySettingsEx`, for the session only) and its
+scaling (the undocumented device-info call Settings uses), and puts everything
+back afterwards. Harness:
 [`poc/experiments/e18_display_changes.py`](../poc/experiments/e18_display_changes.py)
 runs `presenter present --verify --soak`, makes the change mid-show, and
 answers the screen picker over UI Automation the way a speaker would. Deck: a
@@ -1272,6 +1275,10 @@ monitors at 100%.
 | DISPLAY3 (presenting) off for 12 s, then back | The picker came up 4.8 s after the change and listed DISPLAY3 again when it returned. Picking it: **Repaste**, the same slide pixel-exact. The EDID identity and the GDI name survived the round trip |
 | DISPLAY3 off for 20 s; DISPLAY4 picked meanwhile | Picker after 3.8 s, **MovePaint** to DISPLAY4, the current slide shown again 5.9 s after the change. When DISPLAY3 came back, **a second picker came up**; DISPLAY4 picked again: Repaste. 68 slide changes, none unconfirmed |
 | Only the laptop panel for 12 s | Picker after 4.4 s; four speaker keys skipped while it was up (Paint not in front). DISPLAY3 picked once it was back: **Repaste**, 22 s after the change including the wait |
+| DISPLAY3 off for 25 s; the laptop panel picked meanwhile | **NewSlideSize**: Paint reopened on the panel (2880×1920 at 200%), slide 2546×1433, the current slide back 9.9 s after the change. When DISPLAY3 returned, a second picker; the panel picked again: Repaste. Every frame pixel-exact |
+| DISPLAY3 at 1920×1080 for 20 s | Picker at the change and again when the resolution came back; **NewSlideSize** both ways (8.6 s, 11.9 s, the second including the speaker's wait). Every frame pixel-exact |
+| DISPLAY3's scaling one step up (125%) for 20 s | Picker at the change and again at 100%; **NewSlideSize** both ways (9.7 s, 10 s). Every frame pixel-exact |
+| Duplicate (Win+P) for 15 s | Picker at the change; DISPLAY3 was not listed while duplicated, so the picker waited, and it was picked once the layout was back: **Repaste**. Afterwards every slide verified at 99.5–99.65 %, blanks at 100 %: see below |
 
 - **The picker follows the displays.** It came up every time, listed a
   returning display without being reopened, and the show resumed at the
@@ -1280,14 +1287,20 @@ monitors at 100%.
   read from had gone. That is the moment of the change, not a wrong slide.
 - **On DISPLAY4 every frame verified at about 82 %** (black 84 %). An Edge
   picture-in-picture window, always on top, covered part of the canvas. The
-  audience would see it too. **A pre-flight check could warn about
-  always-on-top windows over the chosen display;** not built yet.
+  audience would see it too. No pre-flight warning for this, by choice: the
+  speaker can see such a window and knows it is there.
+- **After a Duplicate round trip the canvas sits 1 px up and left** of where
+  the show measured it at the start. Shifted by (−1, −1), the saved frames
+  match the slides exactly: no scaling, nothing the audience can see. Only
+  `--verify` reads it, because Repaste does not measure the canvas again
+  (measuring needs a blank canvas; reopening Paint does it).
+- **A resolution or scaling change of the same display is NewSlideSize**, as
+  it should be: same monitor identity, a different viewport.
 - **The primary display cannot be switched off this way:** `SetDisplayConfig`
   refuses with error 87. Present on a non-primary display for these runs.
 - **Not covered yet:** a real cable pull (a software detach keeps the port,
-  so the GDI name and device path stayed the same), picking the laptop panel
-  (NewSlideSize), resolution and scaling changes, duplicate/extend with
-  Win+P, FancyZones, and a projector.
+  so the GDI name and device path stayed the same), FancyZones, and a
+  projector.
 - **Harness gotcha:** reading the presenter's stderr in a thread *and*
   calling `communicate()` splits the log between them, and lines go missing.
   A run whose 40-key soak ended the show before the display came back also

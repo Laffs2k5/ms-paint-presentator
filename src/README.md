@@ -82,11 +82,14 @@ after a display change) are printed as JSON at the end and kept in
 
 ## Testing display changes (E18)
 
-Needs a second display. Results so far: [poc-results E18](../docs/poc-results.md#e18-display-changes-mid-show-2026-11-19-pass-for-a-display-leaving-and-coming-back-the-rest-still-open).
+Needs a second display. Results so far: [poc-results E18](../docs/poc-results.md#e18-display-changes-mid-show-2026-11-19-pass-a-real-cable-fancyzones-and-a-projector-still-open).
 
-**Without a cable**, `poc/dotnet/E18Displays` switches a display off and on
-(`list`, `detach <N> --for <S>`, `internal --for <S>`, `restore`; Win+P,
-Extend brings everything back if it goes wrong). The harness runs a whole
+**Without a cable**, `poc/dotnet/E18Displays` makes the change and puts the
+layout back after `--for <S>` seconds: `detach <N>`, `internal` (the laptop
+panel only), `clone` (Duplicate), `mode <N> <W>x<H>`, `scale <N> +1`;
+`list` numbers the displays, `restore` undoes the last change by hand. If
+it goes wrong, Win+P, Extend brings the displays back, and Settings the
+scaling. The harness runs a whole
 change and answers the picker itself; from `poc/paintctl`, with the
 presenter and E18Displays built:
 
@@ -94,12 +97,15 @@ presenter and E18Displays built:
 uv run python ..\experiments\e18_display_changes.py --deck <deck> --display \\.\DISPLAY3 --scenario back --seconds 12
 ```
 
-`--scenario other --other \\.\DISPLAY4` picks another display meanwhile,
-`--scenario internal` leaves only the laptop panel. Present on a non-primary
+`--scenario other --other \\.\DISPLAY4` picks another display meanwhile (the
+laptop panel's name for NewSlideSize), `internal` leaves only the laptop
+panel, `mode --mode 1920x1080`, `scale` and `clone` change the resolution,
+the scaling or the topology. Present on a non-primary
 display (the primary cannot be switched off), and keep `--soak` long enough
 to outlast the change. These drive the real screen.
 
-**By hand**, from a terminal on the laptop's screen:
+**By hand**, for what software cannot do (a real cable, a projector,
+FancyZones), from a terminal on the laptop's screen:
 
 1. `presenter screens`, then `presenter pick`: both displays listed, the
    external one highlighted, Identify puts a number on each.
