@@ -1,0 +1,53 @@
+# Build and test the presenter on every pull request and on main.
+# windows-latest is x64; Paint is not driven here (no desktop session to
+# speak of), so the Paint tests stay manual (presenter doctor, present
+# --verify). PowerPoint is not installed on the runner: its renderer tests
+# skip themselves. Marp's run against marp-cli installed below.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+
+      - name: Node tools for the renderer tests
+        shell: pwsh
+        run: npm install --prefix "$env:RUNNER_TEMP\node-tools" @marp-team/marp-cli
+
+      - name: Build
+        run: dotnet build Presenter.sln -c Release
+
+      - name: Test
+        env:
+          PRESENTER_NODE_TOOLS: ${{ runner.temp }}\node-tools
+        run: dotnet test Presenter.sln -c Release --no-build --logger "trx" --logger "console;verbosity=normal" --results-directory TestResults
+
+      - name: Test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: TestResults
+          if-no-files-found: ignore
