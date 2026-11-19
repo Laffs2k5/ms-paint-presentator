@@ -8,8 +8,10 @@ using Presenter.Core;
 namespace Presenter.Ui;
 
 /// <summary>One slide of the built-in deck. A line starting with "$ " is a
-/// command, set in a monospaced font.</summary>
-public sealed record HelpSlide(string Title, IReadOnlyList<string> Lines);
+/// command, set in a monospaced font; one starting with "> " is what to do
+/// next, set larger and bold. <paramref name="Kicker"/> is a short line above
+/// the title.</summary>
+public sealed record HelpSlide(string Title, IReadOnlyList<string> Lines, string? Kicker = null);
 
 /// <summary>
 /// The deck the presenter shows when it is run without one (demo mode): how
@@ -23,10 +25,12 @@ public static class HelpDeck
     public static IReadOnlyList<HelpSlide> Slides { get; } =
     [
         new("Paint Presentator", [
-            "Slides, live in Microsoft Paint.",
-            "This is the built-in help deck: Right or Space pages through it, Esc ends.",
+            "This tool helps you give your talk in Microsoft Paint: PowerPoint, PDF, Marp or Slidev, "
+                + "every slide pasted in live, pixel for pixel, while the room wonders how.",
+            "> Press Space for the keys",
+            "Esc ends this help deck. Your own deck:",
             "$ presenter present <your deck>",
-        ]),
+        ], Kicker: "Welcome to"),
         new("Keys during a show", [
             "Right, Down, Space, Page Down, Enter or N: the next slide",
             "Left, Up, Backspace, Page Up or P: back",
@@ -104,11 +108,24 @@ public static class HelpDeck
             double titleEm = (cover ? 0.11 : 0.075) * h, bodyEm = 0.042 * h;
             var title = Text(slide.Title, bold, titleEm, Heading, w - 2 * margin);
             double y = cover ? 0.24 * h : 0.09 * h;
+            if (slide.Kicker is { } kicker)
+            {
+                var k = Text(kicker, typeface, 0.05 * h, Muted, w - 2 * margin);
+                y = (cover ? 0.15 : 0.06) * h;
+                g.DrawText(k, new Point(margin, y));
+                y += k.Height;
+            }
             g.DrawText(title, new Point(margin, y));
             y += title.Height + 0.05 * h;
             foreach (string line in slide.Lines)
             {
-                if (line.StartsWith("$ "))
+                if (line.StartsWith("> "))
+                {
+                    var next = Text(line[2..], bold, bodyEm * 1.15, Heading, w - 2 * margin);
+                    g.DrawText(next, new Point(margin, y + 0.01 * h));
+                    y += next.Height + 0.045 * h;
+                }
+                else if (line.StartsWith("$ "))
                 {
                     var cmd = Text(line[2..], mono, bodyEm * 0.95, Ink, w - 2 * margin - 0.04 * w);
                     double pad = 0.012 * h;
