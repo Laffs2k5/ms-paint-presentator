@@ -175,29 +175,58 @@ internal static class MarpRenderer
         var edge = NodeTools.FindEdge(options.EdgePath);
         var raw = System.IO.Path.Combine(work, "raw");
         var design = marp.Design;
+        // A long deck: its first slides first, so the show can start, then the
+        // whole deck, which carries on after them (Queued). The head is a copy
+        // of the deck cut after those slides, next to it so its relative
+        // images, themes and config resolve the same; it is removed after.
+        string? head = marp.SlideCount > 2 * HeadSlides ? MarpDeck.HeadText(marp.Path, HeadSlides) : null;
+        string? headFile = null;
+        try
+        {
+            if (head is not null)
+            {
+                headFile = System.IO.Path.Combine(deckDir, $".presenter-head-{Guid.NewGuid():N}.md");
+                File.WriteAllText(headFile, head);
+                File.SetAttributes(headFile, FileAttributes.Hidden);
+                design = await RunMarp(headFile, design, check: true).ConfigureAwait(false);
+                sink.Note($"marp: the first {sink.Queued} slides first");
+            }
+            await RunMarp(marp.Path, design, check: head is null).ConfigureAwait(false);
+        }
+        finally
+        {
+            if (headFile is not null) try { File.Delete(headFile); } catch (IOException) { }
+        }
+
+        async Task<PixelSize> RunMarp(string input, PixelSize design, bool check)
+        {
         for (int attempt = 0; ; attempt++)
         {
             double scale = Math.Min(sink.Size.Width / (double)design.Width, sink.Size.Height / (double)design.Height);
             var expected = new PixelSize((int)Math.Round(design.Width * scale), (int)Math.Round(design.Height * scale));
             string[] args =
             [
-                marp.Path, "--no-stdin", "--allow-local-files",
+                input, "--no-stdin", "--allow-local-files",
                 "--browser", "edge", "--browser-path", edge,
                 "--images", "png", "--image-scale", NodeExport.Num(scale),
                 "-o", System.IO.Path.Combine(raw, "deck.png"),
             ];
             var rejected = await NodeExport.RunAsync("marp", sink, options, pkg, args, deckDir, work, raw, SlideNumber,
-                attempt == 0
+                check && attempt == 0
                     ? got => Math.Abs(got.Width - expected.Width) <= 2 && Math.Abs(got.Height - expected.Height) <= 2
                     : null,
                 ct).ConfigureAwait(false);
-            if (rejected is not { } got) return;
+            if (rejected is not { } got) return design;
             // the theme's canvas was not what the deck said: measure it from the image and go again
             design = new PixelSize((int)Math.Round(got.Width / scale), (int)Math.Round(got.Height / scale));
             sink.Note($"marp: design canvas is {design}, not {marp.Design}; rendering again");
             Directory.Delete(raw, recursive: true);
         }
+        }
     }
+
+    /// <summary>A long deck's first slides are rendered on their own first.</summary>
+    internal const int HeadSlides = 5;
 
     /// <summary><c>deck.001.png</c> → 1.</summary>
     internal static int? SlideNumber(string file)
@@ -226,6 +255,14 @@ internal static class SlidevRenderer
             "export", deck.Entry, "--format", "png", "--scale", NodeExport.Num(scale), "--output", raw,
             "--executable-path", edge, "--timeout", "60000",
         ];
+        // A long deck: its first slides first (Slidev's --range), so the show
+        // can start, then the whole deck, which carries on after them.
+        if (deck.SlideCount is int n && n > 2 * MarpRenderer.HeadSlides)
+        {
+            await NodeExport.RunAsync("slidev", sink, options, pkg, [.. args, "--range", $"1-{MarpRenderer.HeadSlides}"],
+                deck.Root, work, raw, SlideNumber, null, ct).ConfigureAwait(false);
+            sink.Note($"slidev: the first {sink.Queued} slides first");
+        }
         await NodeExport.RunAsync("slidev", sink, options, pkg, args, deck.Root, work, raw, SlideNumber, null, ct)
             .ConfigureAwait(false);
     }
