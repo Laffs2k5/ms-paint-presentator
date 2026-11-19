@@ -19,7 +19,12 @@ public enum DeckKind
 /// <param name="Aspect">The slide shape, width / height.</param>
 /// <param name="SlideCount">Slides the show presents (hidden PowerPoint slides
 /// not counted), or null when that is costly to know before rendering.</param>
-public sealed record DeckInfo(string Path, DeckKind Kind, double Aspect, int? SlideCount);
+public sealed record DeckInfo(string Path, DeckKind Kind, double Aspect, int? SlideCount)
+{
+    /// <summary>What the deck's tool calls it (its title, first heading, or file name):
+    /// the loading painting writes it.</summary>
+    public string Title { get; init; } = "";
+}
 
 /// <summary>Recognises decks made in other tools (research 05 §6).</summary>
 public static class Decks
@@ -40,6 +45,12 @@ public static class Decks
     /// <exception cref="FileNotFoundException">Nothing at the path.</exception>
     /// <exception cref="NotSupportedException">Not a deck of a known tool.</exception>
     public static DeckInfo Inspect(string path)
+    {
+        var info = InspectShape(path);
+        return info with { Title = DeckTitles.For(info) };
+    }
+
+    private static DeckInfo InspectShape(string path)
     {
         var full = System.IO.Path.GetFullPath(path);
         if (!File.Exists(full) && !Directory.Exists(full)) throw new FileNotFoundException("No deck at this path.", full);
