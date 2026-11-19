@@ -417,7 +417,9 @@ internal static class PresentCommand
             });
         var (stopped, steps) = await stage.Run(p =>
         {
-            var lp = new LoadingPainting(p!, tools, pen, origin, size, o.Title ?? title, Progress, stop.Token, o.Seed, Log);
+            // demo mode: someone new to the presenter, so the painting says how to begin
+            string? tip = o.Deck is null ? "Tip: press Space to get started" : null;
+            var lp = new LoadingPainting(p!, tools, pen, origin, size, o.Title ?? title, Progress, stop.Token, o.Seed, Log, tip);
             bool interrupted = lp.Run();
             return (interrupted, lp.Steps);
         });
