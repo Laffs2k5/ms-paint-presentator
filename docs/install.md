@@ -18,10 +18,9 @@ also need Node.js. No admin rights are needed for any of it.
 In PowerShell (Windows PowerShell 5.1 or PowerShell 7):
 
 ```powershell
-# the repository is private for now: download through the GitHub CLI, signed in
-gh release download --repo Laffs2k5/ms-paint-presentator --pattern install.ps1 --dir .
-# (once it is public, this works without gh:
-#  irm https://github.com/Laffs2k5/ms-paint-presentator/releases/latest/download/install.ps1 -OutFile install.ps1)
+irm https://github.com/Laffs2k5/ms-paint-presentator/releases/latest/download/install.ps1 -OutFile install.ps1
+# or, with the GitHub CLI:
+#  gh release download --repo Laffs2k5/ms-paint-presentator --pattern install.ps1 --dir .
 
 .\install.ps1             # presenter.exe only
 .\install.ps1 -WithNode   # and Node.js + Marp

@@ -8,8 +8,8 @@
     With -WithNode it also installs a portable Node.js (only Marp and Slidev decks
     need it) into %LOCALAPPDATA%\Programs\nodejs and Marp's command line.
 
-    The repository is private for now: a download then needs the GitHub CLI (gh),
-    signed in. Once it is public, a plain web download works.
+    It downloads through the GitHub CLI (gh) when that is installed, otherwise
+    straight from the release page.
 
     With -Sign it signs presenter.exe with your code-signing certificate right
     after unpacking, before anything runs it. On a managed computer where
