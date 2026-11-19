@@ -130,7 +130,7 @@ static class Program
 
     static int Main(string[] args)
     {
-        double For() => args.SkipWhile(a => a != "--for").Skip(1).Select(double.Parse).DefaultIfEmpty(20).First();
+        double For() => args.SkipWhile(a => a != "--for").Skip(1).Select(s => double.Parse(s, System.Globalization.CultureInfo.InvariantCulture)).DefaultIfEmpty(20).First();
         switch (args.FirstOrDefault())
         {
             case "list":
