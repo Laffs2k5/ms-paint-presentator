@@ -50,5 +50,6 @@ can run your quarterly review.
   concept, and the design of the loading painting
 - [Installing](docs/install.md), also on a locked-down work computer
 
-[MIT](LICENSE). Not affiliated with or endorsed by Microsoft. Microsoft Paint
+[MIT](LICENSE), with [third-party notices](THIRD-PARTY-NOTICES.txt) for
+what the program bundles. Not affiliated with or endorsed by Microsoft. Microsoft Paint
 and PowerPoint are trademarks of Microsoft.
