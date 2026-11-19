@@ -10,6 +10,8 @@ POC stays as the reference and test harness.
 > slide images: screen picker, the loading painting while the deck renders,
 > slides by key, display changes, watchdogs, `doctor`.
 
+Installing a release (no admin rights needed): [docs/install.md](../docs/install.md).
+
 ## Build
 
 Needs the .NET 9 SDK. Native on ARM64 and x64.

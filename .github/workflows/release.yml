@@ -1,0 +1,77 @@
+# Releases: push a tag like v0.1.0 and this builds presenter.exe (self-
+# contained, one file) for x64 and ARM64, zips each, and publishes a GitHub
+# release with both. On a pull request that touches the packaging it only
+# builds the zips (kept as artifacts), so packaging is tested before a tag.
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  pull_request:
+    paths:
+      - .github/workflows/release.yml
+      - install.ps1
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    strategy:
+      matrix:
+        rid: [win-x64, win-arm64]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+
+      - name: Version
+        id: version
+        shell: pwsh
+        run: |
+          $v = if ($env:GITHUB_REF_TYPE -eq 'tag') { $env:GITHUB_REF_NAME.TrimStart('v') } else { '0.0.0-dev' }
+          "value=$v" >> $env:GITHUB_OUTPUT
+
+      - name: Publish
+        shell: pwsh
+        run: >
+          dotnet publish src/Presenter.Cli -c Release -r ${{ matrix.rid }} --self-contained
+          -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
+          -p:DebugType=embedded -p:Version=${{ steps.version.outputs.value }} -o out/${{ matrix.rid }}
+
+      - name: Zip
+        shell: pwsh
+        run: |
+          $dir = "out/${{ matrix.rid }}"
+          Copy-Item LICENSE, install.ps1 $dir
+          Copy-Item docs/install.md "$dir/INSTALL.md"
+          Compress-Archive -Path "$dir/presenter.exe", "$dir/LICENSE", "$dir/install.ps1", "$dir/INSTALL.md" -DestinationPath "presenter-${{ matrix.rid }}.zip"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: presenter-${{ matrix.rid }}
+          path: presenter-${{ matrix.rid }}.zip
+
+  release:
+    if: github.ref_type == 'tag'
+    needs: package
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: presenter-*
+          merge-multiple: true
+
+      - name: Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" presenter-*.zip install.ps1 --repo "$GITHUB_REPOSITORY" --title "$GITHUB_REF_NAME" --generate-notes
