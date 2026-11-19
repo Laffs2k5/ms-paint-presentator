@@ -12,15 +12,16 @@ this file wins.
   `main` directly.
 - Atomic commits with conventional-commit subjects, and a body that explains
   *why*. Each commit should be reviewable and revertable on its own.
-- Keep the history clean: the repo may be made public. Don't push WIP, fixup or
-  "oops" commits. Fix a local commit before pushing rather than after.
+- Keep the history clean: the repo is public (since 2026-11-19), and so are
+  its pull requests, their descriptions and the release notes. Don't push WIP,
+  fixup or "oops" commits. Fix a local commit before pushing rather than after.
 - **Paint is not tested in CI** (a runner has no desktop to drive it on). A
   change to the presenter's Paint side is also run by hand: `presenter doctor`
   and `presenter present <deck> --verify`, which drive the real screen.
 
-## Public-ready content
+## Public content
 
-Treat everything you commit as if it is already public.
+Everything you commit, and everything you write on GitHub here, is public.
 
 - **No copyrighted third-party material.** No verbatim transcripts, copied
   articles, copied docs, or copied code. Paraphrase, link to the source, and keep
