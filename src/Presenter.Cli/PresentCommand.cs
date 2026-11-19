@@ -80,7 +80,7 @@ internal static class PresentCommand
         // reminders; --monitor goes straight to a display
         if (o.Monitor is not null)
         {
-            monitor = Monitors.Find(o.Monitor);
+            monitor = ScreenOptions.Find(o.Monitor);
             option = ScreenOptions.For(monitor);
         }
         else

@@ -42,7 +42,7 @@ internal static class DoctorCommand
         // --- the machine -------------------------------------------------------------------------
         var monitors = Monitors.All();
         Add("displays", Level.Pass, string.Join("; ", monitors.Select((m, i) => $"{i + 1}. {m}")));
-        var monitor = Monitors.Find(monitorArg);
+        var monitor = ScreenOptions.Find(monitorArg);
         Add("power", Power.OnMains() ? Level.Pass : Level.Warn,
             Power.OnMains() ? "on mains power" : "on battery: Paint is slower and less steady (E6)");
         Add("do not disturb", Level.Warn, "cannot be read by any API (E19): switch it on before a show");

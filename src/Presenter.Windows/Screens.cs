@@ -42,7 +42,7 @@ public static class Monitors
         if (string.IsNullOrEmpty(which)) return all.First(m => m.Primary);
         if (int.TryParse(which, out int n) && n >= 1 && n <= all.Count) return all[n - 1];
         return all.FirstOrDefault(m => string.Equals(m.Device, which, StringComparison.OrdinalIgnoreCase))
-               ?? throw new ArgumentException($"no display {which}; there are: {string.Join(", ", all)}");
+               ?? throw new ArgumentException($"no display {which}; there are: {string.Join("; ", all.Select((m, i) => $"{i + 1}. {m}"))}");
     }
 }
 

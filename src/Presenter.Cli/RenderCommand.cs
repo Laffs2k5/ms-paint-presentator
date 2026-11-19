@@ -33,7 +33,7 @@ internal static class RenderCommand
         try { info = Decks.Inspect(deckPath); }
         catch (Exception e) when (e is FileNotFoundException or NotSupportedException) { throw new UsageException(e.Message); }
         // the size a show on that display would use, unless one is given
-        size ??= ScreenOptions.For(Monitors.Find(monitorArg)).SlideFor(info.Aspect);
+        size ??= ScreenOptions.For(ScreenOptions.Find(monitorArg)).SlideFor(info.Aspect);
         Console.Error.WriteLine($"{info.Kind} deck, {(info.SlideCount is int n ? $"{n} slides" : "slides not counted yet")}, "
                                 + $"shape {info.Aspect:F3}: rendering {size}");
         var sw = Stopwatch.StartNew();
