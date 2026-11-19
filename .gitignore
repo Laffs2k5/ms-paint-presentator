@@ -5,3 +5,6 @@ __pycache__/
 # .NET build output
 bin/
 obj/
+
+# test runs
+TestResults/
