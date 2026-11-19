@@ -33,6 +33,7 @@ dotnet publish src/Presenter.Cli -c Release -r win-arm64 --self-contained `
 ## Use
 
 ```powershell
+presenter                        # demo mode: the built-in help deck
 presenter doctor                 # check this machine first: about half a minute, opens Paint
 presenter setup                  # once, for Marp decks: installs marp-cli (needs Node and npm)
 presenter screens                # the displays and the slide size each would get
@@ -57,7 +58,7 @@ show of a deck starts at once. Details: [Presenter.Slides](Presenter.Slides/READ
 | `--monitor N` | Present on display N (or a GDI name like `\\.\DISPLAY2`) without the picker |
 | (none) | The screen picker comes first, with the pre-flight reminders; Enter takes the highlighted display |
 | `--no-painting` | Skip the loading painting |
-| `--title "…"` | The loading painting's title (default: Paint Presentator) |
+| `--title "…"` | The loading painting's title (default: the deck's own title; Paint Presentator in demo mode) |
 
 Keys during the show: Right, Down, Space, Page Down, Enter or N for the next
 slide; Left, Up, Backspace, Page Up or P back; Home for the loading painting

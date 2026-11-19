@@ -11,7 +11,7 @@ internal sealed record PresentOptions
     public string? Deck { get; set; }
     public string? Monitor { get; set; }
     public bool Painting { get; set; } = true;
-    public string Title { get; set; } = "Paint Presentator";
+    public string? Title { get; set; }  // default: the deck's own title
     // for tests and demos
     public bool Auto { get; set; }
     public bool Verify { get; set; }
@@ -69,8 +69,8 @@ internal static class PresentCommand
     public static async Task<int> Run(string[] args)
     {
         var o = PresentOptions.Parse(args);
-        if (o.Deck is null) throw new UsageException("which deck?");
-        IDeckSource deck = DeckSources.Open(o.Deck, o.NodeTools);
+        // no deck: demo mode, the built-in help deck (the user's design)
+        IDeckSource deck = o.Deck is null ? new HelpDeckSource() : DeckSources.Open(o.Deck, o.NodeTools);
         var summary = new Dictionary<string, object?> { ["started"] = DateTime.Now.ToString("s") };
 
         // the screen: named, picked, or the only one there is
@@ -144,7 +144,7 @@ internal static class PresentCommand
             (pen, tools) = await stage.Run(p => { var pn = new SyntheticPen(); return (pn, new Toolbox(p!, pn)); });
 
             if (o.Painting)
-                summary["painting"] = await Paint(o, stage, tools, pen, hook, slides, origin, size, () => paint.InFront(), ending.Token);
+                summary["painting"] = await Paint(o, stage, tools, pen, hook, slides, origin, size, deck.Title, () => paint.InFront(), ending.Token);
             if (slides.Failure is null)
             {
                 try { await slides.WaitReadyAsync(1, ending.Token); }
@@ -396,7 +396,7 @@ internal static class PresentCommand
     }
 
     private static async Task<object> Paint(PresentOptions o, PaintStage stage, Toolbox tools, SyntheticPen pen, KeyHook hook,
-                                            SlideStore slides, (int X, int Y) origin, PixelSize size, Func<bool> paintInFront,
+                                            SlideStore slides, (int X, int Y) origin, PixelSize size, string title, Func<bool> paintInFront,
                                             CancellationToken ending)
     {
         // the painting stops on the first key, Ctrl+C, or when rendering fails
@@ -417,7 +417,7 @@ internal static class PresentCommand
             });
         var (stopped, steps) = await stage.Run(p =>
         {
-            var lp = new LoadingPainting(p!, tools, pen, origin, size, o.Title, Progress, stop.Token, o.Seed, Log);
+            var lp = new LoadingPainting(p!, tools, pen, origin, size, o.Title ?? title, Progress, stop.Token, o.Seed, Log);
             bool interrupted = lp.Run();
             return (interrupted, lp.Steps);
         });

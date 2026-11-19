@@ -8,6 +8,9 @@ CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
 const string Usage = """
     presenter: present a slide deck live in Microsoft Paint.
 
+      presenter
+          Demo mode: the built-in help deck (how to use the presenter).
+
       presenter present <deck> [--monitor N] [--no-painting] [--title "…"]
           Show a deck in Paint. <deck>: a PowerPoint file (.pptx, .ppt), a
           PDF, a Marp Markdown file, a Slidev project, or a folder of slide
@@ -44,11 +47,15 @@ if (args.Length > 0 && args[0] is "--version" or "version")
     return 0;
 }
 
-if (args.Length == 0 || args[0] is "-h" or "--help" or "help")
+if (args.Length > 0 && args[0] is "-h" or "--help" or "help")
 {
     Console.WriteLine(Usage);
-    return args.Length == 0 ? 1 : 0;
+    return 0;
 }
+
+// no command (or only options): demo mode, the built-in help deck
+if (args.Length == 0 || args[0].StartsWith("--") || args[0] == "demo")
+    args = ["present", .. args.SkipWhile(a => a == "demo")];
 
 try
 {

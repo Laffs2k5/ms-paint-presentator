@@ -9,6 +9,7 @@ namespace Presenter.Cli;
 internal sealed class RenderedSource(DeckInfo info, RenderOptions options) : IDeckSource
 {
     public string Name => Path.GetFileName(Path.TrimEndingDirectorySeparator(info.Path));
+    public string Title => info.Title;
     public double Aspect => info.Aspect;
     public DeckInfo Info => info;
 
