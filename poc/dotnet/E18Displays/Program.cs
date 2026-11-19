@@ -10,10 +10,14 @@
 //   E18Displays list                    the active displays, numbered
 //   E18Displays detach <N> --for <S>    display N off for S seconds, then back
 //   E18Displays internal --for <S>      only the laptop's own panel for S seconds, then back
-//   E18Displays restore                 put back the layout saved by the last detach/internal
+//   E18Displays clone --for <S>         duplicate (Win+P) for S seconds, then back to the layout
+//   E18Displays mode <N> <W>x<H> --for <S>   display N at another resolution for S seconds
+//   E18Displays scale <N> <+K|-K> --for <S>  display N's scaling K steps up or down for S seconds
+//   E18Displays restore                 put back the layout (and scaling) saved by the last change
 //
 // The layout as it was is saved to %TEMP%\E18Displays-layout.bin before any
 // change and put back afterwards, also when the wait is cut short (Ctrl+C).
+// A scaling change is kept in %TEMP%\E18Displays-scale.txt until it is undone.
 // If anything goes wrong: Win+P, then Extend, brings the displays back.
 using System.ComponentModel;
 using System.Runtime.InteropServices;
@@ -32,6 +36,35 @@ static class Program
     [DllImport("user32.dll")] static extern int SetDisplayConfig(uint np, byte[]? paths, uint nm, byte[]? modes, uint flags);
     [DllImport("user32.dll")] static extern int DisplayConfigGetDeviceInfo(ref SOURCE_NAME info);
     [DllImport("user32.dll")] static extern int DisplayConfigGetDeviceInfo(ref TARGET_NAME info);
+    [DllImport("user32.dll")] static extern int DisplayConfigGetDeviceInfo(ref GET_DPI info);
+    [DllImport("user32.dll")] static extern int DisplayConfigSetDeviceInfo(ref SET_DPI info);
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)] static extern bool EnumDisplaySettings(string device, int mode, ref DEVMODE dm);
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)] static extern int ChangeDisplaySettingsEx(string device, ref DEVMODE dm, nint hwnd, uint flags, nint param);
+
+    const uint SDC_TOPOLOGY_CLONE = 0x2;
+    const uint DM_PELSWIDTH = 0x80000, DM_PELSHEIGHT = 0x100000;
+    static readonly string ScaleFile = Path.Combine(Path.GetTempPath(), "E18Displays-scale.txt");
+
+    // Display scaling has no documented API. These are the device-info types
+    // Settings itself uses (-3 read, -4 write), widely used by tools: the scale
+    // is a step relative to the display's recommended one (100, 125, 150, ...).
+    [StructLayout(LayoutKind.Sequential)] struct GET_DPI { public HEADER header; public int minRel, curRel, maxRel; }
+    [StructLayout(LayoutKind.Sequential)] struct SET_DPI { public HEADER header; public int rel; }
+
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+    struct DEVMODE
+    {
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)] public string deviceName;
+        public ushort specVersion, driverVersion, size, driverExtra;
+        public uint fields;
+        public int positionX, positionY;
+        public uint orientation, fixedOutput;
+        public short color, duplex, yResolution, ttOption, collate;
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)] public string formName;
+        public ushort logPixels;
+        public uint bitsPerPel, pelsWidth, pelsHeight, displayFlags, displayFrequency;
+        public uint icmMethod, icmIntent, mediaType, ditherType, reserved1, reserved2, panningWidth, panningHeight;
+    }
 
     [StructLayout(LayoutKind.Sequential)] struct LUID { public uint low; public int high; }
     [StructLayout(LayoutKind.Sequential)] struct HEADER { public int type, size; public LUID adapterId; public uint id; }
@@ -123,9 +156,64 @@ static class Program
         finally
         {
             Apply(before);
+            RestoreScale();
             Console.WriteLine($"back at {DateTime.Now:HH:mm:ss}");
         }
         return 0;
+    }
+
+    static (LUID Adapter, uint Id) Source(byte[] paths, int i)
+    {
+        var p = paths.AsSpan(i * PathSize, PathSize);
+        return (MemoryMarshal.Read<LUID>(p[0..8]), BitConverter.ToUInt32(p[8..12]));
+    }
+
+    /// <summary>Display N at another resolution, for this session only (no
+    /// registry write); the saved layout puts the old one back.</summary>
+    static void SetMode(string gdi, uint width, uint height)
+    {
+        var dm = new DEVMODE { size = (ushort)Marshal.SizeOf<DEVMODE>() };
+        if (!EnumDisplaySettings(gdi, -1, ref dm)) throw new InvalidOperationException($"no current mode for {gdi}");
+        Console.WriteLine($"{gdi}: {dm.pelsWidth}x{dm.pelsHeight} -> {width}x{height}");
+        dm.pelsWidth = width;
+        dm.pelsHeight = height;
+        dm.fields = DM_PELSWIDTH | DM_PELSHEIGHT;
+        Check(ChangeDisplaySettingsEx(gdi, ref dm, 0, 0, 0), "ChangeDisplaySettingsEx");
+    }
+
+    /// <summary>Display N's scaling <paramref name="steps"/> steps up (or down);
+    /// the old step is kept in a file until it is put back.</summary>
+    static void StepScale(byte[] paths, int i, int steps)
+    {
+        var (adapter, id) = Source(paths, i);
+        var get = new GET_DPI { header = new() { type = -3, size = Marshal.SizeOf<GET_DPI>(), adapterId = adapter, id = id } };
+        Check(DisplayConfigGetDeviceInfo(ref get), "DisplayConfigGetDeviceInfo(dpi)");
+        int want = Math.Clamp(get.curRel + steps, get.minRel, get.maxRel);
+        if (want == get.curRel) throw new InvalidOperationException($"scaling cannot go {steps:+0;-0} steps from here");
+        File.WriteAllText(ScaleFile, $"{adapter.low} {adapter.high} {id} {get.curRel}");
+        Console.WriteLine($"scaling: step {get.curRel} -> {want} (relative to recommended; {get.minRel}..{get.maxRel})");
+        SetScale(adapter, id, want);
+    }
+
+    static void SetScale(LUID adapter, uint id, int rel)
+    {
+        var set = new SET_DPI { header = new() { type = -4, size = Marshal.SizeOf<SET_DPI>(), adapterId = adapter, id = id }, rel = rel };
+        Check(DisplayConfigSetDeviceInfo(ref set), "DisplayConfigSetDeviceInfo(dpi)");
+    }
+
+    static void RestoreScale()
+    {
+        if (!File.Exists(ScaleFile)) return;
+        var f = File.ReadAllText(ScaleFile).Split(' ');
+        SetScale(new LUID { low = uint.Parse(f[0]), high = int.Parse(f[1]) }, uint.Parse(f[2]), int.Parse(f[3]));
+        File.Delete(ScaleFile);
+        Console.WriteLine("scaling put back");
+    }
+
+    static int DisplayArg(Layout l, string arg)
+    {
+        if (!int.TryParse(arg, out int n) || n < 1 || n > l.Paths) throw new ArgumentException($"no display {arg}; there are {l.Paths}");
+        return n - 1;
     }
 
     static int Main(string[] args)
@@ -151,12 +239,29 @@ static class Program
             case "internal":
                 Console.WriteLine("only the built-in screen");
                 return ChangeFor(() => Check(SetDisplayConfig(0, null, 0, null, SDC_APPLY | SDC_TOPOLOGY_INTERNAL), "SetDisplayConfig"), For());
+            case "clone":
+                Console.WriteLine("duplicate (Win+P, Duplicate)");
+                return ChangeFor(() => Check(SetDisplayConfig(0, null, 0, null, SDC_APPLY | SDC_TOPOLOGY_CLONE), "SetDisplayConfig"), For());
+            case "mode" when args.Length >= 3 && args[2].Split('x') is [var w, var h]:
+            {
+                var l = Query();
+                var gdi = Describe(l.PathBytes, DisplayArg(l, args[1])).Gdi;
+                return ChangeFor(() => SetMode(gdi, uint.Parse(w), uint.Parse(h)), For());
+            }
+            case "scale" when args.Length >= 3 && int.TryParse(args[2], out int steps):
+            {
+                var l = Query();
+                int i = DisplayArg(l, args[1]);
+                return ChangeFor(() => StepScale(l.PathBytes, i, steps), For());
+            }
             case "restore":
                 Apply(Load());
+                RestoreScale();
                 Console.WriteLine("layout put back");
                 return 0;
             default:
-                Console.Error.WriteLine("usage: E18Displays list | detach <N> [--for S] | internal [--for S] | restore");
+                Console.Error.WriteLine("usage: E18Displays list | detach <N> [--for S] | internal [--for S] | clone [--for S]\n" +
+                                        "                   | mode <N> <W>x<H> [--for S] | scale <N> <+steps|-steps> [--for S] | restore");
                 return 2;
         }
     }
