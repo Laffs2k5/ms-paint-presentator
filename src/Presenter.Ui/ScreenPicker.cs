@@ -164,6 +164,7 @@ public static class ScreenPicker
                 };
                 AutomationProperties.SetAutomationId(button, $"Screen{i + 1}");
                 AutomationProperties.SetName(button, $"{i + 1}. {o}");
+                AutomationProperties.SetHelpText(button, o.Device);  // for tests: identical monitors share a name
                 button.Click += (_, _) => Pick(o);
                 _list.Children.Add(button);
                 if (i == pick) button.Loaded += (_, _) => button.Focus();
