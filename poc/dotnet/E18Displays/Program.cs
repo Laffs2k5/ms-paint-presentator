@@ -127,9 +127,14 @@ static class Program
         return new Layout(np, pb, nm, mb);
     }
 
+    // Saved to Windows' display database too: otherwise the next time the
+    // monitors wake (a locked screen, sleep), Windows loads whatever the change
+    // left there, Duplicate included.
+    const uint SDC_SAVE_TO_DATABASE = 0x200;
+
     static void Apply(Layout l) =>
         Check(SetDisplayConfig(l.Paths, l.PathBytes, l.Modes, l.ModeBytes,
-                               SDC_APPLY | SDC_USE_SUPPLIED_DISPLAY_CONFIG | SDC_ALLOW_CHANGES), "SetDisplayConfig");
+                               SDC_APPLY | SDC_USE_SUPPLIED_DISPLAY_CONFIG | SDC_ALLOW_CHANGES | SDC_SAVE_TO_DATABASE), "SetDisplayConfig");
 
     static void List(Layout l)
     {

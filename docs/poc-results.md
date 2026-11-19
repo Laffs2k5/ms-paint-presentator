@@ -1298,6 +1298,12 @@ monitors at 100%.
   it should be: same monitor identity, a different viewport.
 - **The primary display cannot be switched off this way:** `SetDisplayConfig`
   refuses with error 87. Present on a non-primary display for these runs.
+- **A restore must be saved to Windows' display database.** E18Displays first
+  put the layout back for the session only. An hour after the Duplicate run
+  the screen locked, the monitors slept and woke, and Windows loaded its
+  stored layout: three displays mirrored. Restores now pass
+  `SDC_SAVE_TO_DATABASE`. After a run, check the layout (`E18Displays list`)
+  before handing the desk back.
 - **Not covered yet:** a real cable pull (a software detach keeps the port,
   so the GDI name and device path stayed the same), FancyZones, and a
   projector.
