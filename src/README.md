@@ -87,9 +87,11 @@ Needs a second display. Results so far: [poc-results E18](../docs/poc-results.md
 **Without a cable**, `poc/dotnet/E18Displays` makes the change and puts the
 layout back after `--for <S>` seconds: `detach <N>`, `internal` (the laptop
 panel only), `clone` (Duplicate), `mode <N> <W>x<H>`, `scale <N> +1`;
-`list` numbers the displays, `restore` undoes the last change by hand. If
-it goes wrong, Win+P, Extend brings the displays back, and Settings the
-scaling. The harness runs a whole
+`list` numbers the displays, `restore` undoes the last change by hand. A
+restore is saved to Windows' display database, so a locked screen or a
+monitor waking up does not bring the change back; check the layout after a
+run anyway. If it goes wrong, Win+P, Extend brings the displays back, and
+Settings the scaling. The harness runs a whole
 change and answers the picker itself; from `poc/paintctl`, with the
 presenter and E18Displays built:
 
