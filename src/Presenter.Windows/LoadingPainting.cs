@@ -51,10 +51,16 @@ public sealed class LoadingPainting
 
     public List<string> Steps { get; } = [];
 
+    private readonly string? _tip;
+
+    /// <param name="tip">A line for the bottom left, by a small light bulb,
+    /// after the signature (demo mode: how to begin); none when null.</param>
     public LoadingPainting(PaintSession paint, Toolbox tools, SyntheticPen pen, (int X, int Y) origin, PixelSize size, string title,
-                           Func<PaintingProgress> progress, CancellationToken stop, int? seed = null, Action<string>? log = null)
+                           Func<PaintingProgress> progress, CancellationToken stop, int? seed = null, Action<string>? log = null,
+                           string? tip = null)
     {
         (_paint, _tools, _pen, _origin, _size, _title, _progress, _stop, _log) = (paint, tools, pen, origin, size, title, progress, stop, log);
+        _tip = tip;
         _rng = seed is { } sd ? new Random(sd) : new Random();
         H = 1280.0 * size.Height / size.Width;
         s = size.Width / 1280.0;
@@ -91,6 +97,7 @@ public sealed class LoadingPainting
             Finale();
             Letters();
             Signature();
+            if (_tip is not null) Tip(_tip);
             _tools.Key('S');  // the Select tool: no brush panel over the canvas
             return false;
         }
@@ -492,6 +499,67 @@ public sealed class LoadingPainting
         _tools.Type(yy);
         Thread.Sleep(600);
         var (cx, cy) = At(0.40 * W, 0.94 * H);
+        _tools.CommitText(cx, cy);
+        _tool = null;
+    }
+
+    /// <summary>
+    /// A small, crappy light bulb in the bottom left corner, coloured in with
+    /// yellow scribbles, a few orange rays, and the tip beside it in Comic
+    /// Sans. After the flood, so the sky does not wash it away; scribbles
+    /// rather than the bucket, so a bulb that does not quite close cannot
+    /// leak yellow into the sky.
+    /// </summary>
+    private void Tip(string tip)
+    {
+        double r = 0.026 * H, bx = 0.045 * W, by = 0.912 * H;  // the glass: radius and centre
+        (double X, double Y) On(double deg, double k = 1) => (bx + Math.Cos(deg * Math.PI / 180) * r * k, by + Math.Sin(deg * Math.PI / 180) * r * k);
+
+        // yellow first, a zigzag inside the glass
+        Use("Yellow", 6.0);
+        var glow = new List<(double X, double Y)>();
+        for (int i = 0; i < 9; i++)
+            glow.Add(On(_rng.NextDouble() * 360, 0.25 + _rng.NextDouble() * 0.5));
+        Note("tip: a bulb");
+        Strokes([Dense(glow)], 0.5);
+
+        // then the outline: the glass, open at the bottom for the neck, and a screw base
+        Use("Black", 3.5);
+        var glass = new List<(double X, double Y)>();
+        for (double a = 118; a <= 422; a += 8) glass.Add(On(a, 1 + (_rng.NextDouble() - 0.5) * 0.12));
+        var neckL = new List<(double X, double Y)> { On(118), (bx - 0.45 * r, by + 1.55 * r) };
+        var neckR = new List<(double X, double Y)> { On(62), (bx + 0.45 * r, by + 1.55 * r) };
+        var threads = new List<List<(double X, double Y)>>();
+        foreach (double k in new[] { 1.05, 1.3, 1.55 })
+            threads.Add(Dense([(bx - 0.5 * r, by + k * r + (_rng.NextDouble() - 0.5) * 0.1 * r), (bx + 0.5 * r, by + (k - 0.08) * r)]));
+        threads.Add(Dense([(bx - 0.2 * r, by + 1.8 * r), (bx + 0.2 * r, by + 1.8 * r)]));
+        Strokes(new[] { Dense(Wob(glass, 0.6 * u, 3)), Dense(neckL), Dense(neckR) }.Concat(threads), 1.0);
+
+        Use("Orange", 3.5);
+        var rays = new List<List<(double X, double Y)>>();
+        foreach (double a in new[] { -155.0, -115, -65, -30 })
+        {
+            double b = a + (_rng.NextDouble() - 0.5) * 12;
+            rays.Add(Dense([On(b, 1.4), On(b, 1.9 + _rng.NextDouble() * 0.4)]));
+        }
+        Strokes(rays, 0.5);
+
+        // the tip, typed: one line beside the bulb, with no box (the sky shows through)
+        Check();
+        double em = 0.038 * _size.Height;
+        var (tx0, ty0) = At(bx + 2.2 * r, by - 0.9 * em / s);
+        var (tx1, ty1) = At(bx + 2.2 * r + 24 * em / s, by + 0.9 * em / s);
+        _tools.TextBox(tx0, ty0, tx1, ty1);
+        _tools.Font("Comic Sans MS");
+        _tools.FontSize((int)Math.Round(em * 0.75));
+        _tools.BackgroundFill(false);
+        _tools.Colour("Black", slot: 1);
+        _pen.Tap(tx0 + 6, ty0 + 6);  // back into the box
+        Thread.Sleep(300);
+        Note($"tip: \"{tip}\"");
+        _tools.Type(tip);
+        Thread.Sleep(400);
+        var (cx, cy) = At(0.72 * W, 0.94 * H);  // between the tip and the signature
         _tools.CommitText(cx, cy);
         _tool = null;
     }

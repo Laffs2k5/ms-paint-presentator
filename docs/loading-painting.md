@@ -32,6 +32,7 @@ offsets.
 | Sun and cloud | in opposite top corners; which side is random |
 | Birds | three small "m"s near the top middle |
 | Signature | bottom right corner: a white box sized to the date, its right edge at 98.5% across and its bottom at 99% down. The text is about 6% of the height (the concept had 3.3%; the user wanted a larger date) |
+| Tip (demo mode only) | bottom left corner: a small light bulb, its glass centred at 4.5% across and 91% down, radius 2.6% of the height; the tip beside it, about 3.8% of the height |
 
 ## Sequence and time budgets
 
@@ -51,6 +52,7 @@ switches change only the colour (about 1.0 s) rather than the tool (about
 | 8 | Finale | Fill (bucket) · Light turquoise | about 2.5 s | Starts only at 100%. The pen hesitates in the cloud ("…hmm", 0.8 s), then clicks. The colour leaks through the gap and floods everything connected, but not the inside of closed letters |
 | 8a | Letters | Fill (bucket) · 1 to 4 random colours | about 1.5–3.5 s | The bucket fills 1 to 4 of the title's letters, chosen at random, each in its own colour from the palette (not White, Black, the greys, the sky's Light turquoise or the title's colour). The user's addition. The painter reads the title's area from the screen once, to find letter bodies (not holes) that are still white |
 | 9 | Signature | Text · Black, Comic Sans, Background fill white | 4.0 s (measured: about 9 s) | Today's date with the last two digits swapped, corrected with Backspace, in an opaque white box. The concept had it among the decorations, before the finale; it moved after it (E27, below) |
+| 10 | Tip (demo mode only) | Brush · Yellow, Black, Orange; then Text · Black, Comic Sans, no box | 2.0 s for the bulb, then the text (a few seconds) | A small, crappy light bulb: yellow scribbles for the light, a wobbly glass open at the bottom, a neck and three screw threads, four orange rays. Beside it "Tip: press Space to get started". Coloured with scribbles, not the bucket: a bulb that does not quite close would flood the sky yellow. The user's addition, for someone running the presenter for the first time |
 
 ## Honest progress
 
