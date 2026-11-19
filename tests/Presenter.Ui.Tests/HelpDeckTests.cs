@@ -31,4 +31,13 @@ public class HelpDeckTests
         Assert.True(HelpDeck.Slides.Count >= 5);
         Assert.All(HelpDeck.Slides, s => Assert.NotEmpty(s.Lines));
     }
+
+    [Fact]
+    public void TheFirstSlideWelcomesAndSpaceLeadsToTheKeys()
+    {
+        var first = HelpDeck.Slides[0];
+        Assert.Equal("Welcome to", first.Kicker);
+        Assert.Contains(first.Lines, l => l.StartsWith("> ") && l.Contains("Space"));
+        Assert.Equal("Keys during a show", HelpDeck.Slides[1].Title);  // where Space goes
+    }
 }
