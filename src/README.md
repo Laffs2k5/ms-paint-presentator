@@ -82,10 +82,24 @@ after a display change) are printed as JSON at the end and kept in
 
 ## Testing display changes (E18)
 
-Needs a second display. The presenter's side is built and tested with a
-simulated change only (`--simulate-display-change`); these steps test the
-real thing and answer research 05 §5's open questions. Run them from a
-terminal on the laptop's screen.
+Needs a second display. Results so far: [poc-results E18](../docs/poc-results.md#e18-display-changes-mid-show-2026-11-19-pass-for-a-display-leaving-and-coming-back-the-rest-still-open).
+
+**Without a cable**, `poc/dotnet/E18Displays` switches a display off and on
+(`list`, `detach <N> --for <S>`, `internal --for <S>`, `restore`; Win+P,
+Extend brings everything back if it goes wrong). The harness runs a whole
+change and answers the picker itself; from `poc/paintctl`, with the
+presenter and E18Displays built:
+
+```powershell
+uv run python ..\experiments\e18_display_changes.py --deck <deck> --display \\.\DISPLAY3 --scenario back --seconds 12
+```
+
+`--scenario other --other \\.\DISPLAY4` picks another display meanwhile,
+`--scenario internal` leaves only the laptop panel. Present on a non-primary
+display (the primary cannot be switched off), and keep `--soak` long enough
+to outlast the change. These drive the real screen.
+
+**By hand**, from a terminal on the laptop's screen:
 
 1. `presenter screens`, then `presenter pick`: both displays listed, the
    external one highlighted, Identify puts a number on each.

@@ -1253,3 +1253,44 @@ a browser; this checks its open points in Paint, maximised at 100% on a
 - **Send the end point of every stroke twice**, so that shapes meant to close
   do close, and the cloud's gap is the only way out.
 - **Brush size for a width of w px: w − 1.**
+
+## E18. Display changes mid-show (2026-11-19): **pass** for a display leaving and coming back; the rest still open
+
+Tool: [`poc/dotnet/E18Displays`](../poc/dotnet/E18Displays) (C#) switches
+displays off and on through `SetDisplayConfig`, the API Windows itself uses
+when a display goes away: the desktop shrinks, windows move off it, and
+`WM_DISPLAYCHANGE` goes out. Harness:
+[`poc/experiments/e18_display_changes.py`](../poc/experiments/e18_display_changes.py)
+runs `presenter present --verify --soak`, makes the change mid-show, and
+answers the screen picker over UI Automation the way a speaker would. Deck: a
+synthetic 4-page PDF. Displays: the laptop panel plus three 2560×1440
+monitors at 100%.
+
+| Run | What happened |
+|---|---|
+| Demo mode on DISPLAY2, no change | Viewport 2512×1229, slide 2066×1163, the 8 help slides; every frame pixel-exact, median 219 ms a key |
+| DISPLAY3 (presenting) off for 12 s, then back | The picker came up 4.8 s after the change and listed DISPLAY3 again when it returned. Picking it: **Repaste**, the same slide pixel-exact. The EDID identity and the GDI name survived the round trip |
+| DISPLAY3 off for 20 s; DISPLAY4 picked meanwhile | Picker after 3.8 s, **MovePaint** to DISPLAY4, the current slide shown again 5.9 s after the change. When DISPLAY3 came back, **a second picker came up**; DISPLAY4 picked again: Repaste. 68 slide changes, none unconfirmed |
+| Only the laptop panel for 12 s | Picker after 4.4 s; four speaker keys skipped while it was up (Paint not in front). DISPLAY3 picked once it was back: **Repaste**, 22 s after the change including the wait |
+
+- **The picker follows the displays.** It came up every time, listed a
+  returning display without being reopened, and the show resumed at the
+  current slide. With the same display back there was nothing to render.
+- **A slide change during the switch verifies at 0 %:** the screen it was
+  read from had gone. That is the moment of the change, not a wrong slide.
+- **On DISPLAY4 every frame verified at about 82 %** (black 84 %). An Edge
+  picture-in-picture window, always on top, covered part of the canvas. The
+  audience would see it too. **A pre-flight check could warn about
+  always-on-top windows over the chosen display;** not built yet.
+- **The primary display cannot be switched off this way:** `SetDisplayConfig`
+  refuses with error 87. Present on a non-primary display for these runs.
+- **Not covered yet:** a real cable pull (a software detach keeps the port,
+  so the GDI name and device path stayed the same), picking the laptop panel
+  (NewSlideSize), resolution and scaling changes, duplicate/extend with
+  Win+P, FancyZones, and a projector.
+- **Harness gotcha:** reading the presenter's stderr in a thread *and*
+  calling `communicate()` splits the log between them, and lines go missing.
+  A run whose 40-key soak ended the show before the display came back also
+  looked like "no picker on return". The harness now waits on stdout alone,
+  keeps the whole log (`--log`), and the soak should outlast the change
+  (`--soak 130` for a 20 s change).
