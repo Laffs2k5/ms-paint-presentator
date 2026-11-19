@@ -99,12 +99,21 @@ public sealed class LoadingPainting
             Signature();
             if (_tip is not null) Tip(_tip);
             _tools.Key('S');  // the Select tool: no brush panel over the canvas
+            if (_pen.Recoveries > 0) Note($"the pen was refused {_pen.Recoveries} time(s) and went down again");
             return false;
         }
         catch (OperationCanceledException)
         {
             _tools.Key('S');
             Note("stopped (a key, Ctrl+C, or the deck failed to render)");
+            return true;
+        }
+        catch (Exception e)
+        {
+            // The painting is decoration: whatever goes wrong in it (the pen
+            // refused, a tool not found), it stops and the show goes on.
+            Note($"stopped by an error, the show goes on: {e.GetType().Name}: {e.Message}");
+            try { _tools.Key('S'); } catch (Exception) { }
             return true;
         }
     }

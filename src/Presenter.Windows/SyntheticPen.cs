@@ -56,6 +56,10 @@ public sealed unsafe class SyntheticPen : IDisposable
     private readonly int _vx, _vy;
     public uint Pressure { get; set; } = 512;
 
+    /// <summary>How often a stroke had to put the pen down again after
+    /// Windows refused a move (see <see cref="Stroke"/>).</summary>
+    public int Recoveries { get; private set; }
+
     public SyntheticPen()
     {
         _device = CreateSyntheticPointerDevice(PT_PEN, 1, POINTER_FEEDBACK_NONE);
@@ -94,29 +98,47 @@ public sealed unsafe class SyntheticPen : IDisposable
     }
 
     /// <summary>One stroke through the points, <paramref name="intervalMs"/>
-    /// apart (at least 1 ms), the end point sent twice (E27).</summary>
+    /// apart (at least 1 ms), the end point sent twice (E27). Windows can
+    /// cancel the pen's contact mid-stroke (another window taking the
+    /// foreground, say), after which a move is refused with "invalid
+    /// parameter": the pen then goes down again where it is, once per
+    /// stroke. It is always lifted at the end.</summary>
     public void Stroke(IReadOnlyList<(int X, int Y)> points, double intervalMs, CancellationToken ct = default)
     {
         if (points.Count == 0) return;
         intervalMs = Math.Max(1.0, intervalMs);
         long t0 = Stopwatch.GetTimestamp();
         double tick = Stopwatch.Frequency / 1000.0;
-        PenDown(points[0].X, points[0].Y);
-        int n = points.Count + 1;  // the last point twice
-        for (int i = 1; i < n; i++)
-        {
-            var p = points[Math.Min(i, points.Count - 1)];
-            long due = t0 + (long)(i * intervalMs * tick);
-            while (Stopwatch.GetTimestamp() < due)
-            {
-                if (due - Stopwatch.GetTimestamp() > 2 * tick) Thread.Sleep(1);
-                else Thread.SpinWait(20);
-            }
-            Move(p.X, p.Y);
-            if (ct.IsCancellationRequested) break;
-        }
         var last = points[^1];
-        PenUp(last.X, last.Y);
+        bool again = false;
+        PenDown(points[0].X, points[0].Y);
+        try
+        {
+            int n = points.Count + 1;  // the last point twice
+            for (int i = 1; i < n; i++)
+            {
+                var p = points[Math.Min(i, points.Count - 1)];
+                long due = t0 + (long)(i * intervalMs * tick);
+                while (Stopwatch.GetTimestamp() < due)
+                {
+                    if (due - Stopwatch.GetTimestamp() > 2 * tick) Thread.Sleep(1);
+                    else Thread.SpinWait(20);
+                }
+                try { Move(p.X, p.Y); }
+                catch (Win32Exception) when (!again)
+                {
+                    again = true;
+                    Recoveries++;
+                    try { Inject(p.X, p.Y, InRange | Up, 2); } catch (Win32Exception) { }
+                    PenDown(p.X, p.Y);
+                }
+                if (ct.IsCancellationRequested) break;
+            }
+        }
+        finally
+        {
+            try { PenUp(last.X, last.Y); } catch (Win32Exception) { }  // lifted whatever happened
+        }
     }
 
     /// <summary>A tap: a click that leaves the mouse where it is.</summary>
