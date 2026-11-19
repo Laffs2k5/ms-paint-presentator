@@ -1,0 +1,69 @@
+Paint Presentator: third-party notices
+======================================
+
+presenter.exe is a self-contained .NET program. Besides Paint Presentator's
+own code (MIT, see LICENSE), it includes the components below, under their
+own licenses. In each release zip, this file also carries the .NET runtime's
+license and its third-party notices, taken from the runtime packs the build
+used.
+
+- FlaUI.Core and FlaUI.UIA3 5.0.0, by Roemer and contributors
+  https://github.com/FlaUI/FlaUI (MIT)
+- Interop.UIAutomationClient 10.19041.0, by Roemer
+  https://github.com/Roemer/UIAutomation-Interop (MIT)
+- The .NET runtime and the Windows Desktop runtime 9.0, by the .NET
+  Foundation and contributors
+  https://github.com/dotnet/runtime, https://github.com/dotnet/wpf,
+  https://github.com/dotnet/winforms (MIT, with their own third-party notices)
+
+
+FlaUI.Core and FlaUI.UIA3
+-------------------------
+
+The MIT License (MIT)
+
+Copyright (c) 2016-2024
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+
+Interop.UIAutomationClient
+--------------------------
+
+MIT License
+
+Copyright (c) 2019 Roman
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

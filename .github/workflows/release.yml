@@ -11,6 +11,7 @@ on:
     paths:
       - .github/workflows/release.yml
       - install.ps1
+      - THIRD-PARTY-NOTICES.txt
   workflow_dispatch:
 
 permissions:
@@ -50,7 +51,22 @@ jobs:
           $dir = "out/${{ matrix.rid }}"
           Copy-Item LICENSE, install.ps1 $dir
           Copy-Item docs/install.md "$dir/INSTALL.md"
-          Compress-Archive -Path "$dir/presenter.exe", "$dir/LICENSE", "$dir/install.ps1", "$dir/INSTALL.md" -DestinationPath "presenter-${{ matrix.rid }}.zip"
+          # The exe bundles third-party code: our notices, then the .NET runtime's
+          # license and third-party notices from the runtime packs the publish used.
+          $pkgs = ((dotnet nuget locals global-packages --list) -replace '^global-packages:\s*', '').Trim()
+          $notices = @(Get-Content -Raw THIRD-PARTY-NOTICES.txt)
+          foreach ($pack in "microsoft.netcore.app.runtime.${{ matrix.rid }}", "microsoft.windowsdesktop.app.runtime.${{ matrix.rid }}") {
+            $ver = Get-ChildItem (Join-Path $pkgs $pack) -Directory |
+              Sort-Object { [version]($_.Name -replace '-.*$', '') } | Select-Object -Last 1
+            if (-not $ver) { throw "no $pack in $pkgs" }
+            $files = @(Get-ChildItem $ver.FullName -File | Where-Object Name -match '^(LICENSE|THIRD-PARTY-NOTICES)')
+            if ($files.Count -eq 0) { throw "no license files in $($ver.FullName)" }
+            foreach ($f in $files) {
+              $notices += "`n`n==== $pack $($ver.Name): $($f.Name) ====`n`n" + (Get-Content -Raw $f.FullName)
+            }
+          }
+          Set-Content "$dir/THIRD-PARTY-NOTICES.txt" ($notices -join '') -Encoding utf8
+          Compress-Archive -Path "$dir/presenter.exe", "$dir/LICENSE", "$dir/THIRD-PARTY-NOTICES.txt", "$dir/install.ps1", "$dir/INSTALL.md" -DestinationPath "presenter-${{ matrix.rid }}.zip"
 
       - uses: actions/upload-artifact@v4
         with:
