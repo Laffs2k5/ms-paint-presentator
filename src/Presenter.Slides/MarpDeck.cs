@@ -110,16 +110,20 @@ internal sealed partial class MarpDeck
     /// before headings when <c>headingDivider</c> is set. An estimate: the
     /// render corrects it to the number of images.
     /// </summary>
-    internal static int CountSlides(string[] body, string? headingDivider)
+    internal static int CountSlides(string[] body, string? headingDivider) => SlideStarts(body, headingDivider).Count + 1;
+
+    /// <summary>Where slides 2, 3, ... start: the body line of each break (a
+    /// thematic break, or a heading when headingDivider is set).</summary>
+    internal static List<int> SlideStarts(string[] body, string? headingDivider)
     {
         var dividerLevels = ParseHeadingDivider(headingDivider);
-        int slides = 1;
+        var starts = new List<int>();
         bool hasContent = false, inComment = false;
         string? fence = null;
         string prev = "";
-        foreach (var raw in body)
+        for (int i = 0; i < body.Length; i++)
         {
-            var line = raw.TrimEnd();
+            var line = body[i].TrimEnd();
             if (fence is not null)
             {
                 if (line.TrimStart().StartsWith(fence, StringComparison.Ordinal) && line.Trim().Trim(fence[0]).Length == 0)
@@ -154,7 +158,7 @@ internal sealed partial class MarpDeck
                 bool setext = line.Trim() == new string('-', line.Trim().Length) && IsParagraphLine(prev);
                 if (!setext)
                 {
-                    slides++;
+                    starts.Add(i);
                     hasContent = false;
                     prev = "";
                     continue;
@@ -162,11 +166,28 @@ internal sealed partial class MarpDeck
             }
             var hm = AtxHeadingRegex().Match(line);
             if (hm.Success && dividerLevels.Contains(hm.Groups[1].Value.Length) && hasContent)
-                slides++;
+                starts.Add(i);
             if (line.Length > 0) hasContent = true;
             prev = line;
         }
-        return slides;
+        return starts;
+    }
+
+    /// <summary>
+    /// The deck cut after its first <paramref name="slides"/> slides, front
+    /// matter and all, to render those first; null when the deck is no longer
+    /// than that.
+    /// </summary>
+    internal static string? HeadText(string path, int slides)
+    {
+        var lines = FrontMatter.SplitLines(File.ReadAllText(path));
+        var fm = FrontMatter.Parse(lines);
+        var body = lines.AsSpan(fm.BodyLine).ToArray();
+        var comments = FrontMatter.CommentDirectives(HtmlComments(body));
+        var divider = comments.TryGetValue("headingDivider", out var d) ? d : fm["headingDivider"];
+        var starts = SlideStarts(body, divider);
+        if (starts.Count < slides) return null;
+        return string.Join('\n', lines[..(fm.BodyLine + starts[slides - 1])]);
     }
 
     private static bool IsParagraphLine(string line)
