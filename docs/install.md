@@ -25,6 +25,7 @@ gh release download --repo Laffs2k5/ms-paint-presentator --pattern install.ps1 -
 
 .\install.ps1             # presenter.exe only
 .\install.ps1 -WithNode   # and Node.js + Marp
+.\install.ps1 -Sign       # signed with your code-signing certificate (managed computers, see below)
 ```
 
 If PowerShell refuses to run scripts at all (execution policy `Restricted`),
@@ -43,7 +44,8 @@ What it does:
    (Marp's command line).
 
 Already have the zip? `.\install.ps1 -Zip .\presenter-win-x64.zip`.
-`-NoPath` leaves your PATH alone.
+`-NoPath` leaves your PATH alone. `-Sign` signs `presenter.exe` right after
+unpacking, before anything runs it (below).
 
 Then:
 
@@ -96,23 +98,31 @@ it. Leave it, and work with a fresh copy from the zip.
 What works:
 
 - **A code-signing certificate your organisation trusts.** Some
-  organisations give staff one, and let Defender run what it signs. Sign a
-  fresh copy *before its first run*, then run that copy:
+  organisations give staff one, and let Defender run what it signs. The
+  installer signs `presenter.exe` with it right after unpacking, *before its
+  first run*:
 
   ```powershell
-  gh release download --repo Laffs2k5/ms-paint-presentator --pattern presenter-win-x64.zip --dir .
-  $dir  = "$env:LOCALAPPDATA\Programs\PaintPresentator-signed"  # not the folder of a blocked copy
-  Expand-Archive .\presenter-win-x64.zip $dir -Force
-  $exe  = "$dir\presenter.exe"
-  $cert = Get-ChildItem Cert:\CurrentUser\My -CodeSigningCert   # pick yours if there are several
-  Set-AuthenticodeSignature -FilePath $exe -Certificate $cert -HashAlgorithm SHA256
-  & $exe --version
+  .\install.ps1 -Sign                         # your only code-signing certificate
+  .\install.ps1 -Sign -Thumbprint <thumbprint> # one of several
+  .\install.ps1 -Sign -InstallDir "$env:LOCALAPPDATA\Programs\PaintPresentator-signed"  # a blocked copy is in the usual folder
+  presenter --version                         # in a new terminal: it runs
   ```
 
-  Then put `$dir` on your user PATH instead of the installer's folder.
+  Your code-signing certificates and their thumbprints:
+  `Get-ChildItem Cert:\CurrentUser\My -CodeSigningCert | Format-Table Thumbprint, Subject, NotAfter`.
+  `-Sign` stops with a message, before anything runs, when there is no
+  certificate, when several leave the choice open, or when this computer does
+  not trust the one chosen (then signing would not help either).
+
+  By hand, for a copy you unpacked yourself:
+  `Set-AuthenticodeSignature -FilePath .\presenter.exe -Certificate $cert -HashAlgorithm SHA256`,
+  with `$cert` from the list above.
 
   Tested on a managed Windows 11 Enterprise machine without admin rights:
-  the unsigned copy was blocked, the signed one ran. Check first that your
-  organisation's rules for its certificate cover a tool like this.
+  the unsigned copy was blocked, the signed one ran. The signature lasts as
+  long as the certificate; after it is renewed, install again with `-Sign`.
+  Check first that your organisation's rules for its certificate cover a
+  tool like this.
 - **Otherwise, ask IT** to allow the program (by file, or by a certificate
   it trusts).

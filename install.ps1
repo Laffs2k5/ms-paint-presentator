@@ -11,10 +11,17 @@
     The repository is private for now: a download then needs the GitHub CLI (gh),
     signed in. Once it is public, a plain web download works.
 
+    With -Sign it signs presenter.exe with your code-signing certificate right
+    after unpacking, before anything runs it. On a managed computer where
+    Defender blocks new programs, a certificate the organisation trusts lets
+    it run (docs/install.md, "Risky action blocked").
+
 .EXAMPLE
     .\install.ps1                   # presenter.exe only (PowerPoint and PDF decks, the demo)
     .\install.ps1 -WithNode         # and Node.js plus Marp, for Marp decks
     .\install.ps1 -Zip .\presenter-win-x64.zip   # from a zip already downloaded
+    .\install.ps1 -Sign             # signed with your (only) code-signing certificate
+    .\install.ps1 -Sign -Thumbprint 0123ABCD...  # with this one of several
 #>
 [CmdletBinding()]
 param(
@@ -22,7 +29,9 @@ param(
     [string]$InstallDir = (Join-Path $env:LOCALAPPDATA 'Programs\PaintPresentator'),
     [string]$Zip,
     [switch]$WithNode,
-    [switch]$NoPath
+    [switch]$NoPath,
+    [switch]$Sign,
+    [string]$Thumbprint
 )
 
 $ErrorActionPreference = 'Stop'
@@ -56,12 +65,35 @@ function Expand-Zip([string]$zip, [string]$dest) {
     finally { $archive.Dispose() }
 }
 
+# The code-signing certificate for -Sign, from the user's own store: the one
+# with -Thumbprint, or the only valid one with a private key.
+function Get-SigningCertificate([string]$thumbprint) {
+    $now = Get-Date
+    $certs = @(Get-ChildItem Cert:\CurrentUser\My -CodeSigningCert |
+        Where-Object { $_.HasPrivateKey -and $_.NotBefore -le $now -and $_.NotAfter -gt $now })
+    $list = ($certs | ForEach-Object { "  $($_.Thumbprint)  $($_.Subject)  (until $($_.NotAfter.ToString('yyyy-MM-dd')))" }) -join "`n"
+    if ($thumbprint) {
+        # a thumbprint copied from the certificate dialog can carry invisible characters
+        $clean = ($thumbprint -replace '[^0-9A-Fa-f]', '').ToUpperInvariant()
+        $cert = $certs | Where-Object { $_.Thumbprint -eq $clean }
+        if (-not $cert) { throw "no valid code-signing certificate with thumbprint $clean in your store. There are:`n$list" }
+        return $cert
+    }
+    if ($certs.Count -eq 0) { throw "-Sign: no valid code-signing certificate with a private key in your store (Cert:\CurrentUser\My)" }
+    if ($certs.Count -gt 1) { throw "-Sign: several code-signing certificates; choose one with -Thumbprint:`n$list" }
+    return $certs[0]
+}
+
 $arch = if ($env:PROCESSOR_ARCHITECTURE -eq 'ARM64' -or $env:PROCESSOR_ARCHITEW6432 -eq 'ARM64') { 'arm64' } else { 'x64' }
 $asset = "presenter-win-$arch.zip"
 $temp = Join-Path ([IO.Path]::GetTempPath()) ("presenter-install-" + [guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $temp | Out-Null
 
 try {
+    # find the certificate first: no point downloading if signing cannot happen
+    $cert = if ($Sign) { Get-SigningCertificate $Thumbprint }
+    elseif ($Thumbprint) { throw "-Thumbprint goes with -Sign" }
+
     # --- presenter.exe ---------------------------------------------------------------
     if (-not $Zip) {
         $Zip = Join-Path $temp $asset
@@ -81,8 +113,23 @@ try {
     Unblock-File -Path $Zip  # downloaded files carry a "from the internet" mark
     Write-Host "Unpacking to $InstallDir"
     New-Item -ItemType Directory -Force -Path $InstallDir | Out-Null
-    Expand-Zip $Zip $InstallDir
+    try { Expand-Zip $Zip $InstallDir }
+    catch [UnauthorizedAccessException] {
+        # Defender refuses any access to a program it has blocked once
+        throw "cannot write to $InstallDir ($($_.Exception.Message)). If Defender blocked presenter.exe there " +
+              "before, that copy stays locked: install to another folder with -InstallDir."
+    }
     Get-ChildItem $InstallDir -File | Unblock-File
+    if ($cert) {
+        # before anything runs it: a program Defender has blocked once stays locked
+        $exe = Join-Path $InstallDir 'presenter.exe'
+        Write-Host "Signing presenter.exe with $($cert.Subject)"
+        $signed = Set-AuthenticodeSignature -FilePath $exe -Certificate $cert -HashAlgorithm SHA256
+        if ($signed.Status -ne 'Valid') {
+            throw "signing gave '$($signed.Status)': $($signed.StatusMessage) " +
+                  "(this computer does not trust the certificate, so it would not help either)"
+        }
+    }
     if (-not $NoPath) { Add-ToUserPath $InstallDir }
 
     # --- Node.js, portable (only Marp and Slidev decks need it) --------------------------
